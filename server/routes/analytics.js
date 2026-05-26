@@ -51,19 +51,19 @@ router.get('/trends', async (req, res) => {
   const db = await getDb();
   const { months = 6 } = req.query;
   const climateMonthly = await db.prepare(`
-    SELECT strftime('%Y-%m', timestamp) as month, district, AVG(rainfall_mm) as avg_rainfall, AVG(temperature_max) as avg_temp
-    FROM climate_readings WHERE timestamp >= datetime('now', '-${parseInt(months)} months')
+    SELECT TO_CHAR(timestamp::timestamptz, 'YYYY-MM') as month, district, AVG(rainfall_mm) as avg_rainfall, AVG(temperature_max) as avg_temp
+    FROM climate_readings WHERE timestamp >= NOW() - INTERVAL '${parseInt(months)} months'
     GROUP BY month, district ORDER BY month
   `).all();
   const maintenanceMonthly = await db.prepare(`
-    SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as requests,
+    SELECT TO_CHAR(created_at::timestamptz, 'YYYY-MM') as month, COUNT(*) as requests,
       SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed
-    FROM maintenance_requests WHERE created_at >= datetime('now', '-${parseInt(months)} months')
+    FROM maintenance_requests WHERE created_at >= NOW() - INTERVAL '${parseInt(months)} months'
     GROUP BY month ORDER BY month
   `).all();
   const healthMonthly = await db.prepare(`
-    SELECT strftime('%Y-%m', reported_date) as month, SUM(cases) as cases, COUNT(*) as incidents
-    FROM health_incidents WHERE reported_date >= datetime('now', '-${parseInt(months)} months')
+    SELECT TO_CHAR(reported_date::date, 'YYYY-MM') as month, SUM(cases) as cases, COUNT(*) as incidents
+    FROM health_incidents WHERE reported_date >= NOW() - INTERVAL '${parseInt(months)} months'
     GROUP BY month ORDER BY month
   `).all();
   res.json({ success: true, data: { climate: climateMonthly, maintenance: maintenanceMonthly, health: healthMonthly } });

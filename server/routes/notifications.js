@@ -10,7 +10,7 @@ router.use(authMiddleware);
 ensureNotifyColumns();
 
 // GET /notifications — role-filtered + personal (recipient_id) notifications
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const db = getDb();
     const { limit = 30 } = req.query;
@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
       params = [...allowed, district || '', uid, +limit];
     }
 
-    const data = db.prepare(sql).all(...params);
+    const data = await db.prepare(sql).all(...params);
     res.json({ success: true, data, total: data.length });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -48,7 +48,7 @@ router.get('/', (req, res) => {
 });
 
 // GET /notifications/unread-count
-router.get('/unread-count', (req, res) => {
+router.get('/unread-count', async (req, res) => {
   try {
     const db = getDb();
     const role = req.user.role;
@@ -73,7 +73,7 @@ router.get('/unread-count', (req, res) => {
       params = [...allowed, district || '', uid];
     }
 
-    const row = db.prepare(sql).get(...params);
+    const row = await db.prepare(sql).get(...params);
     res.json({ success: true, count: row.c });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -81,10 +81,10 @@ router.get('/unread-count', (req, res) => {
 });
 
 // PATCH /notifications/:id/read
-router.patch('/:id/read', (req, res) => {
+router.patch('/:id/read', async (req, res) => {
   try {
     const db = getDb();
-    db.prepare(`UPDATE notification_log SET read_at = datetime('now') WHERE id = ? AND read_at IS NULL`).run(req.params.id);
+    await db.prepare(`UPDATE notification_log SET read_at = NOW() WHERE id = ? AND read_at IS NULL`).run(req.params.id);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -92,7 +92,7 @@ router.patch('/:id/read', (req, res) => {
 });
 
 // PATCH /notifications/read-all
-router.patch('/read-all', (req, res) => {
+router.patch('/read-all', async (req, res) => {
   try {
     const db = getDb();
     const role = req.user.role;
@@ -103,12 +103,12 @@ router.patch('/read-all', (req, res) => {
 
     let sql, params;
     if (role === 'national_admin') {
-      sql = `UPDATE notification_log SET read_at = datetime('now')
+      sql = `UPDATE notification_log SET read_at = NOW()
              WHERE channel = 'in_app' AND read_at IS NULL
                AND (recipient_type IN (${placeholders}) OR recipient_id = ?)`;
       params = [...allowed, uid];
     } else {
-      sql = `UPDATE notification_log SET read_at = datetime('now')
+      sql = `UPDATE notification_log SET read_at = NOW()
              WHERE channel = 'in_app' AND read_at IS NULL
                AND (
                  (recipient_type IN (${placeholders}) AND (district = ? OR district IS NULL))
@@ -117,7 +117,7 @@ router.patch('/read-all', (req, res) => {
       params = [...allowed, district || '', uid];
     }
 
-    db.prepare(sql).run(...params);
+    await db.prepare(sql).run(...params);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -125,12 +125,12 @@ router.patch('/read-all', (req, res) => {
 });
 
 // GET /notifications/stats
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const db = getDb();
-    const total = db.prepare(`SELECT COUNT(*) as c FROM notification_log`).get().c;
-    const byChannel = db.prepare(`SELECT channel, COUNT(*) as c FROM notification_log GROUP BY channel`).all();
-    const sent24h = db.prepare(`SELECT COUNT(*) as c FROM notification_log WHERE sent_at > datetime('now', '-24 hours')`).get().c;
+    const total = (await db.prepare(`SELECT COUNT(*) as c FROM notification_log`).get()).c;
+    const byChannel = await db.prepare(`SELECT channel, COUNT(*) as c FROM notification_log GROUP BY channel`).all();
+    const sent24h = (await db.prepare(`SELECT COUNT(*) as c FROM notification_log WHERE sent_at > NOW() - INTERVAL '24 hours'`).get()).c;
     res.json({ success: true, data: { total, by_channel: byChannel, sent_24h: sent24h } });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -138,14 +138,14 @@ router.get('/stats', (req, res) => {
 });
 
 // POST /notifications/send — admin only manual send
-router.post('/send', requireRole('national_admin', 'district_officer'), (req, res) => {
+router.post('/send', requireRole('national_admin', 'district_officer'), async (req, res) => {
   try {
     const db = getDb();
     const { recipient_type, recipient_id, recipient_contact, channel, subject, message, reference_type, reference_id } = req.body;
     if (!recipient_type || !message) return res.status(400).json({ success: false, error: 'recipient_type and message required' });
     const validChannels = ['sms', 'email', 'whatsapp', 'in_app', 'emergency'];
     if (!validChannels.includes(channel)) return res.status(400).json({ success: false, error: 'Invalid channel' });
-    const result = db.prepare(
+    const result = await db.prepare(
       `INSERT INTO notification_log (recipient_type, recipient_id, recipient_contact, channel, subject, message, status, reference_type, reference_id)
        VALUES (?,?,?,?,?,?,'sent',?,?)`
     ).run(recipient_type, recipient_id || null, recipient_contact || null, channel, subject || null, message, reference_type || null, reference_id || null);
@@ -156,21 +156,24 @@ router.post('/send', requireRole('national_admin', 'district_officer'), (req, re
 });
 
 // POST /notifications/broadcast
-router.post('/broadcast', requireRole('national_admin', 'district_officer'), (req, res) => {
+router.post('/broadcast', requireRole('national_admin', 'district_officer'), async (req, res) => {
   try {
     const db = getDb();
     const { district, channel, subject, message, reference_type, reference_id } = req.body;
     if (!message) return res.status(400).json({ success: false, error: 'Message required' });
-    const recipients = db.prepare(`SELECT id, name, email, phone, role FROM users WHERE district = ? AND active = 1`).all(district || '');
-    const ins = db.prepare(
-      `INSERT INTO notification_log (recipient_type, recipient_id, recipient_contact, channel, subject, message, status, reference_type, reference_id)
-       VALUES (?,?,?,?,?,?,?,?,?)`
-    );
+    const recipients = await db.prepare(`SELECT id, name, email, phone, role FROM users WHERE district = ? AND active = 1`).all(district || '');
     let sent = 0;
     for (const r of recipients) {
-      if (channel === 'email' && r.email) { ins.run('user', r.id, r.email, 'email', subject, message, 'sent', reference_type, reference_id); sent++; }
-      if (channel === 'sms' && r.phone) { ins.run('user', r.id, r.phone, 'sms', subject, message, 'sent', reference_type, reference_id); sent++; }
-      ins.run('user', r.id, null, 'in_app', subject, message, 'sent', reference_type, reference_id); sent++;
+      if (channel === 'email' && r.email) {
+        await db.prepare(`INSERT INTO notification_log (recipient_type, recipient_id, recipient_contact, channel, subject, message, status, reference_type, reference_id) VALUES (?,?,?,?,?,?,?,?,?)`).run('user', r.id, r.email, 'email', subject, message, 'sent', reference_type, reference_id);
+        sent++;
+      }
+      if (channel === 'sms' && r.phone) {
+        await db.prepare(`INSERT INTO notification_log (recipient_type, recipient_id, recipient_contact, channel, subject, message, status, reference_type, reference_id) VALUES (?,?,?,?,?,?,?,?,?)`).run('user', r.id, r.phone, 'sms', subject, message, 'sent', reference_type, reference_id);
+        sent++;
+      }
+      await db.prepare(`INSERT INTO notification_log (recipient_type, recipient_id, recipient_contact, channel, subject, message, status, reference_type, reference_id) VALUES (?,?,?,?,?,?,?,?,?)`).run('user', r.id, null, 'in_app', subject, message, 'sent', reference_type, reference_id);
+      sent++;
     }
     res.json({ success: true, recipients: sent, message: `Broadcast sent to ${sent} recipients in ${district || 'all districts'}` });
   } catch (e) {

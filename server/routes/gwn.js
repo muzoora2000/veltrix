@@ -67,7 +67,7 @@ router.get('/stats', async (req, res) => {
   const total = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE 1=1 ${f}`).get(...p)).c;
   const verified = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE status='verified' ${f}`).get(...p)).c;
   const critical = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE severity='critical' ${f}`).get(...p)).c;
-  const today = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE date(created_at)=date('now') ${f}`).get(...p)).c;
+  const today = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE created_at::date = CURRENT_DATE ${f}`).get(...p)).c;
   const byType = await db.prepare(`SELECT report_type, COUNT(*) as count FROM gwn_reports WHERE 1=1 ${f} GROUP BY report_type ORDER BY count DESC`).all(...p);
   const byStatus = await db.prepare(`SELECT status, COUNT(*) as count FROM gwn_reports WHERE 1=1 ${f} GROUP BY status`).all(...p);
   const hotspots = await db.prepare(`SELECT * FROM pollution_hotspots WHERE 1=1${district ? ' AND district=?' : ''} ORDER BY pollution_score DESC LIMIT 8`).all(...p);
@@ -98,7 +98,7 @@ router.put('/reports/:id', authMiddleware, async (req, res) => {
   if (escalation_level !== undefined) {fields.push('escalation_level=?');vals.push(escalation_level);}
   if (satellite_verified !== undefined) {fields.push('satellite_verified=?');vals.push(satellite_verified ? 1 : 0);}
   if (!fields.length) return res.status(400).json({ success: false, error: 'No fields to update' });
-  fields.push(`updated_at=datetime('now')`);
+  fields.push(`updated_at=NOW()`);
   vals.push(req.params.id);
   await db.prepare(`UPDATE gwn_reports SET ${fields.join(',')} WHERE id=?`).run(...vals);
   res.json({ success: true });
@@ -108,9 +108,9 @@ router.put('/reports/:id', authMiddleware, async (req, res) => {
 router.get('/hotspots', async (req, res) => {
   const db = await getDb();
   const { district } = req.query;
-  const rows = district ? await
-  db.prepare(`SELECT * FROM pollution_hotspots WHERE district=? ORDER BY pollution_score DESC`).all(district) : await
-  db.prepare(`SELECT * FROM pollution_hotspots ORDER BY pollution_score DESC`).all();
+  const rows = district
+    ? await db.prepare(`SELECT * FROM pollution_hotspots WHERE district=? ORDER BY pollution_score DESC`).all(district)
+    : await db.prepare(`SELECT * FROM pollution_hotspots ORDER BY pollution_score DESC`).all();
   res.json({ success: true, data: rows });
 });
 

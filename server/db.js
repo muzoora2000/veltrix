@@ -1,439 +1,87 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs   = require('fs');
+const { Pool } = require('pg');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'watermonitor.db');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
 
-// Ensure the directory that will hold the DB file exists (important for
-// the /data mount path on first deploy before the disk has any files).
-const DB_DIR = path.dirname(DB_PATH);
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+// Convert SQLite-flavoured SQL to PostgreSQL
+function toPostgres(sql) {
+  const hadOrIgnore = /INSERT\s+OR\s+IGNORE/i.test(sql);
+  let i = 0;
+  let s = sql
+    .replace(/\bINSERT\s+OR\s+IGNORE\s+INTO\b/gi, 'INSERT INTO')
+    .replace(/\bINSERT\s+OR\s+REPLACE\s+INTO\b/gi, 'INSERT INTO')
+    .replace(/\bINTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT\b/gi, 'BIGSERIAL PRIMARY KEY')
+    .replace(/\bAUTOINCREMENT\b/gi, '')
+    .replace(/\bdatetime\('now',\s*'([^']+)'\)/gi, (_, mod) => {
+      const m = mod.match(/^([+-]?\d+)\s+(\w+)$/);
+      return m ? `(NOW() + INTERVAL '${m[1]} ${m[2]}')` : 'NOW()';
+    })
+    .replace(/\bdatetime\('now'\)/gi, 'NOW()')
+    .replace(/\bdatetime\(([^)]+)\)/gi, '($1::timestamptz)')
+    .replace(/\bdate\('now'\)/gi, 'CURRENT_DATE')
+    .replace(/\bdate\(([^)]+)\)/gi, '($1::date)')
+    .replace(/\bstrftime\('%Y-%m',\s*([^)]+)\)/gi, "TO_CHAR($1::timestamptz, 'YYYY-MM')")
+    .replace(/\bJULIANDAY\(/gi, 'EXTRACT(EPOCH FROM (')
+    .replace(/\?/g, () => `$${++i}`);
+  if (hadOrIgnore && !/ON CONFLICT/i.test(s)) s += ' ON CONFLICT DO NOTHING';
+  return s;
+}
 
-let db;
-const add = sql => { try { db.exec(sql); } catch {} };
+function flatArgs(args) {
+  if (!args.length) return [];
+  if (args.length === 1 && Array.isArray(args[0])) return args[0];
+  return args;
+}
 
 function getDb() {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema();
-    runMigrations();
-  }
-  return db;
+  return {
+    prepare(sql) {
+      return {
+        async get(...args) {
+          const { rows } = await pool.query(toPostgres(sql), flatArgs(args));
+          return rows[0] ?? null;
+        },
+        async all(...args) {
+          const { rows } = await pool.query(toPostgres(sql), flatArgs(args));
+          return rows;
+        },
+        async run(...args) {
+          let q = toPostgres(sql);
+          if (/^\s*INSERT\s/i.test(q) && !/RETURNING/i.test(q)) q += ' RETURNING id';
+          const res = await pool.query(q, flatArgs(args));
+          return { lastInsertRowid: res.rows[0]?.id ?? null, changes: res.rowCount ?? 0 };
+        },
+      };
+    },
+    async exec(sql) {
+      const stmts = sql.split(/;\s*(?:\n|$)/).map(s => s.trim()).filter(s => s.length > 2);
+      for (const stmt of stmts) {
+        try { await pool.query(toPostgres(stmt)); } catch (_) {}
+      }
+    },
+    pragma() {},
+    transaction(fn) { return fn(); },
+  };
 }
 
-
-function runMigrations() {
-  const add = sql => { try { db.exec(sql); } catch {} };
-
-  // Migration tracking table — records which one-time migrations have been applied
-  add(`CREATE TABLE IF NOT EXISTS _migrations (
-    name TEXT PRIMARY KEY,
-    applied_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  // One-time: establish Walter Olum as the sole national admin
-  const walterDone = db.prepare("SELECT name FROM _migrations WHERE name = 'setup_walter_admin_v1'").get();
-  if (!walterDone) {
-    const bcrypt = require('bcryptjs');
-    db.pragma('foreign_keys = OFF');
-    // Nullify FK references on existing admin accounts before removing them
-    const existingAdmins = db.prepare("SELECT id FROM users WHERE role = 'national_admin'").all();
-    existingAdmins.forEach(a => {
-      db.prepare('UPDATE task_assignments SET assigned_to=NULL WHERE assigned_to=?').run(a.id);
-      db.prepare('UPDATE task_assignments SET assigned_by=NULL WHERE assigned_by=?').run(a.id);
-      db.prepare('UPDATE citizen_reports SET user_id=NULL WHERE user_id=?').run(a.id);
-      db.prepare('UPDATE volunteer_events SET created_by=NULL WHERE created_by=?').run(a.id);
-    });
-    db.prepare("DELETE FROM users WHERE role = 'national_admin'").run();
-    db.pragma('foreign_keys = ON');
-    const hash = bcrypt.hashSync('walter123', 10);
-    db.prepare(
-      `INSERT OR IGNORE INTO users (name, email, password_hash, role, district, organization, active)
-       VALUES ('Walter Olum', 'walter.olum@hydrosense.ug', ?, 'national_admin', 'Kampala', 'Ministry of Water & Environment', 1)`
-    ).run(hash);
-    db.prepare("INSERT INTO _migrations (name) VALUES ('setup_walter_admin_v1')").run();
-    console.log('[MIGRATION] setup_walter_admin_v1: Walter Olum set as national admin.');
-  }
-
-  // Guarantee Walter Olum's credentials are correct (runs once, repairs any bad state)
-  const walterV2 = db.prepare("SELECT name FROM _migrations WHERE name = 'ensure_walter_v2'").get();
-  if (!walterV2) {
-    const bcrypt = require('bcryptjs');
-    const walterEmail = 'walter.olum@hydrosense.ug';
-    const walterHash  = bcrypt.hashSync('walter123', 10);
-    const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(walterEmail);
-    if (existing) {
-      // Account exists — reset name, hash, and active flag
-      db.prepare(
-        `UPDATE users SET name='Walter Olum', password_hash=?, role='national_admin',
-         organization='Ministry of Water & Environment', active=1 WHERE email=?`
-      ).run(walterHash, walterEmail);
-    } else {
-      // Account missing — create fresh
-      db.pragma('foreign_keys = OFF');
-      db.prepare("DELETE FROM users WHERE role = 'national_admin'").run();
-      db.pragma('foreign_keys = ON');
-      db.prepare(
-        `INSERT INTO users (name, email, password_hash, role, district, organization, active)
-         VALUES ('Walter Olum', ?, ?, 'national_admin', 'Kampala', 'Ministry of Water & Environment', 1)`
-      ).run(walterEmail, walterHash);
-    }
-    db.prepare("INSERT OR IGNORE INTO _migrations (name) VALUES ('ensure_walter_v2')").run();
-    console.log('[MIGRATION] ensure_walter_v2: Walter Olum credentials verified/reset.');
-  }
-
-  // One-time: remove all demo/seed users except national_admin accounts
-  const v1done = db.prepare("SELECT name FROM _migrations WHERE name = 'remove_demo_users_v1'").get();
-  if (!v1done) {
-    db.pragma('foreign_keys = OFF');
-    db.prepare("DELETE FROM users WHERE role != 'national_admin'").run();
-    db.pragma('foreign_keys = ON');
-    db.prepare("INSERT INTO _migrations (name) VALUES ('remove_demo_users_v1')").run();
-    console.log('[MIGRATION] remove_demo_users_v1: all non-admin demo accounts deleted.');
-  }
-
-  // One-time: remove ALL known demo accounts (including the demo national_admin)
-  const v2done = db.prepare("SELECT name FROM _migrations WHERE name = 'remove_demo_users_v2'").get();
-  if (!v2done) {
-    const demoEmails = [
-      'admin@mwe.go.ug',
-      'officer@gulu.go.ug',
-      'committee@arua.ug',
-      'john@citizen.ug',
-      'sarah@actionaid.org',
-      'tech@maintenance.ug',
-      'health@moh.go.ug',
-      'climate@nema.go.ug',
-      'officer@lira.go.ug',
-      'officer@moroto.go.ug',
-      'admin@hydrosense.ug',
-    ];
-    const placeholders = demoEmails.map(() => '?').join(',');
-    db.pragma('foreign_keys = OFF');
-    db.prepare(`DELETE FROM users WHERE email IN (${placeholders})`).run(...demoEmails);
-    db.pragma('foreign_keys = ON');
-    db.prepare("INSERT INTO _migrations (name) VALUES ('remove_demo_users_v2')").run();
-    console.log('[MIGRATION] remove_demo_users_v2: all hardcoded demo accounts deleted.');
-  }
-
-  add(`ALTER TABLE users ADD COLUMN avatar TEXT`);
-  add(`ALTER TABLE users ADD COLUMN national_id TEXT`);
-  add(`ALTER TABLE users ADD COLUMN otp_verified INTEGER DEFAULT 0`);
-  add(`ALTER TABLE users ADD COLUMN community_id TEXT`);
-  add(`ALTER TABLE users ADD COLUMN location TEXT`);
-  add(`ALTER TABLE users ADD COLUMN district TEXT`);
-  add(`ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'en'`);
-  add(`ALTER TABLE users ADD COLUMN sub_county TEXT`);
-  /* ── OTP Codes (secure) ── */
-  add(`CREATE TABLE IF NOT EXISTS otp_codes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    otp TEXT NOT NULL,
-    purpose TEXT DEFAULT 'registration',
-    expires_at TEXT NOT NULL,
-    used INTEGER DEFAULT 0,
-    attempts INTEGER DEFAULT 0,
-    blocked_until TEXT,
-    ip_address TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-  /* migrations for existing otp_codes table */
-  add(`ALTER TABLE otp_codes ADD COLUMN attempts INTEGER DEFAULT 0`);
-  add(`ALTER TABLE otp_codes ADD COLUMN blocked_until TEXT`);
-  add(`ALTER TABLE otp_codes ADD COLUMN ip_address TEXT`);
-  /* ── Failed OTP attempt log ── */
-  add(`CREATE TABLE IF NOT EXISTS otp_attempt_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT NOT NULL,
-    ip_address TEXT,
-    success INTEGER DEFAULT 0,
-    attempted_at TEXT DEFAULT (datetime('now'))
-  )`);
-  /* ── OTP delivery log (SMS + Email provider tracking) ── */
-  add(`CREATE TABLE IF NOT EXISTS otp_delivery_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT,
-    phone TEXT,
-    channel TEXT NOT NULL,
-    provider TEXT NOT NULL,
-    status TEXT DEFAULT 'sent',
-    provider_message_id TEXT,
-    error_message TEXT,
-    sent_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── Citizen Multi-Channel Reports ── */
-  add(`CREATE TABLE IF NOT EXISTS citizen_reports (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER REFERENCES users(id),
-    reporter_name TEXT NOT NULL,
-    reporter_phone TEXT,
-    reporter_email TEXT,
-    incident_type TEXT NOT NULL,
-    description TEXT NOT NULL,
-    district TEXT NOT NULL,
-    sub_county TEXT,
-    village TEXT,
-    lat REAL,
-    lng REAL,
-    severity TEXT DEFAULT 'medium',
-    status TEXT DEFAULT 'pending',
-    channel TEXT NOT NULL DEFAULT 'app',
-    water_impact TEXT,
-    affected_population INTEGER DEFAULT 0,
-    is_anonymous INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── Report Media Attachments ── */
-  add(`CREATE TABLE IF NOT EXISTS report_media (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES citizen_reports(id) ON DELETE CASCADE,
-    media_type TEXT NOT NULL,
-    file_path TEXT,
-    file_data TEXT,
-    mime_type TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── Incident Analysis (AI) ── */
-  add(`CREATE TABLE IF NOT EXISTS incident_analysis (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES citizen_reports(id) ON DELETE CASCADE,
-    ai_severity TEXT,
-    ai_category TEXT,
-    ai_urgency TEXT DEFAULT 'medium',
-    ai_risk_score REAL DEFAULT 0,
-    extracted_location TEXT,
-    ai_summary TEXT,
-    is_duplicate INTEGER DEFAULT 0,
-    duplicate_of_id INTEGER,
-    is_false_report INTEGER DEFAULT 0,
-    confidence_score REAL DEFAULT 0,
-    speech_to_text TEXT,
-    image_analysis TEXT,
-    response_recommendation TEXT,
-    analyzed_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── Task Assignments ── */
-  add(`CREATE TABLE IF NOT EXISTS task_assignments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES citizen_reports(id) ON DELETE SET NULL,
-    incident_id INTEGER REFERENCES env_incidents(id) ON DELETE SET NULL,
-    assigned_to INTEGER REFERENCES users(id),
-    assigned_by INTEGER REFERENCES users(id),
-    task_type TEXT NOT NULL,
-    priority TEXT DEFAULT 'medium',
-    status TEXT DEFAULT 'assigned',
-    department TEXT,
-    due_by TEXT,
-    description TEXT,
-    location TEXT,
-    district TEXT,
-    sub_county TEXT,
-    village TEXT,
-    notes TEXT,
-    completed_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── Response Tickets ── */
-  add(`CREATE TABLE IF NOT EXISTS response_tickets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES citizen_reports(id) ON DELETE SET NULL,
-    incident_id INTEGER REFERENCES env_incidents(id) ON DELETE SET NULL,
-    ticket_number TEXT UNIQUE,
-    title TEXT NOT NULL,
-    description TEXT,
-    priority TEXT DEFAULT 'medium',
-    status TEXT DEFAULT 'open',
-    assigned_team TEXT,
-    assigned_agency TEXT,
-    district TEXT,
-    location TEXT,
-    lat REAL,
-    lng REAL,
-    response_deadline TEXT,
-    resolution_notes TEXT,
-    created_by INTEGER REFERENCES users(id),
-    created_at TEXT DEFAULT (datetime('now')),
-    resolved_at TEXT
-  )`);
-
-  /* ── Notification Log ── */
-  /* ── AI Conversations (Persistent Chat Sessions) ── */
-  add(`CREATE TABLE IF NOT EXISTS ai_conversations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL DEFAULT 'New Chat',
-    user_id INTEGER REFERENCES users(id),
-    role TEXT NOT NULL,
-    district TEXT,
-    category TEXT DEFAULT 'general',
-    incident_id INTEGER,
-    location_id INTEGER,
-    is_multi_user INTEGER DEFAULT 0,
-    participants TEXT,
-    summary TEXT,
-    status TEXT DEFAULT 'active',
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── AI Messages ── */
-  add(`CREATE TABLE IF NOT EXISTS ai_messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id INTEGER REFERENCES ai_conversations(id) ON DELETE CASCADE,
-    role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
-    content TEXT NOT NULL,
-    content_type TEXT DEFAULT 'text',
-    file_url TEXT,
-    file_type TEXT,
-    file_name TEXT,
-    file_size INTEGER,
-    metadata TEXT,
-    tokens_used INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── AI Analytics Cache ── */
-  add(`CREATE TABLE IF NOT EXISTS ai_analytics_cache (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cache_key TEXT UNIQUE NOT NULL,
-    data TEXT NOT NULL,
-    expires_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  /* ── AI Decision Log ── */
-  add(`CREATE TABLE IF NOT EXISTS ai_decision_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    decision_type TEXT NOT NULL,
-    input_data TEXT,
-    output_data TEXT,
-    confidence_score REAL,
-    user_id INTEGER REFERENCES users(id),
-    role TEXT,
-    district TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS notification_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    recipient_type TEXT NOT NULL,
-    recipient_id INTEGER,
-    recipient_contact TEXT,
-    channel TEXT NOT NULL,
-    subject TEXT,
-    message TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    reference_type TEXT,
-    reference_id INTEGER,
-    sent_at TEXT DEFAULT (datetime('now')),
-    delivered_at TEXT
-  )`);
-
-  /* ── Citizen Report Tracking ── */
-  add(`CREATE TABLE IF NOT EXISTS citizen_report_tracking (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_id INTEGER REFERENCES citizen_reports(id) ON DELETE CASCADE,
-    status TEXT NOT NULL,
-    note TEXT,
-    updated_by INTEGER REFERENCES users(id),
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  // Citizen module tables
-  add(`CREATE TABLE IF NOT EXISTS citizen_discussions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    author_name TEXT NOT NULL,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    category TEXT DEFAULT 'general',
-    like_count INTEGER DEFAULT 0,
-    reply_count INTEGER DEFAULT 0,
-    pinned INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS citizen_replies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    discussion_id INTEGER REFERENCES citizen_discussions(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    author_name TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS discussion_likes (
-    discussion_id INTEGER REFERENCES citizen_discussions(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    PRIMARY KEY (discussion_id, user_id)
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS volunteer_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT,
-    location TEXT,
-    district TEXT,
-    event_date TEXT,
-    event_time TEXT,
-    event_type TEXT DEFAULT 'cleanup',
-    max_volunteers INTEGER DEFAULT 50,
-    created_by INTEGER REFERENCES users(id),
-    status TEXT DEFAULT 'active',
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS event_registrations (
-    event_id INTEGER REFERENCES volunteer_events(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    joined_at TEXT DEFAULT (datetime('now')),
-    PRIMARY KEY (event_id, user_id)
-  )`);
-
-  add(`CREATE TABLE IF NOT EXISTS citizen_observations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER REFERENCES users(id),
-    author_name TEXT NOT NULL,
-    observation_type TEXT NOT NULL,
-    district TEXT,
-    location TEXT,
-    description TEXT NOT NULL,
-    value REAL,
-    unit TEXT,
-    photo_base64 TEXT,
-    lat REAL,
-    lng REAL,
-    verified INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  // Bootstrap: ensure at least one active admin exists (critical for fresh deployments)
-  const adminCount = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'national_admin' AND active = 1").get().c;
-  if (adminCount === 0) {
-    const bcrypt = require('bcryptjs');
-    const adminEmail = (process.env.ADMIN_EMAIL || 'walter.olum@hydrosense.ug').toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'walter123';
-    const adminName = process.env.ADMIN_NAME || 'Walter Olum';
-    const hash = bcrypt.hashSync(adminPassword, 10);
-    db.prepare(
-      `INSERT OR IGNORE INTO users (name, email, password_hash, role, district, organization, active)
-       VALUES (?, ?, ?, 'national_admin', 'Kampala', 'Ministry of Water & Environment', 1)`
-    ).run(adminName, adminEmail, hash);
-    console.log(`[BOOTSTRAP] No admin found — Walter Olum admin created: ${adminEmail}`);
-  }
+async function initDb() {
+  const db = getDb();
+  await initSchema(db);
+  await runMigrations(db);
+  console.log('[DB] PostgreSQL schema ready.');
 }
 
-function initSchema() {
-  db.exec(`
+async function initSchema(db) {
+  const e = async sql => { try { await pool.query(sql); } catch (_) {} };
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
@@ -443,13 +91,20 @@ function initSchema() {
       phone TEXT,
       organization TEXT,
       avatar TEXT,
+      national_id TEXT,
+      otp_verified INTEGER DEFAULT 0,
+      community_id TEXT,
+      location TEXT,
+      language TEXT DEFAULT 'en',
       active INTEGER DEFAULT 1,
-      last_login TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
+      last_login TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS water_points (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'functional',
@@ -470,12 +125,14 @@ function initSchema() {
       households INTEGER DEFAULT 0,
       infrastructure_score INTEGER DEFAULT 80,
       notes TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS sensors (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      water_point_id INTEGER REFERENCES water_points(id),
+      id BIGSERIAL PRIMARY KEY,
+      water_point_id BIGINT REFERENCES water_points(id),
       sensor_type TEXT NOT NULL,
       sensor_name TEXT NOT NULL,
       serial_number TEXT,
@@ -484,26 +141,30 @@ function initSchema() {
       max_threshold REAL,
       unit TEXT,
       last_reading REAL,
-      last_seen TEXT,
+      last_seen TIMESTAMPTZ,
       battery_level INTEGER DEFAULT 100,
       signal_strength INTEGER DEFAULT 85,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS sensor_readings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sensor_id INTEGER REFERENCES sensors(id),
-      water_point_id INTEGER REFERENCES water_points(id),
+      id BIGSERIAL PRIMARY KEY,
+      sensor_id BIGINT REFERENCES sensors(id),
+      water_point_id BIGINT REFERENCES water_points(id),
       value REAL NOT NULL,
       unit TEXT,
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+      timestamp TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS maintenance_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      water_point_id INTEGER REFERENCES water_points(id),
-      reported_by INTEGER REFERENCES users(id),
-      assigned_to INTEGER REFERENCES users(id),
+      id BIGSERIAL PRIMARY KEY,
+      water_point_id BIGINT REFERENCES water_points(id),
+      reported_by BIGINT REFERENCES users(id),
+      assigned_to BIGINT REFERENCES users(id),
       status TEXT DEFAULT 'pending',
       priority TEXT DEFAULT 'medium',
       issue_type TEXT NOT NULL,
@@ -512,12 +173,14 @@ function initSchema() {
       actual_cost REAL,
       spare_parts TEXT,
       resolution_notes TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      completed_at TEXT
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      completed_at TIMESTAMPTZ
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS climate_readings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       station TEXT,
       rainfall_mm REAL DEFAULT 0,
@@ -526,32 +189,38 @@ function initSchema() {
       humidity_pct REAL,
       wind_speed_kmh REAL,
       soil_moisture REAL,
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+      timestamp TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS drought_index (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       spi_value REAL,
       severity TEXT,
       groundwater_recharge REAL,
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+      timestamp TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS flood_alerts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       river_name TEXT,
       water_level_m REAL,
       flood_risk TEXT,
       affected_communities TEXT,
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+      timestamp TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS water_quality_tests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      water_point_id INTEGER REFERENCES water_points(id),
-      tested_by INTEGER REFERENCES users(id),
+      id BIGSERIAL PRIMARY KEY,
+      water_point_id BIGINT REFERENCES water_points(id),
+      tested_by BIGINT REFERENCES users(id),
       turbidity_ntu REAL,
       ph REAL,
       tds_ppm REAL,
@@ -563,28 +232,32 @@ function initSchema() {
       overall_safe INTEGER DEFAULT 1,
       water_safety_score INTEGER DEFAULT 85,
       notes TEXT,
-      tested_at TEXT DEFAULT (datetime('now'))
-    );
+      tested_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS alerts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       alert_type TEXT NOT NULL,
       severity TEXT NOT NULL,
-      water_point_id INTEGER REFERENCES water_points(id),
+      water_point_id BIGINT REFERENCES water_points(id),
       district TEXT,
       title TEXT NOT NULL,
       message TEXT NOT NULL,
       source TEXT,
       status TEXT DEFAULT 'active',
-      created_at TEXT DEFAULT (datetime('now')),
-      resolved_at TEXT
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      resolved_at TIMESTAMPTZ
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS community_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       reporter_name TEXT,
       reporter_phone TEXT,
-      water_point_id INTEGER REFERENCES water_points(id),
+      water_point_id BIGINT REFERENCES water_points(id),
       district TEXT NOT NULL,
       sub_county TEXT,
       village TEXT,
@@ -595,14 +268,16 @@ function initSchema() {
       channel TEXT DEFAULT 'app',
       lat REAL,
       lng REAL,
-      assigned_to INTEGER REFERENCES users(id),
+      assigned_to BIGINT REFERENCES users(id),
       resolution_notes TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS health_incidents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       sub_county TEXT,
       village TEXT,
@@ -611,27 +286,31 @@ function initSchema() {
       deaths INTEGER DEFAULT 0,
       hospitalizations INTEGER DEFAULT 0,
       water_source_linked INTEGER DEFAULT 0,
-      water_point_id INTEGER REFERENCES water_points(id),
+      water_point_id BIGINT REFERENCES water_points(id),
       lat REAL,
       lng REAL,
       outbreak_status TEXT DEFAULT 'monitoring',
       investigation_notes TEXT,
-      reported_date TEXT DEFAULT (datetime('now')),
-      resolved_date TEXT
-    );
+      reported_date TIMESTAMPTZ DEFAULT NOW(),
+      resolved_date TIMESTAMPTZ
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS governance_audit (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER REFERENCES users(id),
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT REFERENCES users(id),
       action TEXT NOT NULL,
       entity_type TEXT,
-      entity_id INTEGER,
+      entity_id BIGINT,
       details TEXT,
-      timestamp TEXT DEFAULT (datetime('now'))
-    );
+      timestamp TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS budget_records (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       project_name TEXT NOT NULL,
       project_type TEXT,
@@ -641,23 +320,27 @@ function initSchema() {
       funding_source TEXT,
       status TEXT DEFAULT 'active',
       notes TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS maintenance_funds (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      water_point_id INTEGER REFERENCES water_points(id),
+      id BIGSERIAL PRIMARY KEY,
+      water_point_id BIGINT REFERENCES water_points(id),
       district TEXT NOT NULL,
       balance REAL DEFAULT 0,
       monthly_target REAL DEFAULT 50000,
       total_collected REAL DEFAULT 0,
       total_spent REAL DEFAULT 0,
-      last_collection TEXT,
-      managed_by INTEGER REFERENCES users(id)
-    );
+      last_collection TIMESTAMPTZ,
+      managed_by BIGINT REFERENCES users(id)
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS resilience_scores (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       district TEXT NOT NULL,
       water_access_score INTEGER DEFAULT 70,
       infrastructure_score INTEGER DEFAULT 65,
@@ -665,11 +348,13 @@ function initSchema() {
       governance_score INTEGER DEFAULT 60,
       community_capacity_score INTEGER DEFAULT 68,
       overall_resilience_score INTEGER DEFAULT 64,
-      calculated_at TEXT DEFAULT (datetime('now'))
-    );
+      calculated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS spare_parts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       part_name TEXT NOT NULL,
       category TEXT,
       quantity INTEGER DEFAULT 0,
@@ -677,13 +362,13 @@ function initSchema() {
       unit_cost REAL,
       supplier TEXT,
       district TEXT,
-      last_restocked TEXT
-    );
+      last_restocked TIMESTAMPTZ
+    )
+  `);
 
-    /* ── PHASE 3: GWN CITIZEN SCIENCE ─────────────────────────────── */
-
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS gwn_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       reporter_name TEXT,
       reporter_phone TEXT,
       reporter_type TEXT DEFAULT 'citizen',
@@ -708,14 +393,14 @@ function initSchema() {
       ai_score REAL,
       ai_risk TEXT,
       ai_action TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
-    /* ── PHASE 6: INCIDENT COMMAND ──────────────────────────────────── */
-
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS env_incidents (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       incident_type TEXT NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
@@ -726,32 +411,34 @@ function initSchema() {
       lng REAL,
       severity TEXT DEFAULT 'medium',
       status TEXT DEFAULT 'active',
-      reported_by INTEGER,
+      reported_by BIGINT REFERENCES users(id),
       affected_population INTEGER DEFAULT 0,
       response_agencies TEXT,
       ai_risk_score REAL DEFAULT 0,
       satellite_evidence INTEGER DEFAULT 0,
       enforcement_actions TEXT,
       resolution_notes TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      resolved_at TEXT,
-      FOREIGN KEY (reported_by) REFERENCES users(id)
-    );
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      resolved_at TIMESTAMPTZ
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS agency_assignments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      incident_id INTEGER NOT NULL,
+      id BIGSERIAL PRIMARY KEY,
+      incident_id BIGINT NOT NULL REFERENCES env_incidents(id),
       agency_name TEXT NOT NULL,
       agency_role TEXT DEFAULT 'support',
       officer_name TEXT,
       contact TEXT,
-      assigned_at TEXT DEFAULT (datetime('now')),
-      status TEXT DEFAULT 'active',
-      FOREIGN KEY (incident_id) REFERENCES env_incidents(id)
-    );
+      assigned_at TIMESTAMPTZ DEFAULT NOW(),
+      status TEXT DEFAULT 'active'
+    )
+  `);
 
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS pollution_hotspots (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id BIGSERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       hotspot_type TEXT DEFAULT 'mixed',
       district TEXT,
@@ -762,68 +449,391 @@ function initSchema() {
       dominant_type TEXT,
       risk_level TEXT DEFAULT 'medium',
       active INTEGER DEFAULT 1,
-      last_updated TEXT DEFAULT (datetime('now'))
-    );
-
+      last_updated TIMESTAMPTZ DEFAULT NOW()
+    )
   `);
 
-    /* ── Language Learning & Translation Feedback ── */
-    add(`CREATE TABLE IF NOT EXISTS language_corpus (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id BIGSERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      otp TEXT NOT NULL,
+      purpose TEXT DEFAULT 'registration',
+      expires_at TIMESTAMPTZ NOT NULL,
+      used INTEGER DEFAULT 0,
+      attempts INTEGER DEFAULT 0,
+      blocked_until TIMESTAMPTZ,
+      ip_address TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS otp_attempt_log (
+      id BIGSERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      ip_address TEXT,
+      success INTEGER DEFAULT 0,
+      attempted_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS otp_delivery_log (
+      id BIGSERIAL PRIMARY KEY,
+      email TEXT,
+      phone TEXT,
+      channel TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      status TEXT DEFAULT 'sent',
+      provider_message_id TEXT,
+      error_message TEXT,
+      sent_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS citizen_reports (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT REFERENCES users(id),
+      reporter_name TEXT NOT NULL,
+      reporter_phone TEXT,
+      reporter_email TEXT,
+      incident_type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      district TEXT NOT NULL,
+      sub_county TEXT,
+      village TEXT,
+      lat REAL,
+      lng REAL,
+      severity TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'pending',
+      channel TEXT NOT NULL DEFAULT 'app',
+      water_impact TEXT,
+      affected_population INTEGER DEFAULT 0,
+      is_anonymous INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS report_media (
+      id BIGSERIAL PRIMARY KEY,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE CASCADE,
+      media_type TEXT NOT NULL,
+      file_path TEXT,
+      file_data TEXT,
+      mime_type TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS incident_analysis (
+      id BIGSERIAL PRIMARY KEY,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE CASCADE,
+      ai_severity TEXT,
+      ai_category TEXT,
+      ai_urgency TEXT DEFAULT 'medium',
+      ai_risk_score REAL DEFAULT 0,
+      extracted_location TEXT,
+      ai_summary TEXT,
+      is_duplicate INTEGER DEFAULT 0,
+      duplicate_of_id BIGINT,
+      is_false_report INTEGER DEFAULT 0,
+      confidence_score REAL DEFAULT 0,
+      speech_to_text TEXT,
+      image_analysis TEXT,
+      response_recommendation TEXT,
+      analyzed_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS task_assignments (
+      id BIGSERIAL PRIMARY KEY,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE SET NULL,
+      incident_id BIGINT REFERENCES env_incidents(id) ON DELETE SET NULL,
+      assigned_to BIGINT REFERENCES users(id),
+      assigned_by BIGINT REFERENCES users(id),
+      task_type TEXT NOT NULL,
+      priority TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'assigned',
+      department TEXT,
+      due_by TIMESTAMPTZ,
+      description TEXT,
+      location TEXT,
+      district TEXT,
+      sub_county TEXT,
+      village TEXT,
+      notes TEXT,
+      completed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS response_tickets (
+      id BIGSERIAL PRIMARY KEY,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE SET NULL,
+      incident_id BIGINT REFERENCES env_incidents(id) ON DELETE SET NULL,
+      ticket_number TEXT UNIQUE,
+      title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT DEFAULT 'medium',
+      status TEXT DEFAULT 'open',
+      assigned_team TEXT,
+      assigned_agency TEXT,
+      district TEXT,
+      location TEXT,
+      lat REAL,
+      lng REAL,
+      response_deadline TIMESTAMPTZ,
+      resolution_notes TEXT,
+      created_by BIGINT REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      resolved_at TIMESTAMPTZ
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notification_log (
+      id BIGSERIAL PRIMARY KEY,
+      recipient_type TEXT NOT NULL,
+      recipient_id BIGINT,
+      recipient_contact TEXT,
+      channel TEXT NOT NULL,
+      subject TEXT,
+      message TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      reference_type TEXT,
+      reference_id BIGINT,
+      district TEXT,
+      read_at TIMESTAMPTZ,
+      sent_at TIMESTAMPTZ DEFAULT NOW(),
+      delivered_at TIMESTAMPTZ
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS citizen_report_tracking (
+      id BIGSERIAL PRIMARY KEY,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE CASCADE,
+      status TEXT NOT NULL,
+      note TEXT,
+      updated_by BIGINT REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS citizen_discussions (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      author_name TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      like_count INTEGER DEFAULT 0,
+      reply_count INTEGER DEFAULT 0,
+      pinned INTEGER DEFAULT 0,
+      district TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS citizen_replies (
+      id BIGSERIAL PRIMARY KEY,
+      discussion_id BIGINT REFERENCES citizen_discussions(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      author_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS discussion_likes (
+      discussion_id BIGINT REFERENCES citizen_discussions(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      PRIMARY KEY (discussion_id, user_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS volunteer_events (
+      id BIGSERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      location TEXT,
+      district TEXT,
+      event_date TEXT,
+      event_time TEXT,
+      event_type TEXT DEFAULT 'cleanup',
+      max_volunteers INTEGER DEFAULT 50,
+      created_by BIGINT REFERENCES users(id),
+      status TEXT DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS event_registrations (
+      event_id BIGINT REFERENCES volunteer_events(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (event_id, user_id)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS citizen_observations (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT REFERENCES users(id),
+      author_name TEXT NOT NULL,
+      observation_type TEXT NOT NULL,
+      district TEXT,
+      location TEXT,
+      description TEXT NOT NULL,
+      value REAL,
+      unit TEXT,
+      photo_base64 TEXT,
+      lat REAL,
+      lng REAL,
+      verified INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'new',
+      reviewed_by TEXT,
+      review_note TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_conversations (
+      id BIGSERIAL PRIMARY KEY,
+      title TEXT NOT NULL DEFAULT 'New Chat',
+      user_id BIGINT REFERENCES users(id),
+      role TEXT NOT NULL,
+      district TEXT,
+      category TEXT DEFAULT 'general',
+      incident_id BIGINT,
+      location_id BIGINT,
+      is_multi_user INTEGER DEFAULT 0,
+      participants TEXT,
+      summary TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_messages (
+      id BIGSERIAL PRIMARY KEY,
+      conversation_id BIGINT REFERENCES ai_conversations(id) ON DELETE CASCADE,
+      role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+      content TEXT NOT NULL,
+      content_type TEXT DEFAULT 'text',
+      file_url TEXT,
+      file_type TEXT,
+      file_name TEXT,
+      file_size INTEGER,
+      metadata TEXT,
+      tokens_used INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_analytics_cache (
+      id BIGSERIAL PRIMARY KEY,
+      cache_key TEXT UNIQUE NOT NULL,
+      data TEXT NOT NULL,
+      expires_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_decision_log (
+      id BIGSERIAL PRIMARY KEY,
+      decision_type TEXT NOT NULL,
+      input_data TEXT,
+      output_data TEXT,
+      confidence_score REAL,
+      user_id BIGINT REFERENCES users(id),
+      role TEXT,
+      district TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS language_corpus (
+      id BIGSERIAL PRIMARY KEY,
       language TEXT NOT NULL,
       term TEXT NOT NULL,
       english_equivalent TEXT,
       frequency INTEGER DEFAULT 1,
       context TEXT,
       source TEXT DEFAULT 'report',
-      first_seen TEXT DEFAULT (datetime('now')),
-      last_seen TEXT DEFAULT (datetime('now')),
+      first_seen TIMESTAMPTZ DEFAULT NOW(),
+      last_seen TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE(language, term)
-    )`);
+    )
+  `);
 
-    add(`CREATE TABLE IF NOT EXISTS dialect_patterns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS dialect_patterns (
+      id BIGSERIAL PRIMARY KEY,
       language TEXT NOT NULL,
       region TEXT NOT NULL,
       pattern TEXT NOT NULL,
       english_translation TEXT,
       frequency INTEGER DEFAULT 1,
       confidence REAL DEFAULT 0.5,
-      first_seen TEXT DEFAULT (datetime('now')),
-      last_seen TEXT DEFAULT (datetime('now')),
+      first_seen TIMESTAMPTZ DEFAULT NOW(),
+      last_seen TIMESTAMPTZ DEFAULT NOW(),
       UNIQUE(language, region, pattern)
-    )`);
+    )
+  `);
 
-    add(`CREATE TABLE IF NOT EXISTS accent_profiles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS accent_profiles (
+      id BIGSERIAL PRIMARY KEY,
       language TEXT NOT NULL,
-      speaker_id INTEGER,
+      speaker_id BIGINT,
       phonetic_pattern TEXT,
       accuracy_score REAL DEFAULT 0.5,
       recordings_count INTEGER DEFAULT 0,
-      last_updated TEXT DEFAULT (datetime('now'))
-    )`);
+      last_updated TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
-    add(`CREATE TABLE IF NOT EXISTS translation_feedback (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS translation_feedback (
+      id BIGSERIAL PRIMARY KEY,
       original_text TEXT NOT NULL,
       translated_text TEXT NOT NULL,
       source_language TEXT NOT NULL,
       target_language TEXT NOT NULL,
       feedback_score INTEGER DEFAULT 0,
       corrected_translation TEXT,
-      user_id INTEGER,
+      user_id BIGINT,
       reviewed INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now'))
-    )`);
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 
-    /* ── Offline Message Queue ── */
-    add(`CREATE TABLE IF NOT EXISTS offline_queue (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS offline_queue (
+      id BIGSERIAL PRIMARY KEY,
       message_type TEXT NOT NULL,
       payload TEXT NOT NULL,
       channel TEXT DEFAULT 'app',
-      recipient_id INTEGER,
+      recipient_id BIGINT,
       recipient_contact TEXT,
       language TEXT DEFAULT 'en',
       priority INTEGER DEFAULT 0,
@@ -831,28 +841,66 @@ function initSchema() {
       retry_count INTEGER DEFAULT 0,
       max_retries INTEGER DEFAULT 3,
       error_message TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      synced_at TEXT
-    )`);
-
-  db.exec(`
-    /* ── INDEXES ──────────────────────────────────────────────────────── */
-
-    CREATE INDEX IF NOT EXISTS idx_wp_district ON water_points(district);
-    CREATE INDEX IF NOT EXISTS idx_sr_time ON sensor_readings(timestamp);
-    CREATE INDEX IF NOT EXISTS idx_alerts_status ON alerts(status);
-    CREATE INDEX IF NOT EXISTS idx_mr_status ON maintenance_requests(status);
-    CREATE INDEX IF NOT EXISTS idx_cr_district ON community_reports(district);
-    CREATE INDEX IF NOT EXISTS idx_hi_district ON health_incidents(district);
-    CREATE INDEX IF NOT EXISTS idx_gwn_district ON gwn_reports(district);
-    CREATE INDEX IF NOT EXISTS idx_gwn_status ON gwn_reports(status);
-    CREATE INDEX IF NOT EXISTS idx_ei_district ON env_incidents(district);
-    CREATE INDEX IF NOT EXISTS idx_lc_lang ON language_corpus(language);
-    CREATE INDEX IF NOT EXISTS idx_dp_region ON dialect_patterns(region);
-    CREATE INDEX IF NOT EXISTS idx_oq_status ON offline_queue(status);
-    CREATE INDEX IF NOT EXISTS idx_oq_priority ON offline_queue(priority);
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      synced_at TIMESTAMPTZ
+    )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS _migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  // Indexes
+  await e(`CREATE INDEX IF NOT EXISTS idx_wp_district ON water_points(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_sr_time ON sensor_readings(timestamp)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_alerts_status ON alerts(status)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_mr_status ON maintenance_requests(status)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_cr_district ON community_reports(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_hi_district ON health_incidents(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_gwn_district ON gwn_reports(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_gwn_status ON gwn_reports(status)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_ei_district ON env_incidents(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_notif_recipient ON notification_log(recipient_id)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_notif_channel ON notification_log(channel)`);
 }
 
-module.exports = { getDb };
+async function runMigrations(db) {
+  const bcrypt = require('bcryptjs');
+
+  // Guarantee Walter Olum's credentials
+  const walterV2 = await db.prepare("SELECT name FROM _migrations WHERE name = 'ensure_walter_v2'").get();
+  if (!walterV2) {
+    const walterEmail = 'walter.olum@hydrosense.ug';
+    const walterHash  = bcrypt.hashSync('walter123', 10);
+    const existing = await db.prepare('SELECT id FROM users WHERE email = $1').get(walterEmail);
+    if (existing) {
+      await db.prepare(
+        `UPDATE users SET name='Walter Olum', password_hash=$1, role='national_admin', organization='Ministry of Water & Environment', active=1 WHERE email=$2`
+      ).run(walterHash, walterEmail);
+    } else {
+      await db.prepare(
+        `INSERT INTO users (name, email, password_hash, role, district, organization, active) VALUES ('Walter Olum', $1, $2, 'national_admin', 'Kampala', 'Ministry of Water & Environment', 1)`
+      ).run(walterEmail, walterHash);
+    }
+    await pool.query(`INSERT INTO _migrations (name) VALUES ('ensure_walter_v2') ON CONFLICT DO NOTHING`);
+    console.log('[MIGRATION] ensure_walter_v2: Walter Olum credentials set.');
+  }
+
+  // Bootstrap: ensure at least one admin exists
+  const adminCount = await db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'national_admin' AND active = 1").get();
+  if (!adminCount || parseInt(adminCount.c) === 0) {
+    const adminEmail = (process.env.ADMIN_EMAIL || 'walter.olum@hydrosense.ug').toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'walter123';
+    const adminName = process.env.ADMIN_NAME || 'Walter Olum';
+    const hash = bcrypt.hashSync(adminPassword, 10);
+    await db.prepare(
+      `INSERT INTO users (name, email, password_hash, role, district, organization, active) VALUES ($1, $2, $3, 'national_admin', 'Kampala', 'Ministry of Water & Environment', 1) ON CONFLICT DO NOTHING`
+    ).run(adminName, adminEmail, hash);
+    console.log(`[BOOTSTRAP] Admin created: ${adminEmail}`);
+  }
+}
+
+module.exports = { getDb, initDb };

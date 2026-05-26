@@ -29,8 +29,8 @@ router.get('/stats', async (req, res) => {
   const db = await getDb();
   const byStatus = await db.prepare('SELECT status, COUNT(*) as count FROM maintenance_requests GROUP BY status').all();
   const byPriority = await db.prepare('SELECT priority, COUNT(*) as count FROM maintenance_requests GROUP BY priority').all();
-  const avgResolution = await db.prepare("SELECT AVG(JULIANDAY(completed_at) - JULIANDAY(created_at)) * 24 as avg_hours FROM maintenance_requests WHERE completed_at IS NOT NULL").get();
-  const overdue = await db.prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE status NOT IN ('completed','cancelled') AND created_at < datetime('now', '-7 days')").get();
+  const avgResolution = await db.prepare("SELECT AVG(EXTRACT(EPOCH FROM (completed_at::timestamptz - created_at::timestamptz)) / 3600) as avg_hours FROM maintenance_requests WHERE completed_at IS NOT NULL").get();
+  const overdue = await db.prepare("SELECT COUNT(*) as count FROM maintenance_requests WHERE status NOT IN ('completed','cancelled') AND created_at < NOW() - INTERVAL '7 days'").get();
   const parts = await db.prepare('SELECT * FROM spare_parts ORDER BY part_name').all();
   res.json({
     success: true,
@@ -63,7 +63,7 @@ router.put('/:id', async (req, res) => {
   await db.prepare(`UPDATE maintenance_requests SET status=COALESCE(?,status), assigned_to=COALESCE(?,assigned_to), priority=COALESCE(?,priority), resolution_notes=COALESCE(?,resolution_notes), actual_cost=COALESCE(?,actual_cost), completed_at=COALESCE(?,completed_at) WHERE id=?`).run(status, assigned_to, priority, resolution_notes, actual_cost, completed_at, req.params.id);
   if (status === 'completed') {
     const mr = await db.prepare('SELECT water_point_id FROM maintenance_requests WHERE id = ?').get(req.params.id);
-    if (mr) await db.prepare("UPDATE water_points SET last_maintained = datetime('now'), status = 'functional' WHERE id = ? AND status = 'needs_repair'").run(mr.water_point_id);
+    if (mr) await db.prepare("UPDATE water_points SET last_maintained = NOW(), status = 'functional' WHERE id = ? AND status = 'needs_repair'").run(mr.water_point_id);
   }
   res.json({ success: true, message: 'Updated successfully' });
 });

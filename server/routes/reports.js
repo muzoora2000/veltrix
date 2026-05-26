@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const db = await getDb();
   const { status, assigned_to, resolution_notes } = req.body;
-  await db.prepare("UPDATE community_reports SET status=COALESCE(?,status), assigned_to=COALESCE(?,assigned_to), resolution_notes=COALESCE(?,resolution_notes), updated_at=datetime('now') WHERE id=?").run(status, assigned_to, resolution_notes, req.params.id);
+  await db.prepare("UPDATE community_reports SET status=COALESCE(?,status), assigned_to=COALESCE(?,assigned_to), resolution_notes=COALESCE(?,resolution_notes), updated_at=NOW() WHERE id=?").run(status, assigned_to, resolution_notes, req.params.id);
   res.json({ success: true, message: 'Report updated' });
 });
 

@@ -55,14 +55,14 @@ router.put('/:id', async (req, res) => {
     await db.prepare(`UPDATE ai_conversations SET
       title = COALESCE(?,title), category = COALESCE(?,category),
       status = COALESCE(?,status), summary = COALESCE(?,summary),
-      updated_at = datetime('now') WHERE id = ?`).run(title, category, status, summary, req.params.id);
+      updated_at = NOW() WHERE id = ?`).run(title, category, status, summary, req.params.id);
     res.json({ success: true });
   } catch (err) {res.status(500).json({ error: err.message });}
 });
 
 router.delete('/:id', async (req, res) => {
   try {
-    (await getDb()).prepare('DELETE FROM ai_conversations WHERE id = ?').run(req.params.id);
+    await getDb().prepare('DELETE FROM ai_conversations WHERE id = ?').run(req.params.id);
     res.json({ success: true });
   } catch (err) {res.status(500).json({ error: err.message });}
 });
@@ -78,7 +78,7 @@ router.post('/:id/messages', async (req, res) => {
       file_url || null, file_type || null, file_name || null,
       file_size || null, metadata ? JSON.stringify(metadata) : null, tokens_used || 0
     );
-    await db.prepare('UPDATE ai_conversations SET updated_at = datetime(\'now\') WHERE id = ?').run(req.params.id);
+    await db.prepare('UPDATE ai_conversations SET updated_at = NOW() WHERE id = ?').run(req.params.id);
     res.status(201).json({ data: { id: result.lastInsertRowid } });
   } catch (err) {res.status(500).json({ error: err.message });}
 });
@@ -100,7 +100,7 @@ router.post('/:id/summarize', async (req, res) => {
       WHERE conversation_id = ? AND role != 'system' ORDER BY id ASC`).all(req.params.id);
     const text = messages.map((m) => `${m.role}: ${m.content}`).join('\n').slice(0, 2000);
     const summary = text.length > 50 ? text.slice(0, 200) + '...' : 'Short conversation';
-    await db.prepare('UPDATE ai_conversations SET summary = ?, updated_at = datetime(\'now\') WHERE id = ?').run(summary, req.params.id);
+    await db.prepare('UPDATE ai_conversations SET summary = ?, updated_at = NOW() WHERE id = ?').run(summary, req.params.id);
     res.json({ data: { summary } });
   } catch (err) {res.status(500).json({ error: err.message });}
 });

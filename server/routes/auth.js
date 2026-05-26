@@ -51,8 +51,8 @@ async function generateAndStoreOTP(db, email, purpose, ip) {
   const hashed  = bcrypt.hashSync(raw, 10);
   const expires = new Date(Date.now() + OTP_EXPIRY_MS).toISOString();
 
-  db.prepare(`DELETE FROM otp_codes WHERE email = ? AND used = 0`).run(email);
-  db.prepare(`
+  await db.prepare(`DELETE FROM otp_codes WHERE email = ? AND used = 0`).run(email);
+  await db.prepare(`
     INSERT INTO otp_codes (email, otp, purpose, expires_at, attempts, ip_address)
     VALUES (?, ?, ?, ?, 0, ?)
   `).run(email, hashed, purpose, expires, ip || null);
@@ -64,9 +64,9 @@ async function generateAndStoreOTP(db, email, purpose, ip) {
 const otpStore = new Map();
 
 /* ── Public user profile (for QR code scanning, no auth required) ── */
-router.get('/users/:id/public', (req, res) => {
+router.get('/users/:id/public', async (req, res) => {
   const db = getDb();
-  const user = db.prepare(
+  const user = await db.prepare(
     'SELECT id, name, email, role, district, organization, avatar FROM users WHERE id=? AND active=1'
   ).get(parseInt(req.params.id));
   if (!user) return res.status(404).json({ success: false, error: 'User not found' });
@@ -85,11 +85,11 @@ router.post('/register', async (req, res) => {
     if (!phone) return res.status(400).json({ success: false, error: 'Phone number is required' });
 
     const emailKey = email.toLowerCase().trim();
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(emailKey);
+    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(emailKey);
     if (existing) return res.status(409).json({ success: false, error: 'An account with this email already exists' });
 
     const hash = bcrypt.hashSync(password, 10);
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO users (name, email, password_hash, role, phone, national_id, community_id, district, sub_county, location, language, active, otp_verified)
       VALUES (?, ?, ?, 'citizen', ?, ?, ?, ?, ?, ?, ?, 1, 1)
     `).run(
@@ -98,7 +98,7 @@ router.post('/register', async (req, res) => {
       sub_county || null, location || null, language || 'en'
     );
 
-    const user = db.prepare(
+    const user = await db.prepare(
       'SELECT id, name, email, role, district, phone, language, otp_verified, active FROM users WHERE id = ?'
     ).get(result.lastInsertRowid);
 
@@ -151,15 +151,15 @@ router.post('/send-otp', async (req, res) => {
   if (rl.cooldown) return res.status(429).json({ success: false, error: `Please wait ${rl.secondsLeft}s before requesting another code.`, secondsLeft: rl.secondsLeft });
   if (rl.limited)  return res.status(429).json({ success: false, error: `Too many requests. Try again in ${rl.secondsLeft}s.`, secondsLeft: rl.secondsLeft });
 
-  const userRecord = db.prepare('SELECT phone FROM users WHERE email = ?').get(emailKey);
+  const userRecord = await db.prepare('SELECT phone FROM users WHERE email = ?').get(emailKey);
   const phone = bodyPhone || (userRecord?.phone) || null;
 
   const raw = await generateAndStoreOTP(db, emailKey, purpose, ip);
 
   /* Helper: log delivery result to DB */
-  const logDelivery = (channel, result, recipientPhone = null) => {
+  const logDelivery = async (channel, result, recipientPhone = null) => {
     try {
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO otp_delivery_log (email, phone, channel, provider, status, provider_message_id, error_message)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `).run(emailKey, recipientPhone, channel, result?.provider || 'unknown', result?.status || 'failed', result?.messageId || null, result?.error || null);
@@ -171,8 +171,8 @@ router.post('/send-otp', async (req, res) => {
     sendRealEmail(emailKey, raw, purpose).catch(() => null),
     phone ? sendSMS(phone, raw).catch(() => null) : Promise.resolve(null),
   ]);
-  logDelivery('email', emailResult);
-  if (phone) logDelivery('sms', smsResult, phone);
+  await logDelivery('email', emailResult);
+  if (phone) await logDelivery('sms', smsResult, phone);
 
   const emailDelivered = emailResult && emailResult.status !== 'mock';
   const smsDelivered   = smsResult   && smsResult.status   !== 'mock';
@@ -208,9 +208,9 @@ router.post('/verify-otp', async (req, res) => {
   const emailKey = email.toLowerCase().trim();
 
   /* Find the most recent unused, unexpired record */
-  const record = db.prepare(`
+  const record = await db.prepare(`
     SELECT * FROM otp_codes
-    WHERE email = ? AND used = 0 AND datetime(expires_at) > datetime('now')
+    WHERE email = ? AND used = 0 AND expires_at > NOW()
     ORDER BY created_at DESC LIMIT 1
   `).get(emailKey);
 
@@ -228,7 +228,7 @@ router.post('/verify-otp', async (req, res) => {
   const isValid = bcrypt.compareSync(otp.trim(), record.otp);
 
   /* Log attempt */
-  db.prepare(`INSERT INTO otp_attempt_log (email, ip_address, success) VALUES (?, ?, ?)`).run(emailKey, ip, isValid ? 1 : 0);
+  await db.prepare(`INSERT INTO otp_attempt_log (email, ip_address, success) VALUES (?, ?, ?)`).run(emailKey, ip, isValid ? 1 : 0);
 
   if (!isValid) {
     const newAttempts = (record.attempts || 0) + 1;
@@ -236,11 +236,11 @@ router.post('/verify-otp', async (req, res) => {
 
     if (newAttempts >= MAX_VERIFY_ATTEMPTS) {
       const blockedUntil = new Date(Date.now() + BLOCK_DURATION_MS).toISOString();
-      db.prepare(`UPDATE otp_codes SET attempts = ?, blocked_until = ? WHERE id = ?`).run(newAttempts, blockedUntil, record.id);
+      await db.prepare(`UPDATE otp_codes SET attempts = ?, blocked_until = ? WHERE id = ?`).run(newAttempts, blockedUntil, record.id);
       return res.status(429).json({ success: false, error: `Account temporarily locked for 15 minutes after ${MAX_VERIFY_ATTEMPTS} failed attempts.`, blockedFor: BLOCK_DURATION_MS / 1000 });
     }
 
-    db.prepare(`UPDATE otp_codes SET attempts = ? WHERE id = ?`).run(newAttempts, record.id);
+    await db.prepare(`UPDATE otp_codes SET attempts = ? WHERE id = ?`).run(newAttempts, record.id);
     return res.status(400).json({ success: false, error: `Incorrect code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`, attemptsLeft: remaining });
   }
 
@@ -250,12 +250,12 @@ router.post('/verify-otp', async (req, res) => {
   }
 
   /* Valid for registration/login — mark used and activate user */
-  db.prepare(`UPDATE otp_codes SET used = 1 WHERE id = ?`).run(record.id);
+  await db.prepare(`UPDATE otp_codes SET used = 1 WHERE id = ?`).run(record.id);
 
-  const user = db.prepare(`SELECT * FROM users WHERE email = ?`).get(emailKey);
+  const user = await db.prepare(`SELECT * FROM users WHERE email = ?`).get(emailKey);
   if (!user) return res.status(404).json({ success: false, error: 'User account not found' });
 
-  db.prepare(`UPDATE users SET otp_verified = 1, active = 1 WHERE id = ?`).run(user.id);
+  await db.prepare(`UPDATE users SET otp_verified = 1, active = 1 WHERE id = ?`).run(user.id);
 
   const { password_hash, ...safeUser } = user;
   const token = jwt.sign(
@@ -280,13 +280,13 @@ router.post('/resend-otp', async (req, res) => {
   if (rl.cooldown) return res.status(429).json({ success: false, error: `Please wait ${rl.secondsLeft}s before resending.`, secondsLeft: rl.secondsLeft });
   if (rl.limited)  return res.status(429).json({ success: false, error: `Too many requests. Try again in ${rl.secondsLeft}s.`, secondsLeft: rl.secondsLeft });
 
-  const userRecord = db.prepare('SELECT phone FROM users WHERE email = ?').get(emailKey);
+  const userRecord = await db.prepare('SELECT phone FROM users WHERE email = ?').get(emailKey);
   const phone = bodyPhone || (userRecord?.phone) || null;
   const raw   = await generateAndStoreOTP(db, emailKey, 'registration', ip);
 
-  const logDelivery = (channel, result, ph = null) => {
+  const logDelivery = async (channel, result, ph = null) => {
     try {
-      db.prepare(`INSERT INTO otp_delivery_log (email, phone, channel, provider, status, provider_message_id) VALUES (?, ?, ?, ?, ?, ?)`)
+      await db.prepare(`INSERT INTO otp_delivery_log (email, phone, channel, provider, status, provider_message_id) VALUES (?, ?, ?, ?, ?, ?)`)
         .run(emailKey, ph, channel, result?.provider || 'unknown', result?.status || 'failed', result?.messageId || null);
     } catch {}
   };
@@ -295,8 +295,8 @@ router.post('/resend-otp', async (req, res) => {
     sendRealEmail(emailKey, raw, 'registration').catch(() => null),
     phone ? sendSMS(phone, raw).catch(() => null) : Promise.resolve(null),
   ]);
-  logDelivery('email', emailResult);
-  if (phone) logDelivery('sms', smsResult, phone);
+  await logDelivery('email', emailResult);
+  if (phone) await logDelivery('sms', smsResult, phone);
 
   const emailOk = emailResult && emailResult.status !== 'mock';
   const smsOk   = smsResult   && smsResult.status   !== 'mock';
@@ -324,7 +324,7 @@ router.post('/login', async (req, res) => {
   const valid = bcrypt.compareSync(password, user.password_hash);
   if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
 
-  await db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
+  await db.prepare("UPDATE users SET last_login = NOW() WHERE id = ?").run(user.id);
 
   // Long-lived token when user ticks "Remember Me", otherwise 7 days
   const expiry = rememberMe ? '365d' : '7d';
@@ -510,31 +510,27 @@ router.delete('/users/:id', authMiddleware, requireRole('national_admin'), async
     return res.status(400).json({ success: false, error: 'You cannot delete your own account' });
   }
   const db = getDb();
-  const user = db.prepare('SELECT id, name FROM users WHERE id = ?').get(userId);
+  const user = await db.prepare('SELECT id, name FROM users WHERE id = ?').get(userId);
   if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
   try {
-    const deleteUser = db.transaction(() => {
-      // Nullify all FK references that lack ON DELETE CASCADE/SET NULL
-      db.prepare('UPDATE citizen_reports SET user_id=NULL WHERE user_id=?').run(userId);
-      db.prepare('UPDATE task_assignments SET assigned_to=NULL WHERE assigned_to=?').run(userId);
-      db.prepare('UPDATE task_assignments SET assigned_by=NULL WHERE assigned_by=?').run(userId);
-      db.prepare('UPDATE response_tickets SET created_by=NULL WHERE created_by=?').run(userId);
-      db.prepare('UPDATE ai_conversations SET user_id=NULL WHERE user_id=?').run(userId);
-      db.prepare('UPDATE ai_decision_log SET user_id=NULL WHERE user_id=?').run(userId);
-      db.prepare('UPDATE citizen_report_tracking SET updated_by=NULL WHERE updated_by=?').run(userId);
-      db.prepare('UPDATE citizen_observations SET user_id=NULL WHERE user_id=?').run(userId);
-      db.prepare('UPDATE volunteer_events SET created_by=NULL WHERE created_by=?').run(userId);
-      db.prepare('UPDATE maintenance_requests SET reported_by=NULL WHERE reported_by=?').run(userId);
-      db.prepare('UPDATE maintenance_requests SET assigned_to=NULL WHERE assigned_to=?').run(userId);
-      db.prepare('UPDATE water_quality_tests SET tested_by=NULL WHERE tested_by=?').run(userId);
-      db.prepare('UPDATE community_reports SET assigned_to=NULL WHERE assigned_to=?').run(userId);
-      db.prepare('UPDATE governance_audit SET user_id=NULL WHERE user_id=?').run(userId);
-      db.prepare('UPDATE maintenance_funds SET managed_by=NULL WHERE managed_by=?').run(userId);
-      db.prepare('UPDATE env_incidents SET reported_by=NULL WHERE reported_by=?').run(userId);
-      db.prepare('DELETE FROM users WHERE id=?').run(userId);
-    });
-    deleteUser();
+    await db.prepare('UPDATE citizen_reports SET user_id=NULL WHERE user_id=?').run(userId);
+    await db.prepare('UPDATE task_assignments SET assigned_to=NULL WHERE assigned_to=?').run(userId);
+    await db.prepare('UPDATE task_assignments SET assigned_by=NULL WHERE assigned_by=?').run(userId);
+    await db.prepare('UPDATE response_tickets SET created_by=NULL WHERE created_by=?').run(userId);
+    await db.prepare('UPDATE ai_conversations SET user_id=NULL WHERE user_id=?').run(userId);
+    await db.prepare('UPDATE ai_decision_log SET user_id=NULL WHERE user_id=?').run(userId);
+    await db.prepare('UPDATE citizen_report_tracking SET updated_by=NULL WHERE updated_by=?').run(userId);
+    await db.prepare('UPDATE citizen_observations SET user_id=NULL WHERE user_id=?').run(userId);
+    await db.prepare('UPDATE volunteer_events SET created_by=NULL WHERE created_by=?').run(userId);
+    await db.prepare('UPDATE maintenance_requests SET reported_by=NULL WHERE reported_by=?').run(userId);
+    await db.prepare('UPDATE maintenance_requests SET assigned_to=NULL WHERE assigned_to=?').run(userId);
+    await db.prepare('UPDATE water_quality_tests SET tested_by=NULL WHERE tested_by=?').run(userId);
+    await db.prepare('UPDATE community_reports SET assigned_to=NULL WHERE assigned_to=?').run(userId);
+    await db.prepare('UPDATE governance_audit SET user_id=NULL WHERE user_id=?').run(userId);
+    await db.prepare('UPDATE maintenance_funds SET managed_by=NULL WHERE managed_by=?').run(userId);
+    await db.prepare('UPDATE env_incidents SET reported_by=NULL WHERE reported_by=?').run(userId);
+    await db.prepare('DELETE FROM users WHERE id=?').run(userId);
     res.json({ success: true, message: `User "${user.name}" has been permanently deleted` });
   } catch (err) {
     console.error('Delete user error:', err);
@@ -582,9 +578,9 @@ router.post('/reset-password', async (req, res) => {
 
   const db = await getDb();
   const emailKey = email.toLowerCase().trim();
-  const record = db.prepare(`
+  const record = await db.prepare(`
     SELECT * FROM otp_codes
-    WHERE email = ? AND purpose = 'password_reset' AND used = 0 AND datetime(expires_at) > datetime('now')
+    WHERE email = ? AND purpose = 'password_reset' AND used = 0 AND expires_at > NOW()
     ORDER BY created_at DESC LIMIT 1
   `).get(emailKey);
 
@@ -592,10 +588,10 @@ router.post('/reset-password', async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
   }
 
-  db.prepare(`UPDATE otp_codes SET used = 1 WHERE id = ?`).run(record.id);
+  await db.prepare(`UPDATE otp_codes SET used = 1 WHERE id = ?`).run(record.id);
 
   const hash = bcrypt.hashSync(password, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(hash, emailKey);
+  await db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(hash, emailKey);
 
   res.json({ success: true, message: 'Password has been reset successfully. You can now log in.' });
 });
@@ -604,12 +600,12 @@ router.post('/reset-password', async (req, res) => {
 router.put('/language', authMiddleware, async (req, res) => {
   const { language } = req.body;
   if (!language) return res.status(400).json({ success: false, error: 'Language code required' });
-  (await getDb()).prepare('UPDATE users SET language = ? WHERE id = ?').run(language, req.user.id);
+  await getDb().prepare('UPDATE users SET language = ? WHERE id = ?').run(language, req.user.id);
   res.json({ success: true, language });
 });
 
 router.get('/language', authMiddleware, async (req, res) => {
-  const row = (await getDb()).prepare('SELECT language FROM users WHERE id = ?').get(req.user.id);
+  const row = await getDb().prepare('SELECT language FROM users WHERE id = ?').get(req.user.id);
   res.json({ success: true, language: row?.language || 'en' });
 });
 

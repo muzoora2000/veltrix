@@ -18,10 +18,10 @@ router.get('/my-reports', authMiddleware, async (req, res) => {
     ORDER BY cr.created_at DESC
   `).all(req.user.id);
 
-  const enriched = reports.map(async (r) => {
+  const enriched = await Promise.all(reports.map(async (r) => {
     const tracking = await db.prepare(`SELECT ct.*, u.name as updated_by_name FROM citizen_report_tracking ct LEFT JOIN users u ON ct.updated_by = u.id WHERE ct.report_id = ? ORDER BY ct.created_at DESC`).all(r.id);
     return { ...r, tracking };
-  });
+  }));
 
   res.json({ success: true, data: enriched });
 });

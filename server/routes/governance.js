@@ -60,10 +60,10 @@ router.get('/transparency', async (req, res) => {
 
 router.get('/performance', async (req, res) => {
   const db = await getDb();
-  const responseTime = await db.prepare("SELECT AVG(JULIANDAY(completed_at) - JULIANDAY(created_at)) * 24 as avg_hours FROM maintenance_requests WHERE completed_at IS NOT NULL AND created_at >= datetime('now', '-90 days')").get();
-  const qualityTests = await db.prepare("SELECT COUNT(*) as count FROM water_quality_tests WHERE tested_at >= datetime('now', '-30 days')").get();
-  const reportResolution = await db.prepare("SELECT status, COUNT(*) as count FROM community_reports WHERE created_at >= datetime('now', '-30 days') GROUP BY status").all();
-  const alertResolution = await db.prepare("SELECT AVG(JULIANDAY(resolved_at) - JULIANDAY(created_at)) * 24 as avg_hours FROM alerts WHERE resolved_at IS NOT NULL AND created_at >= datetime('now', '-30 days')").get();
+  const responseTime = await db.prepare("SELECT AVG(EXTRACT(EPOCH FROM (completed_at::timestamptz - created_at::timestamptz)) / 3600) as avg_hours FROM maintenance_requests WHERE completed_at IS NOT NULL AND created_at >= NOW() - INTERVAL '90 days'").get();
+  const qualityTests = await db.prepare("SELECT COUNT(*) as count FROM water_quality_tests WHERE tested_at >= NOW() - INTERVAL '30 days'").get();
+  const reportResolution = await db.prepare("SELECT status, COUNT(*) as count FROM community_reports WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY status").all();
+  const alertResolution = await db.prepare("SELECT AVG(EXTRACT(EPOCH FROM (resolved_at::timestamptz - created_at::timestamptz)) / 3600) as avg_hours FROM alerts WHERE resolved_at IS NOT NULL AND created_at >= NOW() - INTERVAL '30 days'").get();
   res.json({
     success: true,
     data: {

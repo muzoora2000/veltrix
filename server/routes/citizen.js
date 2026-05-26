@@ -22,18 +22,18 @@ router.get('/dashboard', async (req, res) => {
     const critAlerts = (await db.prepare(`SELECT COUNT(*) as c FROM alerts WHERE status='active' AND severity IN ('critical','emergency')`).get()).c;
     const recentAlerts = await db.prepare(`SELECT title, severity, district, created_at FROM alerts WHERE status='active' ORDER BY created_at DESC LIMIT 5`).all();
 
-    const safeTests = (await db.prepare(`SELECT COUNT(*) as c FROM water_quality_tests WHERE overall_safe=1 AND tested_at > datetime('now','-30 days')`).get()).c;
-    const totalTests = (await db.prepare(`SELECT COUNT(*) as c FROM water_quality_tests WHERE tested_at > datetime('now','-30 days')`).get()).c;
-    const avgQuality = (await db.prepare(`SELECT AVG(water_safety_score) as avg FROM water_quality_tests WHERE tested_at > datetime('now','-30 days')`).get()).avg;
+    const safeTests = (await db.prepare(`SELECT COUNT(*) as c FROM water_quality_tests WHERE overall_safe=1 AND tested_at > NOW() - INTERVAL '30 days'`).get()).c;
+    const totalTests = (await db.prepare(`SELECT COUNT(*) as c FROM water_quality_tests WHERE tested_at > NOW() - INTERVAL '30 days'`).get()).c;
+    const avgQuality = (await db.prepare(`SELECT AVG(water_safety_score) as avg FROM water_quality_tests WHERE tested_at > NOW() - INTERVAL '30 days'`).get()).avg;
 
     const gwnTotal = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports`).get()).c;
-    const gwnToday = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE date(created_at)=date('now')`).get()).c;
+    const gwnToday = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE created_at::date = CURRENT_DATE`).get()).c;
     const gwnCritical = (await db.prepare(`SELECT COUNT(*) as c FROM gwn_reports WHERE severity='critical' AND status != 'resolved'`).get()).c;
     const gwnRecent = await db.prepare(`SELECT report_type, severity, district, description, created_at FROM gwn_reports ORDER BY created_at DESC LIMIT 6`).all();
 
     const drought = await db.prepare(`SELECT severity, COUNT(*) as c FROM drought_index GROUP BY severity ORDER BY c DESC LIMIT 3`).all();
-    const rainfall = await db.prepare(`SELECT AVG(rainfall_mm) as avg, MAX(rainfall_mm) as max FROM climate_readings WHERE timestamp > datetime('now','-7 days')`).get();
-    const tempAvg = await db.prepare(`SELECT AVG(temperature_max) as avg FROM climate_readings WHERE timestamp > datetime('now','-7 days')`).get();
+    const rainfall = await db.prepare(`SELECT AVG(rainfall_mm) as avg, MAX(rainfall_mm) as max FROM climate_readings WHERE timestamp > NOW() - INTERVAL '7 days'`).get();
+    const tempAvg = await db.prepare(`SELECT AVG(temperature_max) as avg FROM climate_readings WHERE timestamp > NOW() - INTERVAL '7 days'`).get();
 
     const totalBene = (await db.prepare(`SELECT SUM(beneficiaries) as t FROM water_points WHERE status='functional'`).get()).t || 0;
     const districts = await db.prepare(`SELECT district, COUNT(*) as total, SUM(CASE WHEN status='functional' THEN 1 ELSE 0 END) as func FROM water_points GROUP BY district ORDER BY district`).all();
@@ -119,7 +119,7 @@ router.post('/discussions/:id/like', authMiddleware, async (req, res) => {
     await db.prepare(`UPDATE citizen_discussions SET like_count=MAX(0,like_count-1) WHERE id=?`).run(did);
     res.json({ success: true, liked: false });
   } else {
-    await db.prepare(`INSERT OR IGNORE INTO discussion_likes (discussion_id, user_id) VALUES (?,?)`).run(did, req.user.id);
+    await db.prepare(`INSERT INTO discussion_likes (discussion_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING`).run(did, req.user.id);
     await db.prepare(`UPDATE citizen_discussions SET like_count=like_count+1 WHERE id=?`).run(did);
     res.json({ success: true, liked: true });
   }
@@ -140,12 +140,12 @@ router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
   await db.prepare(`UPDATE citizen_discussions SET reply_count=reply_count+1 WHERE id=?`).run(did);
 
   // Notify the discussion author (if not the same person replying)
-  const disc = db.prepare(`SELECT user_id, author_name, title, district FROM citizen_discussions WHERE id=?`).get(did);
+  const disc = await db.prepare(`SELECT user_id, author_name, title, district FROM citizen_discussions WHERE id=?`).get(did);
   if (disc && disc.user_id !== req.user.id) {
-    const author = db.prepare(`SELECT role FROM users WHERE id=?`).get(disc.user_id);
+    const author = await db.prepare(`SELECT role FROM users WHERE id=?`).get(disc.user_id);
     if (author) {
       // Insert a personal notification for the discussion author
-      db.prepare(
+      await db.prepare(
         `INSERT INTO notification_log (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
          VALUES (?, ?, 'in_app', ?, ?, 'sent', 'discussion', ?, ?)`
       ).run(
@@ -207,16 +207,16 @@ router.post('/events/:id/join', authMiddleware, async (req, res) => {
   if (!ev) return res.status(404).json({ success: false, error: 'Event not found' });
   const count = (await db.prepare(`SELECT COUNT(*) as c FROM event_registrations WHERE event_id=?`).get(eid)).c;
   if (count >= ev.max_volunteers) return res.status(400).json({ success: false, error: 'Event is full' });
-  await db.prepare(`INSERT OR IGNORE INTO event_registrations (event_id, user_id) VALUES (?,?)`).run(eid, req.user.id);
+  await db.prepare(`INSERT INTO event_registrations (event_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING`).run(eid, req.user.id);
 
   // Personal confirmation notification for the person who joined
   const dateLabel = ev.event_date + (ev.event_time ? ` at ${ev.event_time}` : '');
-  db.prepare(
+  await db.prepare(
     `INSERT INTO notification_log (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
      VALUES (?, ?, 'in_app', ?, ?, 'sent', 'volunteer_event', ?, ?)`
   ).run(
     req.user.role, req.user.id,
-    `✅ Registered: ${ev.title}`,
+    `Registered: ${ev.title}`,
     `You're registered for "${ev.title}" on ${dateLabel}${ev.location ? ` at ${ev.location}` : ''}. See you there!`,
     eid, ev.district || null
   );
@@ -233,10 +233,10 @@ router.delete('/events/:id/leave', authMiddleware, async (req, res) => {
 /* ─────────────────────────────────────────────────────────────
    CITIZEN OBSERVATIONS (auth required)
 ───────────────────────────────────────────────────────────── */
-// Ensure status column exists
-try { getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN status TEXT DEFAULT 'new'`); } catch {}
-try { getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN reviewed_by TEXT`); } catch {}
-try { getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN review_note TEXT`); } catch {}
+// Ensure status column exists (fire-and-forget migrations)
+getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN status TEXT DEFAULT 'new'`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN reviewed_by TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN review_note TEXT`).catch(() => {});
 
 // GET /observations — role-filtered list for staff; own observations for citizens
 router.get('/observations', authMiddleware, async (req, res) => {
@@ -263,7 +263,7 @@ router.get('/observations', authMiddleware, async (req, res) => {
   if (observation_type) { sql += ' AND observation_type = ?'; params.push(observation_type); }
 
   sql += ` ORDER BY created_at DESC LIMIT ${parseInt(limit)}`;
-  const rows = db.prepare(sql).all(...params);
+  const rows = await db.prepare(sql).all(...params);
   res.json({ success: true, data: rows, total: rows.length });
 });
 
@@ -273,7 +273,7 @@ router.post('/observations', authMiddleware, async (req, res) => {
   const { observation_type, district, location, description, value, unit, lat, lng, photo_base64 } = req.body;
   if (!observation_type || !description) return res.status(400).json({ success: false, error: 'Type and description required' });
 
-  const r = db.prepare(
+  const r = await db.prepare(
     `INSERT INTO citizen_observations (user_id, author_name, observation_type, district, location, description, value, unit, lat, lng, photo_base64, status)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,'new')`
   ).run(req.user.id, req.user.name, observation_type, district, location, description, value, unit, lat, lng, photo_base64 || null);
@@ -303,7 +303,7 @@ router.patch('/observations/:id/status', authMiddleware, async (req, res) => {
   const { status, review_note } = req.body;
   const valid = ['new', 'under_review', 'resolved', 'escalated'];
   if (!valid.includes(status)) return res.status(400).json({ success: false, error: 'Invalid status' });
-  db.prepare(
+  await db.prepare(
     `UPDATE citizen_observations SET status=?, reviewed_by=?, review_note=? WHERE id=?`
   ).run(status, req.user.name, review_note || null, req.params.id);
   res.json({ success: true });

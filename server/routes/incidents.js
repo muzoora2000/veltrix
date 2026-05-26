@@ -17,7 +17,7 @@ router.get('/dashboard', async (req, res) => {
   const p = district ? [district] : [];
   const active = (await db.prepare(`SELECT COUNT(*) as c FROM env_incidents WHERE status NOT IN ('resolved') ${f}`).get(...p)).c;
   const critical = (await db.prepare(`SELECT COUNT(*) as c FROM env_incidents WHERE severity IN ('critical','emergency') AND status NOT IN ('resolved') ${f}`).get(...p)).c;
-  const res24h = (await db.prepare(`SELECT COUNT(*) as c FROM env_incidents WHERE status='resolved' AND resolved_at >= datetime('now','-24 hours') ${f}`).get(...p)).c;
+  const res24h = (await db.prepare(`SELECT COUNT(*) as c FROM env_incidents WHERE status='resolved' AND resolved_at >= NOW() - INTERVAL '24 hours' ${f}`).get(...p)).c;
   const avgRisk = await db.prepare(`SELECT AVG(ai_risk_score) as avg FROM env_incidents WHERE 1=1 ${f}`).get(...p);
   const byType = await db.prepare(`SELECT incident_type, COUNT(*) as count FROM env_incidents WHERE 1=1 ${f} GROUP BY incident_type ORDER BY count DESC`).all(...p);
   const bySev = await db.prepare(`SELECT severity, COUNT(*) as count FROM env_incidents WHERE 1=1 ${f} GROUP BY severity`).all(...p);
@@ -105,9 +105,9 @@ router.get('/:id/agencies', async (req, res) => {
 router.get('/pollution/hotspots', async (req, res) => {
   const db = await getDb();
   const { district } = req.query;
-  const rows = district ? await
-  db.prepare(`SELECT * FROM pollution_hotspots WHERE district=? ORDER BY pollution_score DESC`).all(district) : await
-  db.prepare(`SELECT * FROM pollution_hotspots ORDER BY pollution_score DESC`).all();
+  const rows = district
+    ? await db.prepare(`SELECT * FROM pollution_hotspots WHERE district=? ORDER BY pollution_score DESC`).all(district)
+    : await db.prepare(`SELECT * FROM pollution_hotspots ORDER BY pollution_score DESC`).all();
   res.json({ success: true, data: rows });
 });
 

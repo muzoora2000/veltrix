@@ -8,7 +8,7 @@ router.use(authMiddleware);
 router.get('/readings', async (req, res) => {
   const db = await getDb();
   const { district, months = 12 } = req.query;
-  let sql = `SELECT * FROM climate_readings WHERE timestamp >= datetime('now', '-${parseInt(months)} months')`;
+  let sql = `SELECT * FROM climate_readings WHERE timestamp >= NOW() - INTERVAL '${parseInt(months)} months'`;
   const params = [];
   if (district) {sql += ' AND district = ?';params.push(district);}
   sql += ' ORDER BY district, timestamp';
@@ -60,7 +60,7 @@ router.get('/summary', async (req, res) => {
   const db = await getDb();
   const droughtCritical = await db.prepare("SELECT COUNT(*) as count FROM drought_index WHERE severity IN ('extreme_drought','severe_drought')").get();
   const floodCritical = await db.prepare("SELECT COUNT(*) as count FROM flood_alerts WHERE flood_risk IN ('critical','high')").get();
-  const avgRainfall = await db.prepare("SELECT AVG(rainfall_mm) as avg FROM climate_readings WHERE timestamp >= datetime('now', '-3 months')").get();
+  const avgRainfall = await db.prepare("SELECT AVG(rainfall_mm) as avg FROM climate_readings WHERE timestamp >= NOW() - INTERVAL '3 months'").get();
   const districtSummary = await db.prepare(`
     SELECT cr.district, AVG(cr.rainfall_mm) as avg_rainfall, MAX(cr.temperature_max) as max_temp,
       di.severity as drought_severity, di.spi_value

@@ -87,7 +87,7 @@ router.post('/auto-assign', requireRole('national_admin', 'district_officer'), a
   );
 
   if (report_id) {
-    await db.prepare(`UPDATE citizen_reports SET status = 'assigned', updated_at = datetime('now') WHERE id = ?`).run(report_id);
+    await db.prepare(`UPDATE citizen_reports SET status = 'assigned', updated_at = NOW() WHERE id = ?`).run(report_id);
     await db.prepare(`INSERT INTO citizen_report_tracking (report_id, status, note, updated_by) VALUES (?, 'assigned', ?, ?)`).run(report_id, `Task automatically assigned to ${officer?.name || 'appropriate officer'}`, req.user.id);
   }
 
@@ -128,7 +128,7 @@ router.put('/:id/status', async (req, res) => {
   if (status === 'completed') {
     const task = await db.prepare(`SELECT * FROM task_assignments WHERE id = ?`).get(req.params.id);
     if (task?.report_id) {
-      await db.prepare(`UPDATE citizen_reports SET status = 'resolved', updated_at = datetime('now') WHERE id = ?`).run(task.report_id);
+      await db.prepare(`UPDATE citizen_reports SET status = 'resolved', updated_at = NOW() WHERE id = ?`).run(task.report_id);
       await db.prepare(`INSERT INTO citizen_report_tracking (report_id, status, note, updated_by) VALUES (?, 'resolved', 'Issue resolved and task completed', ?)`).run(task.report_id, req.user.id);
     }
   }

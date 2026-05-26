@@ -24,14 +24,14 @@ router.get('/stats', async (req, res) => {
   const byStatus = await db.prepare('SELECT status, COUNT(*) as count FROM sensors GROUP BY status').all();
   const byType = await db.prepare('SELECT sensor_type, COUNT(*) as count FROM sensors GROUP BY sensor_type').all();
   const lowBattery = await db.prepare('SELECT COUNT(*) as count FROM sensors WHERE battery_level < 20').get();
-  const offline = await db.prepare("SELECT COUNT(*) as count FROM sensors WHERE last_seen < datetime('now', '-1 hour') OR last_seen IS NULL").get();
+  const offline = await db.prepare("SELECT COUNT(*) as count FROM sensors WHERE last_seen < NOW() - INTERVAL '1 hour' OR last_seen IS NULL").get();
   res.json({ success: true, data: { total: total.count, by_status: byStatus, by_type: byType, low_battery: lowBattery.count, offline: offline.count } });
 });
 
 router.get('/:id/readings', async (req, res) => {
   const db = await getDb();
   const { hours = 24 } = req.query;
-  const readings = await db.prepare(`SELECT * FROM sensor_readings WHERE sensor_id = ? AND timestamp >= datetime('now', '-${parseInt(hours)} hours') ORDER BY timestamp ASC`).all(req.params.id);
+  const readings = await db.prepare(`SELECT * FROM sensor_readings WHERE sensor_id = ? AND timestamp >= NOW() - INTERVAL '${parseInt(hours)} hours' ORDER BY timestamp ASC`).all(req.params.id);
   res.json({ success: true, data: readings });
 });
 
@@ -50,7 +50,7 @@ router.post('/reading', async (req, res) => {
   const sensor = await db.prepare('SELECT * FROM sensors WHERE id = ?').get(sensor_id);
   if (!sensor) return res.status(404).json({ success: false, error: 'Sensor not found' });
   await db.prepare('INSERT INTO sensor_readings (sensor_id, water_point_id, value, unit) VALUES (?, ?, ?, ?)').run(sensor_id, sensor.water_point_id, value, sensor.unit);
-  await db.prepare("UPDATE sensors SET last_reading = ?, last_seen = datetime('now') WHERE id = ?").run(value, sensor_id);
+  await db.prepare("UPDATE sensors SET last_reading = ?, last_seen = NOW() WHERE id = ?").run(value, sensor_id);
   res.json({ success: true, message: 'Reading recorded' });
 });
 

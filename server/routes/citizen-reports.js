@@ -66,9 +66,8 @@ router.post('/', authMiddleware, async (req, res) => {
   await db.prepare(`INSERT INTO citizen_report_tracking (report_id, status, note, updated_by) VALUES (?, 'submitted', 'Report submitted successfully', ?)`).run(reportId, req.user.id);
 
   if (media && Array.isArray(media)) {
-    const ins = db.prepare(`INSERT INTO report_media (report_id, media_type, file_data, mime_type) VALUES (?, ?, ?, ?)`);
     for (const m of media) {
-      ins.run(reportId, m.media_type || 'other', m.file_data || null, m.mime_type || null);
+      await db.prepare(`INSERT INTO report_media (report_id, media_type, file_data, mime_type) VALUES (?, ?, ?, ?)`).run(reportId, m.media_type || 'other', m.file_data || null, m.mime_type || null);
     }
   }
 
@@ -87,7 +86,7 @@ router.post('/', authMiddleware, async (req, res) => {
       if (analysis?.analysis) {
         const a = analysis.analysis;
         try {
-          await db.prepare(`INSERT INTO incident_analysis (report_id, ai_severity, ai_category, ai_urgency, ai_risk_score, extracted_location, ai_summary, is_duplicate, confidence_score, speech_to_text, response_recommendation, analyzed_at) VALUES (?,?,?,?,?,?,?,0,?,?,?,datetime('now'))`).run(
+          await db.prepare(`INSERT INTO incident_analysis (report_id, ai_severity, ai_category, ai_urgency, ai_risk_score, extracted_location, ai_summary, is_duplicate, confidence_score, speech_to_text, response_recommendation, analyzed_at) VALUES (?,?,?,?,?,?,?,0,?,?,?,NOW())`).run(
             reportId, a.ai_severity, a.ai_category, a.ai_urgency,
             a.ai_risk_score, a.extracted_location,
             a.translated_summary || description,
@@ -145,11 +144,11 @@ router.get('/', authMiddleware, async (req, res) => {
   sql += ` ORDER BY cr.created_at DESC LIMIT ${+limit}`;
   const data = await db.prepare(sql).all(...params);
 
-  const reports = data.map(async (r) => {
+  const reports = await Promise.all(data.map(async (r) => {
     const media = await db.prepare(`SELECT id, media_type, mime_type FROM report_media WHERE report_id = ?`).all(r.id);
     const tracking = await db.prepare(`SELECT * FROM citizen_report_tracking WHERE report_id = ? ORDER BY created_at DESC`).all(r.id);
     return { ...r, media, tracking };
-  });
+  }));
 
   res.json({ success: true, data: reports, total: reports.length });
 });
@@ -190,7 +189,7 @@ router.put('/:id/status', authMiddleware, requireRole('national_admin', 'distric
   const valid = ['pending', 'under_investigation', 'assigned', 'resolved', 'escalated'];
   if (!valid.includes(status)) return res.status(400).json({ success: false, error: 'Invalid status' });
 
-  await db.prepare(`UPDATE citizen_reports SET status = ?, updated_at = datetime('now') WHERE id = ?`).run(status, req.params.id);
+  await db.prepare(`UPDATE citizen_reports SET status = ?, updated_at = NOW() WHERE id = ?`).run(status, req.params.id);
   await db.prepare(`INSERT INTO citizen_report_tracking (report_id, status, note, updated_by) VALUES (?, ?, ?, ?)`).run(req.params.id, status, note || null, req.user.id);
 
   res.json({ success: true, message: 'Status updated' });
@@ -208,7 +207,7 @@ router.post('/:id/analyze', authMiddleware, requireRole('national_admin', 'distr
 
   const existing = await db.prepare(`SELECT id FROM incident_analysis WHERE report_id = ?`).get(report.id);
   if (existing) {
-    await db.prepare(`UPDATE incident_analysis SET ai_severity=?, ai_category=?, ai_risk_score=?, ai_summary=?, response_recommendation=?, analyzed_at=datetime('now') WHERE report_id=?`).run(
+    await db.prepare(`UPDATE incident_analysis SET ai_severity=?, ai_category=?, ai_risk_score=?, ai_summary=?, response_recommendation=?, analyzed_at=NOW() WHERE report_id=?`).run(
       aiRisk > 70 ? 'high' : aiRisk > 45 ? 'medium' : 'low', category, Math.round(aiRisk * 10) / 10,
       `AI analysis complete. Category: ${category.replace(/_/g, ' ')}, Risk: ${Math.round(aiRisk)}%`,
       generateRecommendation(category, report.severity), report.id

@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id/resolve', async (req, res) => {
   const db = await getDb();
-  await db.prepare("UPDATE alerts SET status = 'resolved', resolved_at = datetime('now') WHERE id = ?").run(req.params.id);
+  await db.prepare("UPDATE alerts SET status = 'resolved', resolved_at = NOW() WHERE id = ?").run(req.params.id);
   await db.prepare("INSERT INTO governance_audit (user_id, action, entity_type, entity_id, details) VALUES (?, 'RESOLVE', 'alert', ?, 'Alert resolved')").run(req.user.id, req.params.id);
   res.json({ success: true, message: 'Alert resolved' });
 });
