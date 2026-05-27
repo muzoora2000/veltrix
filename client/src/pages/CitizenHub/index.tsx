@@ -1273,7 +1273,20 @@ export default function CitizenHub() {
                   <div><label className="label">Date *</label><input type="date" className="input" required value={evForm.event_date} onChange={e => setEvForm(f => ({ ...f, event_date: e.target.value }))} /></div>
                   <div><label className="label">Time</label><input type="time" className="input" value={evForm.event_time} onChange={e => setEvForm(f => ({ ...f, event_time: e.target.value }))} /></div>
                   <div><label className="label">Location / Venue</label><input className="input" placeholder="Meeting point..." value={evForm.location} onChange={e => setEvForm(f => ({ ...f, location: e.target.value }))} /></div>
-                  <div><label className="label">Max Volunteers</label><input type="number" className="input" min="1" max="500" value={evForm.max_volunteers} onChange={e => setEvForm(f => ({ ...f, max_volunteers: e.target.value }))} /></div>
+                  <div>
+                    <label className="label">
+                      Max Volunteers
+                      {evForm.event_mode === 'online' && <span className="ml-1 text-blue-500 font-normal">(Google Meet limit: 100)</span>}
+                    </label>
+                    <input type="number" className="input" min="1"
+                      max={evForm.event_mode === 'online' ? 100 : 500}
+                      value={evForm.max_volunteers}
+                      onChange={e => {
+                        const cap = evForm.event_mode === 'online' ? 100 : 500;
+                        const val = Math.min(+e.target.value, cap);
+                        setEvForm(f => ({ ...f, max_volunteers: String(val) }));
+                      }} />
+                  </div>
                 </div>
                 {/* Event mode toggle */}
                 <div>
@@ -1281,7 +1294,7 @@ export default function CitizenHub() {
                   <div className="flex gap-2">
                     {(['physical','online'] as const).map(mode => (
                       <button key={mode} type="button"
-                        onClick={() => setEvForm(f => ({ ...f, event_mode: mode, event_link: mode === 'physical' ? '' : f.event_link }))}
+                        onClick={() => setEvForm(f => ({ ...f, event_mode: mode, event_link: mode === 'physical' ? '' : f.event_link, max_volunteers: mode === 'online' ? String(Math.min(+f.max_volunteers, 100)) : f.max_volunteers }))}
                         className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${evForm.event_mode === mode ? (mode === 'online' ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-600 text-white border-emerald-600') : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-400'}`}>
                         {mode === 'physical' ? '📍 Physical' : '🌐 Online'}
                       </button>
