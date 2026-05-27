@@ -341,7 +341,7 @@ router.post('/login', async (req, res) => {
 /* ── Refresh token — issues a fresh token for the same user without re-login ── */
 router.post('/refresh', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, active FROM users WHERE id = ? AND active = 1').get(req.user.id);
+  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active FROM users WHERE id = ? AND active = 1').get(req.user.id);
   if (!user) return res.status(401).json({ success: false, error: 'User account not found or deactivated' });
 
   const { rememberMe } = req.body;
@@ -358,7 +358,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 /* ── Get current user ── */
 router.get('/me', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ success: false, error: 'User not found' });
   res.json({ success: true, user });
 });
@@ -384,15 +384,16 @@ router.put('/profile/password', authMiddleware, async (req, res) => {
 /* ── Update own profile (any authenticated user) ── */
 router.put('/profile', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const { name, phone, avatar } = req.body;
+  const { name, phone, avatar, language } = req.body;
   const fields = [];const vals = [];
   if (name !== undefined) {fields.push('name=?');vals.push(name.trim());}
   if (phone !== undefined) {fields.push('phone=?');vals.push(phone || null);}
   if (avatar !== undefined) {fields.push('avatar=?');vals.push(avatar || null);}
+  if (language !== undefined) {fields.push('language=?');vals.push(language || 'en');}
   if (!fields.length) return res.status(400).json({ success: false, error: 'Nothing to update' });
   vals.push(req.user.id);
   await db.prepare(`UPDATE users SET ${fields.join(',')} WHERE id=?`).run(...vals);
-  const updated = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
+  const updated = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
   res.json({ success: true, user: updated });
 });
 

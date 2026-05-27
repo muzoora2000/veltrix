@@ -179,7 +179,7 @@ const SEVERITY_BADGE: Record<string, string> = {
   low:      'bg-green-100 text-green-700 border-green-200',
 };
 
-const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee'];
+const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee', 'health_officer'];
 
 const TABS = [
   { id: 'dashboard',     label: '🏠 Dashboard',       roles: 'all' },
@@ -769,7 +769,7 @@ export default function CitizenHub() {
     </div>
   );
 
-  const canCreateEvent = user && ['national_admin','district_officer','ngo_officer','community_committee'].includes(user.role);
+  const canCreateEvent = user && ['national_admin','district_officer','ngo_officer','community_committee','health_officer'].includes(user.role);
 
   /* ═══════════════════════════════════════════════════════════
      RENDER

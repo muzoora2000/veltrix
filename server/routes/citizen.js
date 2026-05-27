@@ -137,7 +137,7 @@ router.get('/discussions/:id/replies', authMiddleware, async (req, res) => {
 });
 
 // Roles that can delete anyone's forum content (in addition to the original poster)
-const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee'];
+const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee', 'health_officer'];
 
 router.delete('/discussions/:id', authMiddleware, async (req, res) => {
   const db = await getDb();
@@ -327,7 +327,7 @@ router.get('/events', authMiddleware, async (req, res) => {
 
 router.post('/events', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const ALLOWED = ['national_admin', 'district_officer', 'ngo_officer', 'community_committee'];
+  const ALLOWED = ['national_admin', 'district_officer', 'ngo_officer', 'community_committee', 'health_officer'];
   if (!ALLOWED.includes(req.user.role)) return res.status(403).json({ success: false, error: 'Only admins and NGOs can create events' });
   const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null, paid_plan = false } = req.body;
   if (!title || !event_date) return res.status(400).json({ success: false, error: 'Title and date required' });

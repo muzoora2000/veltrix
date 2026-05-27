@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { LanguageCode, LANGUAGE_MAP, SUPPORTED_LANGUAGES } from '../types/language';
+import { useAuth } from './AuthContext';
+import { updateProfile } from '../api/client';
 
 interface LanguageContextType {
   language: LanguageCode;
@@ -457,12 +459,14 @@ const UI_STRINGS: Record<string, Record<string, string>> = {
 };
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const { user, patchUser, token } = useAuth();
   const [language, setLanguageState] = useState<LanguageCode>('en');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [offlineMode, setOfflineModeState] = useState(false);
   const cacheRef = useRef<Map<string, string>>(new Map());
 
+  // Bootstrap from local storage initially
   useEffect(() => {
     const saved = localStorage.getItem('hs_language') as LanguageCode;
     if (saved && LANGUAGE_MAP[saved]) setLanguageState(saved);
@@ -470,10 +474,27 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setOfflineModeState(offline);
   }, []);
 
+  // Sync with auth user on login/refresh
+  useEffect(() => {
+    if (user?.language && user.language !== language && LANGUAGE_MAP[user.language as LanguageCode]) {
+      setLanguageState(user.language as LanguageCode);
+      localStorage.setItem('hs_language', user.language);
+    }
+  }, [user?.language]); // specifically watch for language prop changes from backend
+
   const setLanguage = useCallback((code: LanguageCode) => {
     setLanguageState(code);
     localStorage.setItem('hs_language', code);
-  }, []);
+    
+    // Attempt to persist the language choice to the backend if logged in
+    if (token) {
+      updateProfile({ language: code })
+        .then(() => {
+          if (patchUser) patchUser({ language: code });
+        })
+        .catch(err => console.error('Failed to update backend language preference:', err));
+    }
+  }, [token, patchUser]);
 
   const setOfflineMode = useCallback((v: boolean) => {
     setOfflineModeState(v);

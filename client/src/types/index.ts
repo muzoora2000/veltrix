@@ -210,6 +210,7 @@ export interface User {
   organization?: string;
   phone?: string;
   avatar?: string;      // base64 data-URL or null
+  language?: string;
   active?: number;
   last_login?: string;
   created_at?: string;
