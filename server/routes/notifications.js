@@ -26,12 +26,14 @@ router.get('/', async (req, res) => {
     if (role === 'national_admin') {
       sql = `SELECT * FROM notification_log
              WHERE channel = 'in_app'
+               AND read_at IS NULL
                AND (recipient_type IN (${placeholders}) OR recipient_id = ?)
              ORDER BY sent_at DESC LIMIT ?`;
       params = [...allowed, uid, +limit];
     } else {
       sql = `SELECT * FROM notification_log
              WHERE channel = 'in_app'
+               AND read_at IS NULL
                AND (
                  (recipient_type IN (${placeholders}) AND (district = ? OR district IS NULL))
                  OR recipient_id = ?

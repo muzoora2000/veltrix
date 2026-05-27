@@ -497,7 +497,7 @@ export default function ChatBot() {
     <>
       <button
         onClick={() => setOpen(o => !o)}
-        className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl shadow-2xl items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+        className="flex fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl shadow-2xl items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
         style={{ background: 'linear-gradient(135deg,#0b5e42,#1a8a5c)', boxShadow: '0 8px 32px rgba(11,94,66,0.45)' }}
         title="Hydro AI Assistant"
       >

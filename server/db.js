@@ -663,6 +663,17 @@ async function initSchema(db) {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS discussion_views (
+      discussion_id BIGINT REFERENCES citizen_discussions(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      seen_at TIMESTAMPTZ DEFAULT NOW(),
+      read_at TIMESTAMPTZ,
+      PRIMARY KEY (discussion_id, user_id)
+    )
+  `);
+  await e(`ALTER TABLE discussion_views ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ`);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS volunteer_events (
       id BIGSERIAL PRIMARY KEY,
       title TEXT NOT NULL,

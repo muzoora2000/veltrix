@@ -5,7 +5,7 @@ import {
   MapPin, Calendar, Clock, ChevronRight, Star, Award,
   Leaf, CloudRain, Zap, Camera, Eye, X, Loader2,
   CheckCircle, Globe, Wind, Flame, ImagePlus, Navigation, Crosshair,
-  Mic, MicOff, Languages, Trash2, Paperclip, Video, ExternalLink, Link2,
+  Mic, MicOff, Languages, Trash2, Paperclip, Video, ExternalLink, Link2, CheckCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -13,6 +13,7 @@ import {
   getCitizenDashboard, getDiscussions, createDiscussion, likeDiscussion,
   getDiscussionReplies, postDiscussionReply,
   deleteDiscussion as deleteDiscussionApi, deleteDiscussionReply as deleteDiscussionReplyApi,
+  batchMarkDiscussionsViewed, markDiscussionRead, getDiscussionViewers,
   getVolunteerEvents, joinEvent, leaveEvent,
   getCitizenAchievements, submitObservation, voiceTranslate,
 } from '../../api/client';
@@ -262,6 +263,12 @@ export default function CitizenHub() {
   const audioChunksRef    = useRef<Blob[]>([]);
   const recordingTimer    = useRef<ReturnType<typeof setInterval>|null>(null);
 
+  // Seen-by (long press)
+  const [seenByDiscId,  setSeenByDiscId]  = useState<number|null>(null);
+  const [seenByUsers,   setSeenByUsers]   = useState<any[]>([]);
+  const [seenByLoading, setSeenByLoading] = useState(false);
+  const longPressTimer  = useRef<ReturnType<typeof setTimeout>|null>(null);
+
   /* volunteer */
   const [events,    setEvents]    = useState<any[]>([]);
   const [evLoad,    setEvLoad]    = useState(false);
@@ -305,7 +312,20 @@ export default function CitizenHub() {
   const loadDisc = () => {
     setDiscLoad(true);
     getDiscussions({ category: discCat === 'all' ? undefined : discCat, limit: 30 })
-      .then(r => setDiscussions(r.data.data || []))
+      .then(r => {
+        const rows = r.data.data || [];
+        setDiscussions(rows);
+        if (rows.length > 0) batchMarkDiscussionsViewed(rows.map((d: any) => d.id)).catch(() => {});
+        // Re-fetch replies for any currently-expanded discussion
+        setExpandedDisc(prev => {
+          if (prev !== null) {
+            getDiscussionReplies(prev)
+              .then(rr => setReplies(p => ({ ...p, [prev]: rr.data.data || [] })))
+              .catch(() => {});
+          }
+          return prev;
+        });
+      })
       .finally(() => setDiscLoad(false));
   };
   const loadEvents = () => {
@@ -318,7 +338,12 @@ export default function CitizenHub() {
   };
 
   useEffect(() => { loadDash(); }, []);
-  useEffect(() => { if (tab === 'discussions') loadDisc(); }, [tab, discCat]);
+  useEffect(() => {
+    if (tab !== 'discussions') return;
+    loadDisc();
+    const poll = setInterval(loadDisc, 15000);
+    return () => clearInterval(poll);
+  }, [tab, discCat]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'volunteer')   loadEvents(); }, [tab]);
   useEffect(() => { if (tab === 'achievements') loadAchieve(); }, [tab]);
 
@@ -425,7 +450,7 @@ export default function CitizenHub() {
 
   const submitDiscussion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDiscTitle.trim() || !newDiscBody.trim()) return;
+    if (!newDiscTitle.trim() || (!newDiscBody.trim() && !newDiscMedia)) return;
     setDiscSaving(true);
     try {
       await createDiscussion({
@@ -446,6 +471,7 @@ export default function CitizenHub() {
   const toggleReplies = async (id: number) => {
     if (expandedDisc === id) { setExpandedDisc(null); return; }
     setExpandedDisc(id);
+    markDiscussionRead(id).catch(() => {});
     if (!replies[id]) {
       const r = await getDiscussionReplies(id);
       setReplies(prev => ({ ...prev, [id]: r.data.data || [] }));
@@ -453,7 +479,7 @@ export default function CitizenHub() {
   };
 
   const submitReply = async (id: number) => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && !replyMedia[id]) return;
     setReplySaving(true);
     try {
       await postDiscussionReply(id, {
@@ -467,6 +493,22 @@ export default function CitizenHub() {
       setReplies(prev => ({ ...prev, [id]: r.data.data || [] }));
       setDiscussions(prev => prev.map(d => d.id === id ? { ...d, reply_count: d.reply_count + 1 } : d));
     } finally { setReplySaving(false); }
+  };
+
+  const handleLongPressStart = (id: number) => {
+    longPressTimer.current = setTimeout(async () => {
+      setSeenByDiscId(id);
+      setSeenByLoading(true);
+      try {
+        const r = await getDiscussionViewers(id);
+        setSeenByUsers(r.data.data || []);
+      } catch { setSeenByUsers([]); }
+      finally { setSeenByLoading(false); }
+    }, 600);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
   };
 
   const handleDeleteDiscussion = async (id: number) => {
@@ -1095,7 +1137,17 @@ export default function CitizenHub() {
               {discussions.map(d => {
                 const cat = DISC_CATS.find(c => c.value === d.category);
                 return (
-                  <div key={d.id} className="card hover:shadow-md transition-shadow">
+                  <div
+                    key={d.id}
+                    className="card hover:shadow-md transition-shadow select-none"
+                    onMouseDown={() => handleLongPressStart(d.id)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(d.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onTouchMove={handleLongPressEnd}
+                    onContextMenu={e => e.preventDefault()}
+                  >
                     <div className="flex items-start gap-3">
                       {/* Avatar */}
                       <div className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg,#065f46,#0891b2)' }}>
@@ -1132,7 +1184,22 @@ export default function CitizenHub() {
                           className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
                           <MessageSquare size={12} /> {d.reply_count}
                         </button>
-                        {(d.user_id === user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
+                        {+d.user_id === +user?.id && (
+                          <button
+                            onClick={async e => {
+                              e.stopPropagation();
+                              setSeenByDiscId(d.id);
+                              setSeenByLoading(true);
+                              try { const r = await getDiscussionViewers(d.id); setSeenByUsers(r.data.data || []); }
+                              catch { setSeenByUsers([]); }
+                              finally { setSeenByLoading(false); }
+                            }}
+                            title="See who viewed this"
+                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                            <Eye size={12} />
+                          </button>
+                        )}
+                        {(+d.user_id === +user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
                           <button onClick={() => handleDeleteDiscussion(d.id)}
                             className="flex items-center gap-1 text-xs text-gray-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
                             <Trash2 size={12} />
@@ -1162,7 +1229,7 @@ export default function CitizenHub() {
                                 : <div className="w-5 h-5 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">{r.author_name?.charAt(0)}</div>}
                               <span className="font-semibold text-xs text-gray-700 dark:text-gray-300">{r.author_name}</span>
                               <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
-                              {(r.user_id === user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
+                              {(+r.user_id === +user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
                                 <button onClick={() => handleDeleteReply(d.id, r.id)}
                                   className="ml-auto text-gray-300 hover:text-red-500 transition-colors p-0.5 rounded">
                                   <Trash2 size={11} />
@@ -1237,6 +1304,91 @@ export default function CitizenHub() {
           <input ref={replyMediaRef} type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleReplyMediaChange} />
         </div>
       )}
+
+      {/* ══ SEEN-BY MODAL ══ */}
+      {seenByDiscId !== null && (() => {
+        const readUsers = seenByUsers.filter((u: any) => u.read_at);
+        const seenOnlyUsers = seenByUsers.filter((u: any) => !u.read_at);
+        const UserRow = ({ u, label }: { u: any; label: 'read' | 'seen' }) => (
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            <div className="w-8 h-8 rounded-xl flex-shrink-0 overflow-hidden" style={{ background: 'linear-gradient(135deg,#065f46,#0891b2)' }}>
+              {u.avatar
+                ? <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">{u.name?.charAt(0).toUpperCase()}</div>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{u.name}</div>
+              <div className="text-[11px] text-gray-400">
+                {new Date(label === 'read' ? u.read_at : u.seen_at).toLocaleString('en-UG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+            {label === 'read'
+              ? <CheckCheck size={13} className="text-blue-400 flex-shrink-0" />
+              : <Eye size={12} className="text-gray-300 flex-shrink-0" />}
+          </div>
+        );
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setSeenByDiscId(null)}
+          >
+            <div
+              className="w-full sm:w-96 max-h-[75vh] bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <Eye size={15} className="text-blue-500" />
+                  <span className="font-bold text-sm text-gray-800 dark:text-gray-100">Message Info</span>
+                </div>
+                <button onClick={() => setSeenByDiscId(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto flex-1">
+                {seenByLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 size={22} className="animate-spin text-blue-500" />
+                  </div>
+                ) : seenByUsers.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <Eye size={32} className="mx-auto text-gray-200 dark:text-gray-700 mb-2" />
+                    <p className="text-sm text-gray-400">No one has seen this message yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Read section */}
+                    <div className="px-4 pt-3 pb-1 flex items-center gap-2">
+                      <CheckCheck size={14} className="text-blue-500" />
+                      <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">Read</span>
+                      <span className="text-xs text-gray-400">({readUsers.length})</span>
+                    </div>
+                    {readUsers.length === 0
+                      ? <p className="px-4 pb-3 text-xs text-gray-400 italic">Nobody has read this yet</p>
+                      : <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                          {readUsers.map((u: any) => <UserRow key={u.id} u={u} label="read" />)}
+                        </div>}
+
+                    {/* Seen section */}
+                    <div className="px-4 pt-3 pb-1 flex items-center gap-2 border-t border-gray-100 dark:border-gray-800 mt-1">
+                      <Eye size={14} className="text-gray-400" />
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Seen only</span>
+                      <span className="text-xs text-gray-400">({seenOnlyUsers.length})</span>
+                    </div>
+                    {seenOnlyUsers.length === 0
+                      ? <p className="px-4 pb-3 text-xs text-gray-400 italic">Nobody else has seen this</p>
+                      : <div className="divide-y divide-gray-50 dark:divide-gray-800 pb-2">
+                          {seenOnlyUsers.map((u: any) => <UserRow key={u.id} u={u} label="seen" />)}
+                        </div>}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ══ VOLUNTEER TAB ══ */}
       {tab === 'volunteer' && (

@@ -10,6 +10,7 @@ const { notifyRoles } = require('../utils/notify');
 
 const router = express.Router();
 
+
 /* ─────────────────────────────────────────────────────────────
    PUBLIC ENVIRONMENTAL DASHBOARD (no auth needed)
 ───────────────────────────────────────────────────────────── */
@@ -187,6 +188,79 @@ router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
   }
 
   res.status(201).json({ success: true });
+});
+
+// Record that the current user has seen a batch of discussions (message appeared on screen)
+router.post('/discussions/batch-view', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.json({ success: true });
+  const validIds = ids.filter(id => Number.isInteger(+id)).map(Number);
+  for (const id of validIds) {
+    await db.prepare(
+      `INSERT INTO discussion_views (discussion_id, user_id) VALUES (?,?)
+       ON CONFLICT (discussion_id, user_id) DO NOTHING`
+    ).run(id, req.user.id);
+  }
+  res.json({ success: true });
+});
+
+// Mark a discussion as fully read (user opened/expanded it) + notify author once
+router.post('/discussions/:id/read', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const did = +req.params.id;
+
+  // Check if already marked read (to avoid duplicate notifications)
+  const existing = await db.prepare(
+    `SELECT read_at FROM discussion_views WHERE discussion_id=? AND user_id=?`
+  ).get(did, req.user.id);
+
+  const alreadyRead = existing?.read_at;
+
+  // Upsert: insert or set read_at only if not already set
+  await db.prepare(
+    `INSERT INTO discussion_views (discussion_id, user_id, seen_at, read_at)
+     VALUES (?,?,NOW(),NOW())
+     ON CONFLICT (discussion_id, user_id) DO UPDATE
+       SET read_at = COALESCE(discussion_views.read_at, NOW())`
+  ).run(did, req.user.id);
+
+  // Notify discussion author the first time this user reads it
+  if (!alreadyRead) {
+    const disc = await db.prepare(
+      `SELECT user_id, title FROM citizen_discussions WHERE id=?`
+    ).get(did);
+    if (disc && disc.user_id !== req.user.id) {
+      const author = await db.prepare(`SELECT role FROM users WHERE id=?`).get(disc.user_id);
+      if (author) {
+        await db.prepare(
+          `INSERT INTO notification_log
+             (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id)
+           VALUES (?,?,'in_app',?,?,'sent','discussion',?)`
+        ).run(
+          author.role, disc.user_id,
+          `Your post was read`,
+          `${req.user.name} read your discussion "${disc.title.slice(0, 60)}"`,
+          did
+        );
+      }
+    }
+  }
+
+  res.json({ success: true });
+});
+
+// Get the list of users who have seen or read a discussion
+router.get('/discussions/:id/views', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const rows = await db.prepare(
+    `SELECT u.id, u.name, u.avatar, dv.seen_at, dv.read_at
+     FROM discussion_views dv
+     JOIN users u ON u.id = dv.user_id
+     WHERE dv.discussion_id = ?
+     ORDER BY dv.seen_at ASC`
+  ).all(req.params.id);
+  res.json({ success: true, data: rows });
 });
 
 /* ─────────────────────────────────────────────────────────────

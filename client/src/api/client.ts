@@ -109,6 +109,9 @@ export const postDiscussionReply = (id: number, data: { content: string; media_u
 export const deleteDiscussion = (id: number) => api.delete(`/citizen/discussions/${id}`);
 export const deleteDiscussionReply = (discussionId: number, replyId: number) =>
   api.delete(`/citizen/discussions/${discussionId}/replies/${replyId}`);
+export const batchMarkDiscussionsViewed = (ids: number[]) => api.post('/citizen/discussions/batch-view', { ids });
+export const markDiscussionRead = (id: number) => api.post(`/citizen/discussions/${id}/read`);
+export const getDiscussionViewers = (id: number) => api.get(`/citizen/discussions/${id}/views`);
 export const getVolunteerEvents = (params?: object) => api.get('/citizen/events', { params });
 export const createVolunteerEvent = (data: object) => api.post('/citizen/events', data);
 export const joinEvent = (id: number) => api.post(`/citizen/events/${id}/join`);

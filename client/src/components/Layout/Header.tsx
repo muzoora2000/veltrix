@@ -1,11 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, Sun, Moon, CheckCheck, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { getNotifications, getNotificationUnreadCount, markNotificationRead, markAllNotificationsRead } from '../../api/client';
+import { getNotifications, getNotificationUnreadCount, markAllNotificationsRead } from '../../api/client';
 import AIStatusIndicator from '../common/AIStatusIndicator';
 import LanguageSwitcher from '../common/LanguageSwitcher';
+
+// Maps notification reference_type → app route
+const NOTIF_ROUTE: Record<string, string> = {
+  discussion:           '/citizen-hub',
+  volunteer_event:      '/citizen-hub',
+  citizen_observation:  '/citizen-hub',
+  gwn_report:           '/citizen-hub',
+  alert:                '/alerts',
+  maintenance_request:  '/maintenance',
+  water_point:          '/waterpoints',
+  waterpoint:           '/waterpoints',
+  health_incident:      '/health',
+  incident:             '/health',
+  sensor:               '/sensors',
+  climate:              '/climate',
+  quality_test:         '/water-quality',
+  report:               '/reports',
+};
 
 const roleColors: Record<string, string> = {
   national_admin:      'bg-purple-500',
@@ -42,6 +61,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function Header({ onMenuClick, title }: HeaderProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { language, translate } = useLanguage();
@@ -95,16 +115,15 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
   }, [notifOpen]);
 
   const handleBellClick = () => {
-    if (!notifOpen) fetchNotifications();
+    if (!notifOpen) {
+      fetchNotifications();
+      if (unreadCount > 0) {
+        markAllNotificationsRead().catch(() => {});
+        setUnreadCount(0);
+        setNotifications([]);
+      }
+    }
     setNotifOpen(v => !v);
-  };
-
-  const handleMarkRead = async (id: number) => {
-    try {
-      await markNotificationRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date().toISOString() } : n));
-      setUnreadCount(c => Math.max(0, c - 1));
-    } catch {}
   };
 
   const handleMarkAll = async () => {
@@ -233,7 +252,7 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
                   notifications.map(n => (
                     <button
                       key={n.id}
-                      onClick={() => { if (!n.read_at) handleMarkRead(n.id); }}
+                      onClick={() => { const route = NOTIF_ROUTE[n.reference_type ?? '']; if (route) { setNotifOpen(false); navigate(route); } }}
                       className={`w-full text-left px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
                         n.read_at ? '' : 'bg-blue-50/60 dark:bg-blue-950/30'
                       }`}
