@@ -83,11 +83,11 @@ router.get('/discussions', authMiddleware, async (req, res) => {
 
 router.post('/discussions', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const { title, content, category = 'general' } = req.body;
+  const { title, content, category = 'general', media_url = null, media_type = null } = req.body;
   if (!title?.trim() || !content?.trim()) return res.status(400).json({ success: false, error: 'Title and content required' });
   const VALID_CATS = ['general', 'water_quality', 'pollution', 'climate', 'health', 'events', 'governance'];
   if (!VALID_CATS.includes(category)) return res.status(400).json({ success: false, error: 'Invalid category' });
-  const r = await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category) VALUES (?,?,?,?,?)`).run(req.user.id, req.user.name, title.trim(), content.trim(), category);
+  const r = await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category, media_url, media_type) VALUES (?,?,?,?,?,?,?)`).run(req.user.id, req.user.name, title.trim(), content.trim(), category, media_url || null, media_type || null);
 
   // Notify roles that care about this category
   const CAT_ROLES = {
@@ -131,12 +131,35 @@ router.get('/discussions/:id/replies', authMiddleware, async (req, res) => {
   res.json({ success: true, data: rows });
 });
 
+router.delete('/discussions/:id', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const disc = await db.prepare(`SELECT user_id FROM citizen_discussions WHERE id=?`).get(req.params.id);
+  if (!disc) return res.status(404).json({ success: false, error: 'Not found' });
+  if (disc.user_id !== req.user.id && req.user.role !== 'national_admin') {
+    return res.status(403).json({ success: false, error: 'Not allowed' });
+  }
+  await db.prepare(`DELETE FROM citizen_discussions WHERE id=?`).run(req.params.id);
+  res.json({ success: true });
+});
+
+router.delete('/discussions/:id/replies/:replyId', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const reply = await db.prepare(`SELECT user_id FROM citizen_replies WHERE id=? AND discussion_id=?`).get(req.params.replyId, req.params.id);
+  if (!reply) return res.status(404).json({ success: false, error: 'Not found' });
+  if (reply.user_id !== req.user.id && req.user.role !== 'national_admin') {
+    return res.status(403).json({ success: false, error: 'Not allowed' });
+  }
+  await db.prepare(`DELETE FROM citizen_replies WHERE id=?`).run(req.params.replyId);
+  await db.prepare(`UPDATE citizen_discussions SET reply_count=GREATEST(0, reply_count-1) WHERE id=?`).run(req.params.id);
+  res.json({ success: true });
+});
+
 router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const { content } = req.body;
+  const { content, media_url = null, media_type = null } = req.body;
   if (!content?.trim()) return res.status(400).json({ success: false, error: 'Reply content required' });
   const did = +req.params.id;
-  await db.prepare(`INSERT INTO citizen_replies (discussion_id, user_id, author_name, content) VALUES (?,?,?,?)`).run(did, req.user.id, req.user.name, content.trim());
+  await db.prepare(`INSERT INTO citizen_replies (discussion_id, user_id, author_name, content, media_url, media_type) VALUES (?,?,?,?,?,?)`).run(did, req.user.id, req.user.name, content.trim(), media_url || null, media_type || null);
   await db.prepare(`UPDATE citizen_discussions SET reply_count=reply_count+1 WHERE id=?`).run(did);
 
   // Notify the discussion author (if not the same person replying)
@@ -233,6 +256,12 @@ router.delete('/events/:id/leave', authMiddleware, async (req, res) => {
 /* ─────────────────────────────────────────────────────────────
    CITIZEN OBSERVATIONS (auth required)
 ───────────────────────────────────────────────────────────── */
+// Ensure media columns exist on discussions and replies (fire-and-forget)
+getDb().exec(`ALTER TABLE citizen_discussions ADD COLUMN media_url TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_discussions ADD COLUMN media_type TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_replies ADD COLUMN media_url TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_replies ADD COLUMN media_type TEXT`).catch(() => {});
+
 // Ensure status column exists (fire-and-forget migrations)
 getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN status TEXT DEFAULT 'new'`).catch(() => {});
 getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN reviewed_by TEXT`).catch(() => {});

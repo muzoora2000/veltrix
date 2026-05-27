@@ -5,13 +5,14 @@ import {
   MapPin, Calendar, Clock, ChevronRight, Star, Award,
   Leaf, CloudRain, Zap, Camera, Eye, X, Loader2,
   CheckCircle, Globe, Wind, Flame, ImagePlus, Navigation, Crosshair,
-  Mic, MicOff, Languages,
+  Mic, MicOff, Languages, Trash2, Paperclip, Video,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslations } from '../../hooks/useTranslations';
 import {
   getCitizenDashboard, getDiscussions, createDiscussion, likeDiscussion,
   getDiscussionReplies, postDiscussionReply,
+  deleteDiscussion as deleteDiscussionApi, deleteDiscussionReply as deleteDiscussionReplyApi,
   getVolunteerEvents, joinEvent, leaveEvent,
   getCitizenAchievements, submitObservation, voiceTranslate,
 } from '../../api/client';
@@ -244,6 +245,12 @@ export default function CitizenHub() {
   const [replies,     setReplies]       = useState<Record<number,any[]>>({});
   const [replyText,   setReplyText]     = useState('');
   const [replySaving, setReplySaving]   = useState(false);
+  const [newDiscMedia,  setNewDiscMedia]  = useState<{url:string;type:'image'|'video'}|null>(null);
+  const [replyMedia,    setReplyMedia]    = useState<Record<number,{url:string;type:'image'|'video'}|null>>({});
+  const [mediaError,    setMediaError]    = useState('');
+  const discMediaRef  = useRef<HTMLInputElement>(null);
+  const replyMediaRef = useRef<HTMLInputElement>(null);
+  const replyMediaDiscId = useRef<number>(0);
 
   /* volunteer */
   const [events,    setEvents]    = useState<any[]>([]);
@@ -306,13 +313,66 @@ export default function CitizenHub() {
   useEffect(() => { if (tab === 'achievements') loadAchieve(); }, [tab]);
 
   /* ── Handlers ── */
+  /* ── Media helpers ── */
+  const compressImage = (file: File): Promise<{url:string;type:'image'}> =>
+    new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 1024;
+          let w = img.width, h = img.height;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          resolve({ url: canvas.toDataURL('image/jpeg', 0.82), type: 'image' });
+        };
+        img.src = e.target!.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const readVideo = (file: File): Promise<{url:string;type:'video'}> =>
+    new Promise((resolve, reject) => {
+      if (file.size > 10 * 1024 * 1024) { reject(new Error('Video must be under 10 MB')); return; }
+      const reader = new FileReader();
+      reader.onload = e => resolve({ url: e.target!.result as string, type: 'video' });
+      reader.readAsDataURL(file);
+    });
+
+  const handleDiscMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setMediaError('');
+    try {
+      setNewDiscMedia(f.type.startsWith('video/') ? await readVideo(f) : await compressImage(f));
+    } catch (err: any) { setMediaError(err.message || 'Failed to load file'); }
+    e.target.value = '';
+  };
+
+  const handleReplyMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    const discId = replyMediaDiscId.current;
+    if (!f || !discId) return;
+    setMediaError('');
+    try {
+      const media = f.type.startsWith('video/') ? await readVideo(f) : await compressImage(f);
+      setReplyMedia(prev => ({ ...prev, [discId]: media }));
+    } catch (err: any) { setMediaError(err.message || 'Failed to load file'); }
+    e.target.value = '';
+  };
+
   const submitDiscussion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDiscTitle.trim() || !newDiscBody.trim()) return;
     setDiscSaving(true);
     try {
-      await createDiscussion({ title: newDiscTitle.trim(), content: newDiscBody.trim(), category: newDiscCat });
-      setShowNewDisc(false); setNewDiscTitle(''); setNewDiscBody('');
+      await createDiscussion({
+        title: newDiscTitle.trim(), content: newDiscBody.trim(), category: newDiscCat,
+        media_url: newDiscMedia?.url ?? null, media_type: newDiscMedia?.type ?? null,
+      });
+      setShowNewDisc(false); setNewDiscTitle(''); setNewDiscBody(''); setNewDiscMedia(null);
       loadDisc();
     } finally { setDiscSaving(false); }
   };
@@ -335,12 +395,35 @@ export default function CitizenHub() {
     if (!replyText.trim()) return;
     setReplySaving(true);
     try {
-      await postDiscussionReply(id, replyText.trim());
+      await postDiscussionReply(id, {
+        content: replyText.trim(),
+        media_url: replyMedia[id]?.url ?? null,
+        media_type: replyMedia[id]?.type ?? null,
+      });
       setReplyText('');
+      setReplyMedia(prev => ({ ...prev, [id]: null }));
       const r = await getDiscussionReplies(id);
       setReplies(prev => ({ ...prev, [id]: r.data.data || [] }));
       setDiscussions(prev => prev.map(d => d.id === id ? { ...d, reply_count: d.reply_count + 1 } : d));
     } finally { setReplySaving(false); }
+  };
+
+  const handleDeleteDiscussion = async (id: number) => {
+    if (!window.confirm('Delete this discussion? This cannot be undone.')) return;
+    try {
+      await deleteDiscussionApi(id);
+      setDiscussions(prev => prev.filter(d => d.id !== id));
+      if (expandedDisc === id) setExpandedDisc(null);
+    } catch {}
+  };
+
+  const handleDeleteReply = async (discId: number, replyId: number) => {
+    if (!window.confirm('Delete this reply?')) return;
+    try {
+      await deleteDiscussionReplyApi(discId, replyId);
+      setReplies(prev => ({ ...prev, [discId]: (prev[discId] || []).filter((r: any) => r.id !== replyId) }));
+      setDiscussions(prev => prev.map(d => d.id === discId ? { ...d, reply_count: Math.max(0, d.reply_count - 1) } : d));
+    } catch {}
   };
 
   const handleJoinLeave = async (ev: any) => {
@@ -875,8 +958,27 @@ export default function CitizenHub() {
                   value={newDiscTitle} onChange={e => setNewDiscTitle(e.target.value)} />
                 <textarea className="input" rows={4} required placeholder="Share your thoughts, questions, or observations..."
                   value={newDiscBody} onChange={e => setNewDiscBody(e.target.value)} />
+                {/* Media attachment */}
+                {newDiscMedia ? (
+                  <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                    {newDiscMedia.type === 'image'
+                      ? <img src={newDiscMedia.url} alt="" className="max-h-48 w-full object-contain bg-gray-50 dark:bg-gray-800" />
+                      : <video src={newDiscMedia.url} controls className="max-h-40 w-full" />}
+                    <button type="button" onClick={() => setNewDiscMedia(null)}
+                      className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => discMediaRef.current?.click()}
+                    className="flex items-center gap-2 text-xs text-gray-500 hover:text-emerald-600 border border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-400 rounded-xl px-3 py-2 transition-colors w-full justify-center">
+                    <Paperclip size={13} /> Attach photo or video
+                  </button>
+                )}
+                {mediaError && <p className="text-xs text-red-500">{mediaError}</p>}
+                <input ref={discMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleDiscMediaChange} />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowNewDisc(false)} className="btn-secondary flex-1">Cancel</button>
+                  <button type="button" onClick={() => { setShowNewDisc(false); setNewDiscMedia(null); }} className="btn-secondary flex-1">Cancel</button>
                   <button type="submit" disabled={discSaving}
                     className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg,#065f46,#0891b2)' }}>
@@ -933,25 +1035,68 @@ export default function CitizenHub() {
                           className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
                           <MessageSquare size={12} /> {d.reply_count}
                         </button>
+                        {(d.user_id === user?.id || user?.role === 'national_admin') && (
+                          <button onClick={() => handleDeleteDiscussion(d.id)}
+                            className="flex items-center gap-1 text-xs text-gray-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
+                    {/* Media */}
+                    {d.media_url && (
+                      <div className="mt-2 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
+                        {d.media_type === 'video'
+                          ? <video src={d.media_url} controls className="max-h-64 w-full" />
+                          : <img src={d.media_url} alt="" className="max-h-64 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
+                      </div>
+                    )}
 
                     {/* Replies section */}
                     {expandedDisc === d.id && (
                       <div className="mt-3 pl-3 border-l-2 border-emerald-200 dark:border-emerald-800 space-y-2">
-                        {(replies[d.id] || []).map((r: any, i: number) => (
-                          <div key={i} className="text-sm bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                        {(replies[d.id] || []).map((r: any) => (
+                          <div key={r.id} className="text-sm bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
                               {r.user_avatar
                                 ? <img src={r.user_avatar} className="w-5 h-5 rounded-lg object-cover" alt="" />
                                 : <div className="w-5 h-5 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">{r.author_name?.charAt(0)}</div>}
                               <span className="font-semibold text-xs text-gray-700 dark:text-gray-300">{r.author_name}</span>
                               <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
+                              {(r.user_id === user?.id || user?.role === 'national_admin') && (
+                                <button onClick={() => handleDeleteReply(d.id, r.id)}
+                                  className="ml-auto text-gray-300 hover:text-red-500 transition-colors p-0.5 rounded">
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
                             </div>
                             <p className="text-gray-600 dark:text-gray-400">{r.content}</p>
+                            {r.media_url && (
+                              <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                {r.media_type === 'video'
+                                  ? <video src={r.media_url} controls className="max-h-48 w-full" />
+                                  : <img src={r.media_url} alt="" className="max-h-48 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
+                              </div>
+                            )}
                           </div>
                         ))}
+                        {/* Reply media preview */}
+                        {replyMedia[d.id] && (
+                          <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                            {replyMedia[d.id]!.type === 'video'
+                              ? <video src={replyMedia[d.id]!.url} controls className="max-h-36 w-full" />
+                              : <img src={replyMedia[d.id]!.url} alt="" className="max-h-36 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
+                            <button onClick={() => setReplyMedia(prev => ({ ...prev, [d.id]: null }))}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80">
+                              <X size={11} />
+                            </button>
+                          </div>
+                        )}
                         <div className="flex gap-2 mt-2">
+                          <button onClick={() => { replyMediaDiscId.current = d.id; replyMediaRef.current?.click(); }}
+                            className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-emerald-600 hover:border-emerald-400 transition-colors flex-shrink-0">
+                            <Paperclip size={14} />
+                          </button>
                           <input className="input flex-1 text-sm py-2"
                             placeholder="Write a reply..."
                             value={replyText}
@@ -962,6 +1107,7 @@ export default function CitizenHub() {
                             {replySaving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                           </button>
                         </div>
+                        {mediaError && <p className="text-xs text-red-500">{mediaError}</p>}
                       </div>
                     )}
                   </div>
@@ -969,6 +1115,8 @@ export default function CitizenHub() {
               })}
             </div>
           )}
+          {/* Hidden file input for reply media — shared across all reply inputs */}
+          <input ref={replyMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleReplyMediaChange} />
         </div>
       )}
 

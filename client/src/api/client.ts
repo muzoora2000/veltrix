@@ -104,7 +104,11 @@ export const getDiscussions = (params?: object) => api.get('/citizen/discussions
 export const createDiscussion = (data: object) => api.post('/citizen/discussions', data);
 export const likeDiscussion = (id: number) => api.post(`/citizen/discussions/${id}/like`);
 export const getDiscussionReplies = (id: number) => api.get(`/citizen/discussions/${id}/replies`);
-export const postDiscussionReply = (id: number, content: string) => api.post(`/citizen/discussions/${id}/replies`, { content });
+export const postDiscussionReply = (id: number, data: { content: string; media_url?: string | null; media_type?: string | null }) =>
+  api.post(`/citizen/discussions/${id}/replies`, data);
+export const deleteDiscussion = (id: number) => api.delete(`/citizen/discussions/${id}`);
+export const deleteDiscussionReply = (discussionId: number, replyId: number) =>
+  api.delete(`/citizen/discussions/${discussionId}/replies/${replyId}`);
 export const getVolunteerEvents = (params?: object) => api.get('/citizen/events', { params });
 export const createVolunteerEvent = (data: object) => api.post('/citizen/events', data);
 export const joinEvent = (id: number) => api.post(`/citizen/events/${id}/join`);
