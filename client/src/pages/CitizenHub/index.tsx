@@ -176,6 +176,8 @@ const SEVERITY_BADGE: Record<string, string> = {
   low:      'bg-green-100 text-green-700 border-green-200',
 };
 
+const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee'];
+
 const TABS = [
   { id: 'dashboard',     label: '🏠 Dashboard',       roles: 'all' },
   { id: 'education',     label: '📚 Education',        roles: 'all' },
@@ -1108,7 +1110,7 @@ export default function CitizenHub() {
                           className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
                           <MessageSquare size={12} /> {d.reply_count}
                         </button>
-                        {(d.user_id === user?.id || user?.role === 'national_admin') && (
+                        {(d.user_id === user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
                           <button onClick={() => handleDeleteDiscussion(d.id)}
                             className="flex items-center gap-1 text-xs text-gray-300 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
                             <Trash2 size={12} />
@@ -1138,7 +1140,7 @@ export default function CitizenHub() {
                                 : <div className="w-5 h-5 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">{r.author_name?.charAt(0)}</div>}
                               <span className="font-semibold text-xs text-gray-700 dark:text-gray-300">{r.author_name}</span>
                               <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
-                              {(r.user_id === user?.id || user?.role === 'national_admin') && (
+                              {(r.user_id === user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
                                 <button onClick={() => handleDeleteReply(d.id, r.id)}
                                   className="ml-auto text-gray-300 hover:text-red-500 transition-colors p-0.5 rounded">
                                   <Trash2 size={11} />

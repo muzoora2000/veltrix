@@ -131,12 +131,15 @@ router.get('/discussions/:id/replies', authMiddleware, async (req, res) => {
   res.json({ success: true, data: rows });
 });
 
+// Roles that can delete anyone's forum content (in addition to the original poster)
+const FORUM_ADMINS = ['national_admin', 'district_officer', 'community_committee'];
+
 router.delete('/discussions/:id', authMiddleware, async (req, res) => {
   const db = await getDb();
   const disc = await db.prepare(`SELECT user_id FROM citizen_discussions WHERE id=?`).get(req.params.id);
   if (!disc) return res.status(404).json({ success: false, error: 'Not found' });
-  if (disc.user_id !== req.user.id && req.user.role !== 'national_admin') {
-    return res.status(403).json({ success: false, error: 'Not allowed' });
+  if (disc.user_id !== req.user.id && !FORUM_ADMINS.includes(req.user.role)) {
+    return res.status(403).json({ success: false, error: 'Only the author or an admin can delete this' });
   }
   await db.prepare(`DELETE FROM citizen_discussions WHERE id=?`).run(req.params.id);
   res.json({ success: true });
@@ -146,8 +149,8 @@ router.delete('/discussions/:id/replies/:replyId', authMiddleware, async (req, r
   const db = await getDb();
   const reply = await db.prepare(`SELECT user_id FROM citizen_replies WHERE id=? AND discussion_id=?`).get(req.params.replyId, req.params.id);
   if (!reply) return res.status(404).json({ success: false, error: 'Not found' });
-  if (reply.user_id !== req.user.id && req.user.role !== 'national_admin') {
-    return res.status(403).json({ success: false, error: 'Not allowed' });
+  if (reply.user_id !== req.user.id && !FORUM_ADMINS.includes(req.user.role)) {
+    return res.status(403).json({ success: false, error: 'Only the author or an admin can delete this' });
   }
   await db.prepare(`DELETE FROM citizen_replies WHERE id=?`).run(req.params.replyId);
   await db.prepare(`UPDATE citizen_discussions SET reply_count=GREATEST(0, reply_count-1) WHERE id=?`).run(req.params.id);
