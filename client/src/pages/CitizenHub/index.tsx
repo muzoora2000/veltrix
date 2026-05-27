@@ -245,8 +245,8 @@ export default function CitizenHub() {
   const [replies,     setReplies]       = useState<Record<number,any[]>>({});
   const [replyText,   setReplyText]     = useState('');
   const [replySaving, setReplySaving]   = useState(false);
-  const [newDiscMedia,  setNewDiscMedia]  = useState<{url:string;type:'image'|'video'}|null>(null);
-  const [replyMedia,    setReplyMedia]    = useState<Record<number,{url:string;type:'image'|'video'}|null>>({});
+  const [newDiscMedia,  setNewDiscMedia]  = useState<{url:string;type:'image'|'video'|'audio'}|null>(null);
+  const [replyMedia,    setReplyMedia]    = useState<Record<number,{url:string;type:'image'|'video'|'audio'}|null>>({});
   const [mediaError,    setMediaError]    = useState('');
   const discMediaRef  = useRef<HTMLInputElement>(null);
   const replyMediaRef = useRef<HTMLInputElement>(null);
@@ -333,21 +333,30 @@ export default function CitizenHub() {
       reader.readAsDataURL(file);
     });
 
-  const readVideo = (file: File): Promise<{url:string;type:'video'}> =>
+  const readMediaFile = (file: File): Promise<{url:string;type:'video'|'audio'}> =>
     new Promise((resolve, reject) => {
-      if (file.size > 10 * 1024 * 1024) { reject(new Error('Video must be under 10 MB')); return; }
+      const isAudio = file.type.startsWith('audio/');
+      const limit = isAudio ? 20 : 10;
+      if (file.size > limit * 1024 * 1024) {
+        reject(new Error(`${isAudio ? 'Audio' : 'Video'} must be under ${limit} MB`));
+        return;
+      }
       const reader = new FileReader();
-      reader.onload = e => resolve({ url: e.target!.result as string, type: 'video' });
+      reader.onload = e => resolve({ url: e.target!.result as string, type: isAudio ? 'audio' : 'video' });
       reader.readAsDataURL(file);
     });
+
+  const pickMedia = async (file: File) => {
+    if (file.type.startsWith('image/')) return compressImage(file);
+    return readMediaFile(file);
+  };
 
   const handleDiscMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setMediaError('');
-    try {
-      setNewDiscMedia(f.type.startsWith('video/') ? await readVideo(f) : await compressImage(f));
-    } catch (err: any) { setMediaError(err.message || 'Failed to load file'); }
+    try { setNewDiscMedia(await pickMedia(f)); }
+    catch (err: any) { setMediaError(err.message || 'Failed to load file'); }
     e.target.value = '';
   };
 
@@ -356,8 +365,8 @@ export default function CitizenHub() {
     const discId = replyMediaDiscId.current;
     if (!f || !discId) return;
     setMediaError('');
-    try {
-      const media = f.type.startsWith('video/') ? await readVideo(f) : await compressImage(f);
+    try { setReplyMedia(prev => ({ ...prev, [discId]: null })); // clear old
+      const media = await pickMedia(f);
       setReplyMedia(prev => ({ ...prev, [discId]: media }));
     } catch (err: any) { setMediaError(err.message || 'Failed to load file'); }
     e.target.value = '';
@@ -963,6 +972,8 @@ export default function CitizenHub() {
                   <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                     {newDiscMedia.type === 'image'
                       ? <img src={newDiscMedia.url} alt="" className="max-h-48 w-full object-contain bg-gray-50 dark:bg-gray-800" />
+                      : newDiscMedia.type === 'audio'
+                      ? <audio src={newDiscMedia.url} controls className="w-full p-2" />
                       : <video src={newDiscMedia.url} controls className="max-h-40 w-full" />}
                     <button type="button" onClick={() => setNewDiscMedia(null)}
                       className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80">
@@ -976,7 +987,7 @@ export default function CitizenHub() {
                   </button>
                 )}
                 {mediaError && <p className="text-xs text-red-500">{mediaError}</p>}
-                <input ref={discMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleDiscMediaChange} />
+                <input ref={discMediaRef} type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleDiscMediaChange} />
                 <div className="flex gap-3">
                   <button type="button" onClick={() => { setShowNewDisc(false); setNewDiscMedia(null); }} className="btn-secondary flex-1">Cancel</button>
                   <button type="submit" disabled={discSaving}
@@ -1048,6 +1059,8 @@ export default function CitizenHub() {
                       <div className="mt-2 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
                         {d.media_type === 'video'
                           ? <video src={d.media_url} controls className="max-h-64 w-full" />
+                          : d.media_type === 'audio'
+                          ? <audio src={d.media_url} controls className="w-full p-2" />
                           : <img src={d.media_url} alt="" className="max-h-64 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
                       </div>
                     )}
@@ -1075,6 +1088,8 @@ export default function CitizenHub() {
                               <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                                 {r.media_type === 'video'
                                   ? <video src={r.media_url} controls className="max-h-48 w-full" />
+                                  : r.media_type === 'audio'
+                                  ? <audio src={r.media_url} controls className="w-full p-2" />
                                   : <img src={r.media_url} alt="" className="max-h-48 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
                               </div>
                             )}
@@ -1085,6 +1100,8 @@ export default function CitizenHub() {
                           <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                             {replyMedia[d.id]!.type === 'video'
                               ? <video src={replyMedia[d.id]!.url} controls className="max-h-36 w-full" />
+                              : replyMedia[d.id]!.type === 'audio'
+                              ? <audio src={replyMedia[d.id]!.url} controls className="w-full p-2" />
                               : <img src={replyMedia[d.id]!.url} alt="" className="max-h-36 w-full object-contain bg-gray-50 dark:bg-gray-800" />}
                             <button onClick={() => setReplyMedia(prev => ({ ...prev, [d.id]: null }))}
                               className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80">
@@ -1116,7 +1133,7 @@ export default function CitizenHub() {
             </div>
           )}
           {/* Hidden file input for reply media — shared across all reply inputs */}
-          <input ref={replyMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleReplyMediaChange} />
+          <input ref={replyMediaRef} type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleReplyMediaChange} />
         </div>
       )}
 
