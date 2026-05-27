@@ -317,7 +317,7 @@ router.get('/events', authMiddleware, async (req, res) => {
   let sql = `SELECT e.*,
     (SELECT COUNT(*) FROM event_registrations WHERE event_id=e.id) as registered_count,
     EXISTS(SELECT 1 FROM event_registrations WHERE event_id=e.id AND user_id=?) as i_joined
-    FROM volunteer_events e WHERE e.status='active'`;
+    FROM volunteer_events e WHERE e.status='active' AND (e.expires_at IS NULL OR e.expires_at > NOW())`;
   const params = [req.user.id];
   if (district) {sql += ' AND e.district=?';params.push(district);}
   sql += ' ORDER BY e.event_date ASC';
@@ -329,7 +329,7 @@ router.post('/events', authMiddleware, async (req, res) => {
   const db = await getDb();
   const ALLOWED = ['national_admin', 'district_officer', 'ngo_officer', 'community_committee', 'health_officer'];
   if (!ALLOWED.includes(req.user.role)) return res.status(403).json({ success: false, error: 'Only admins and NGOs can create events' });
-  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null, paid_plan = false } = req.body;
+  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null, paid_plan = false, expires_at = null } = req.body;
   if (!title || !event_date) return res.status(400).json({ success: false, error: 'Title and date required' });
   if (event_mode === 'online' && !event_link?.trim()) {
     return res.status(400).json({ success: false, error: 'A meeting link is required for online events' });
@@ -337,7 +337,7 @@ router.post('/events', authMiddleware, async (req, res) => {
   const maxCap = event_mode !== 'online' ? 1000 : (paid_plan ? 1000 : 100);
   const safeMax = Math.min(+max_volunteers || 50, maxCap);
   const safeLink = event_mode === 'online' ? (event_link?.trim() || null) : null;
-  const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by, event_mode, event_link) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, safeMax, req.user.id, event_mode, safeLink);
+  const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by, event_mode, event_link, expires_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, safeMax, req.user.id, event_mode, safeLink, expires_at);
   const eid = r.lastInsertRowid;
 
   // Notify all community-relevant roles about the new event
@@ -403,6 +403,7 @@ getDb().exec(`ALTER TABLE citizen_replies ADD COLUMN media_type TEXT`).catch(() 
 // Ensure event mode + link columns exist on volunteer_events (fire-and-forget)
 getDb().exec(`ALTER TABLE volunteer_events ADD COLUMN event_mode TEXT DEFAULT 'physical'`).catch(() => {});
 getDb().exec(`ALTER TABLE volunteer_events ADD COLUMN event_link TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE volunteer_events ADD COLUMN expires_at TIMESTAMPTZ`).catch(() => {});
 
 // Ensure status column exists (fire-and-forget migrations)
 getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN status TEXT DEFAULT 'new'`).catch(() => {});

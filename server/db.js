@@ -686,6 +686,7 @@ async function initSchema(db) {
       max_volunteers INTEGER DEFAULT 50,
       created_by BIGINT REFERENCES users(id),
       status TEXT DEFAULT 'active',
+      expires_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);

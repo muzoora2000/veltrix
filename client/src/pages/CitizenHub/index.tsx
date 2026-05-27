@@ -284,7 +284,7 @@ export default function CitizenHub() {
   const [events,    setEvents]    = useState<any[]>([]);
   const [evLoad,    setEvLoad]    = useState(false);
   const [showNewEv, setShowNewEv] = useState(false);
-  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50', event_mode:'physical', event_link:'', paid_plan: false });
+  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50', event_mode:'physical', event_link:'', expires_at:'', paid_plan: false });
   const [evSaving,  setEvSaving]  = useState(false);
   const [evMsg,     setEvMsg]     = useState('');
   const [joiningEv, setJoiningEv] = useState<Record<number,boolean>>({});
@@ -1567,6 +1567,7 @@ export default function CitizenHub() {
                     </select></div>
                   <div><label className="label">Date *</label><input type="date" className="input" required value={evForm.event_date} onChange={e => setEvForm(f => ({ ...f, event_date: e.target.value }))} /></div>
                   <div><label className="label">Time</label><input type="time" className="input" value={evForm.event_time} onChange={e => setEvForm(f => ({ ...f, event_time: e.target.value }))} /></div>
+                  <div><label className="label">Expiry Time *</label><input type="datetime-local" className="input" required value={evForm.expires_at} onChange={e => setEvForm(f => ({ ...f, expires_at: e.target.value }))} /></div>
                   <div><label className="label">Location / Venue</label><input className="input" placeholder="Meeting point..." value={evForm.location} onChange={e => setEvForm(f => ({ ...f, location: e.target.value }))} /></div>
                   {(() => {
                     const url = evForm.event_link.toLowerCase();
@@ -1670,6 +1671,7 @@ export default function CitizenHub() {
                     {ev.description && <p className="text-sm text-gray-500 mb-2 line-clamp-2">{ev.description}</p>}
                     <div className="space-y-1 text-xs text-gray-400 mb-3">
                       {ev.event_date && <div className="flex items-center gap-1.5"><Calendar size={10} /> {new Date(ev.event_date).toLocaleDateString()} {ev.event_time && `at ${ev.event_time}`}</div>}
+                      {ev.expires_at && <div className="flex items-center gap-1.5 text-red-500 font-semibold"><Clock size={10} /> Expires: {new Date(ev.expires_at).toLocaleString([], { dateStyle:'medium', timeStyle:'short' })}</div>}
                       {ev.event_mode === 'online'
                         ? <div className="flex items-center gap-1.5 text-blue-500 font-semibold"><Globe size={10} /> Online Event</div>
                         : ev.location && <div className="flex items-center gap-1.5"><MapPin size={10} /> {ev.location}</div>}
