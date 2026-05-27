@@ -215,7 +215,12 @@ router.post('/events', authMiddleware, async (req, res) => {
   if (event_mode === 'online' && !event_link?.trim()) {
     return res.status(400).json({ success: false, error: 'A meeting link is required for online events' });
   }
-  const maxCap = event_mode === 'online' ? 100 : 1000;
+  const linkLower = (event_link || '').toLowerCase();
+  const onlineCap =
+    /meet\.google\.com/.test(linkLower) ? 100 :
+    /zoom\.us/.test(linkLower)           ? 100 :
+    /teams\.microsoft\.com|teams\.live\.com/.test(linkLower) ? 100 : 100;
+  const maxCap = event_mode === 'online' ? onlineCap : 1000;
   const safeMax = Math.min(+max_volunteers || 50, maxCap);
   const safeLink = event_mode === 'online' ? (event_link?.trim() || null) : null;
   const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by, event_mode, event_link) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, safeMax, req.user.id, event_mode, safeLink);

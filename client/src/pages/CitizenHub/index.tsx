@@ -1273,20 +1273,31 @@ export default function CitizenHub() {
                   <div><label className="label">Date *</label><input type="date" className="input" required value={evForm.event_date} onChange={e => setEvForm(f => ({ ...f, event_date: e.target.value }))} /></div>
                   <div><label className="label">Time</label><input type="time" className="input" value={evForm.event_time} onChange={e => setEvForm(f => ({ ...f, event_time: e.target.value }))} /></div>
                   <div><label className="label">Location / Venue</label><input className="input" placeholder="Meeting point..." value={evForm.location} onChange={e => setEvForm(f => ({ ...f, location: e.target.value }))} /></div>
-                  <div>
-                    <label className="label">
-                      Max Volunteers
-                      {evForm.event_mode === 'online' && <span className="ml-1 text-blue-500 font-normal">(Google Meet limit: 100)</span>}
-                    </label>
-                    <input type="number" className="input" min="1"
-                      max={evForm.event_mode === 'online' ? 100 : 1000}
-                      value={evForm.max_volunteers}
-                      onChange={e => {
-                        const cap = evForm.event_mode === 'online' ? 100 : 500;
-                        const val = Math.min(+e.target.value, cap);
-                        setEvForm(f => ({ ...f, max_volunteers: String(val) }));
-                      }} />
-                  </div>
+                  {(() => {
+                    const url = evForm.event_link.toLowerCase();
+                    const platform =
+                      /meet\.google\.com/.test(url) ? { name: 'Google Meet', cap: 100 } :
+                      /zoom\.us/.test(url)           ? { name: 'Zoom',        cap: 100 } :
+                      /teams\.microsoft\.com|teams\.live\.com/.test(url) ? { name: 'Microsoft Teams', cap: 100 } :
+                      evForm.event_mode === 'online'  ? { name: 'online meeting', cap: 100 } :
+                      null;
+                    const cap = platform ? platform.cap : 1000;
+                    return (
+                      <div>
+                        <label className="label">
+                          Max Volunteers
+                          {platform && (
+                            <span className="ml-1 text-blue-500 font-normal">
+                              ({platform.name} free limit: {platform.cap})
+                            </span>
+                          )}
+                        </label>
+                        <input type="number" className="input" min="1" max={cap}
+                          value={evForm.max_volunteers}
+                          onChange={e => setEvForm(f => ({ ...f, max_volunteers: String(Math.min(+e.target.value, cap)) }))} />
+                      </div>
+                    );
+                  })()}
                 </div>
                 {/* Event mode toggle */}
                 <div>
