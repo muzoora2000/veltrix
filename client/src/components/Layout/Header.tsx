@@ -252,7 +252,16 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
                   notifications.map(n => (
                     <button
                       key={n.id}
-                      onClick={() => { const route = NOTIF_ROUTE[n.reference_type ?? '']; if (route) { setNotifOpen(false); navigate(route); } }}
+                      onClick={() => {
+                        const route = NOTIF_ROUTE[n.reference_type ?? ''];
+                        if (route) {
+                          setNotifOpen(false);
+                          const qs = n.reference_id
+                            ? `?ref_type=${encodeURIComponent(n.reference_type ?? '')}&ref_id=${n.reference_id}`
+                            : '';
+                          navigate(`${route}${qs}`);
+                        }
+                      }}
                       className={`w-full text-left px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
                         n.read_at ? '' : 'bg-blue-50/60 dark:bg-blue-950/30'
                       }`}

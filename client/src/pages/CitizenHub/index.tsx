@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Shield, Droplets, AlertTriangle, BookOpen, Users, Trophy,
   MessageSquare, Heart, Plus, ThumbsUp, RefreshCw, Send,
@@ -229,7 +230,9 @@ export default function CitizenHub() {
     fromGallery: 'From Gallery',
     takePhoto: 'Take Photo',
   });
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState('dashboard');
+  const [targetDiscId, setTargetDiscId] = useState<number|null>(null);
 
   /* dashboard */
   const [dashData, setDashData]   = useState<any>(null);
@@ -324,6 +327,22 @@ export default function CitizenHub() {
           }
           return prev;
         });
+        // Deep-link from notification: expand + scroll to target discussion
+        setTargetDiscId(target => {
+          if (target !== null && rows.some((d: any) => +d.id === target)) {
+            setExpandedDisc(target);
+            getDiscussionReplies(target)
+              .then(rr => setReplies(p => ({ ...p, [target]: rr.data.data || [] })))
+              .catch(() => {});
+            markDiscussionRead(target).catch(() => {});
+            setTimeout(() => {
+              const el = document.getElementById(`disc-${target}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+            return null; // clear after handling
+          }
+          return target;
+        });
       })
       .finally(() => { if (!silent) setDiscLoad(false); });
   };
@@ -344,6 +363,20 @@ export default function CitizenHub() {
     return () => clearInterval(poll);
   }, [tab, discCat]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'volunteer')   loadEvents(); }, [tab]);
+
+  // Handle notification deep-link: ?ref_type=discussion&ref_id=123
+  useEffect(() => {
+    const refType = searchParams.get('ref_type');
+    const refId   = searchParams.get('ref_id');
+    if (!refType || !refId) return;
+    setSearchParams({}, { replace: true }); // clean URL immediately
+    if (refType === 'discussion' || refType === 'citizen_observation' || refType === 'gwn_report') {
+      setTab('discussions');
+      setTargetDiscId(+refId);
+    } else if (refType === 'volunteer_event') {
+      setTab('volunteer');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'achievements') loadAchieve(); }, [tab]);
 
   /* ── Handlers ── */
@@ -1138,6 +1171,7 @@ export default function CitizenHub() {
                 return (
                   <div
                     key={d.id}
+                    id={`disc-${d.id}`}
                     className="card hover:shadow-md transition-shadow select-none"
                     onMouseDown={() => handleLongPressStart(d.id)}
                     onMouseUp={handleLongPressEnd}
