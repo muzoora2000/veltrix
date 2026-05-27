@@ -6,16 +6,17 @@ async function ensureNotifyColumns() {
   try { await db.exec(`ALTER TABLE notification_log ADD COLUMN district TEXT`); } catch {}
 }
 
-// Which recipient_types each role can see
+// Which recipient_types each role can see in their notification feed
 const ROLE_RECEIVES = {
-  national_admin:      ['national_admin', 'district_officer', 'technician', 'health_officer', 'climate_scientist', 'ngo_officer', 'all'],
-  district_officer:    ['district_officer', 'all'],
+  national_admin:      ['national_admin', 'district_officer', 'technician', 'health_officer', 'climate_scientist', 'ngo_officer', 'citizen', 'community_committee', 'all'],
+  district_officer:    ['district_officer', 'citizen', 'community_committee', 'all'],
   technician:          ['technician', 'all'],
   health_officer:      ['health_officer', 'all'],
   climate_scientist:   ['climate_scientist', 'all'],
-  ngo_officer:         ['ngo_officer', 'all'],
-  community_committee: ['community_committee', 'all'],
-  citizen:             ['citizen', 'all'],
+  ngo_officer:         ['ngo_officer', 'citizen', 'community_committee', 'all'],
+  // Community roles: only see forum, events, and GWN — NOT stakeholder alerts/maintenance/health
+  community_committee: ['community_committee', 'citizen', 'all'],
+  citizen:             ['citizen', 'community_committee', 'all'],
 };
 
 // Incident type → roles to notify

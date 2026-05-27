@@ -5,6 +5,7 @@
 const express = require('express');
 const { getDb } = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { notifyRoles } = require('../utils/notify');
 
 const router = express.Router();
 
@@ -34,13 +35,27 @@ router.post('/reports', async (req, res) => {
     is_anonymous ? 1 : 0, channel,
     photo_base64 || null, ai_score || null, ai_risk || null, ai_action || null
   );
+  const reportId = result.lastInsertRowid;
+
   if (severity === 'critical') {
-    await db.prepare(`UPDATE gwn_reports SET escalated=1, escalation_level='national' WHERE id=?`).run(result.lastInsertRowid);
+    await db.prepare(`UPDATE gwn_reports SET escalated=1, escalation_level='national' WHERE id=?`).run(reportId);
     await db.prepare(`INSERT INTO alerts (alert_type, severity, district, title, message, source)
       VALUES ('contamination','critical',?,'GWN Critical Report: ' || ?,'Citizen report: ' || ? || ' in ' || ?,'gwn')`
     ).run(district, report_type, report_type, district);
   }
-  res.status(201).json({ success: true, id: result.lastInsertRowid });
+
+  // Notify community people about the new GWN report
+  const typeLabel = (report_type || 'report').replace(/_/g, ' ');
+  const sevLabel  = severity === 'critical' ? '🚨 CRITICAL' : severity === 'high' ? '⚠️ High' : '📢';
+  notifyRoles(
+    ['citizen', 'community_committee'],
+    null,  // null district → all users see it regardless of their district
+    `${sevLabel} GWN Report: ${typeLabel} in ${district}`,
+    `A new ${severity} ${typeLabel} has been reported in ${district}. Visit the Community Forum to view details and cast your community vote.`,
+    'gwn_report', reportId
+  );
+
+  res.status(201).json({ success: true, id: reportId });
 });
 
 /* ── Public: List reports ── */
