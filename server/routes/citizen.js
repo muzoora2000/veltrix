@@ -210,17 +210,12 @@ router.post('/events', authMiddleware, async (req, res) => {
   const db = await getDb();
   const ALLOWED = ['national_admin', 'district_officer', 'ngo_officer', 'community_committee'];
   if (!ALLOWED.includes(req.user.role)) return res.status(403).json({ success: false, error: 'Only admins and NGOs can create events' });
-  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null } = req.body;
+  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null, paid_plan = false } = req.body;
   if (!title || !event_date) return res.status(400).json({ success: false, error: 'Title and date required' });
   if (event_mode === 'online' && !event_link?.trim()) {
     return res.status(400).json({ success: false, error: 'A meeting link is required for online events' });
   }
-  const linkLower = (event_link || '').toLowerCase();
-  const onlineCap =
-    /meet\.google\.com/.test(linkLower) ? 100 :
-    /zoom\.us/.test(linkLower)           ? 100 :
-    /teams\.microsoft\.com|teams\.live\.com/.test(linkLower) ? 100 : 100;
-  const maxCap = event_mode === 'online' ? onlineCap : 1000;
+  const maxCap = event_mode !== 'online' ? 1000 : (paid_plan ? 1000 : 100);
   const safeMax = Math.min(+max_volunteers || 50, maxCap);
   const safeLink = event_mode === 'online' ? (event_link?.trim() || null) : null;
   const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by, event_mode, event_link) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, safeMax, req.user.id, event_mode, safeLink);

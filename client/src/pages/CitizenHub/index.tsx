@@ -266,7 +266,7 @@ export default function CitizenHub() {
   const [events,    setEvents]    = useState<any[]>([]);
   const [evLoad,    setEvLoad]    = useState(false);
   const [showNewEv, setShowNewEv] = useState(false);
-  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50', event_mode:'physical', event_link:'' });
+  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50', event_mode:'physical', event_link:'', paid_plan: false });
   const [evSaving,  setEvSaving]  = useState(false);
   const [evMsg,     setEvMsg]     = useState('');
   const [joiningEv, setJoiningEv] = useState<Record<number,boolean>>({});
@@ -504,6 +504,7 @@ export default function CitizenHub() {
         ...evForm,
         max_volunteers: +evForm.max_volunteers,
         event_link: evForm.event_mode === 'online' ? evForm.event_link : null,
+        paid_plan: evForm.paid_plan,
       }));
       setShowNewEv(false);
       loadEvents();
@@ -1276,25 +1277,38 @@ export default function CitizenHub() {
                   {(() => {
                     const url = evForm.event_link.toLowerCase();
                     const platform =
-                      /meet\.google\.com/.test(url) ? { name: 'Google Meet', cap: 100 } :
-                      /zoom\.us/.test(url)           ? { name: 'Zoom',        cap: 100 } :
-                      /teams\.microsoft\.com|teams\.live\.com/.test(url) ? { name: 'Microsoft Teams', cap: 100 } :
-                      evForm.event_mode === 'online'  ? { name: 'online meeting', cap: 100 } :
-                      null;
-                    const cap = platform ? platform.cap : 1000;
+                      /meet\.google\.com/.test(url) ? 'Google Meet' :
+                      /zoom\.us/.test(url)           ? 'Zoom' :
+                      /teams\.microsoft\.com|teams\.live\.com/.test(url) ? 'Microsoft Teams' :
+                      evForm.event_mode === 'online'  ? 'online meeting' : null;
+                    const cap = evForm.event_mode !== 'online' ? 1000
+                      : evForm.paid_plan ? 1000 : 100;
                     return (
-                      <div>
+                      <div className="space-y-2">
                         <label className="label">
-                          Max Volunteers
-                          {platform && (
-                            <span className="ml-1 text-blue-500 font-normal">
-                              ({platform.name} free limit: {platform.cap})
-                            </span>
+                          Max Participants
+                          {platform && !evForm.paid_plan && (
+                            <span className="ml-1 text-blue-500 font-normal">({platform} free limit: 100)</span>
+                          )}
+                          {platform && evForm.paid_plan && (
+                            <span className="ml-1 text-emerald-600 font-normal">(paid plan — no platform cap)</span>
                           )}
                         </label>
                         <input type="number" className="input" min="1" max={cap}
                           value={evForm.max_volunteers}
                           onChange={e => setEvForm(f => ({ ...f, max_volunteers: String(Math.min(+e.target.value, cap)) }))} />
+                        {evForm.event_mode === 'online' && platform && (
+                          <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 dark:text-gray-400 select-none">
+                            <input type="checkbox" className="w-4 h-4 rounded accent-emerald-600"
+                              checked={evForm.paid_plan}
+                              onChange={e => setEvForm(f => ({
+                                ...f,
+                                paid_plan: e.target.checked,
+                                max_volunteers: e.target.checked ? f.max_volunteers : String(Math.min(+f.max_volunteers, 100)),
+                              }))} />
+                            Using a <strong className="text-gray-800 dark:text-gray-200 mx-1">{platform} paid plan</strong> (higher participant limit)
+                          </label>
+                        )}
                       </div>
                     );
                   })()}
