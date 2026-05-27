@@ -626,11 +626,23 @@ export default function CitizenHub() {
 
   const handleJoinLeave = async (ev: any) => {
     setJoiningEv(j => ({ ...j, [ev.id]: true }));
+    // Optimistic: update count immediately so spots bar responds at once
+    setEvents(prev => prev.map(e => e.id === ev.id
+      ? { ...e, i_joined: !e.i_joined, registered_count: e.i_joined ? Math.max(0, +e.registered_count - 1) : +e.registered_count + 1 }
+      : e
+    ));
     try {
       if (ev.i_joined) { await leaveEvent(ev.id); } else { await joinEvent(ev.id); }
+      // Sync real count from server after success
       loadEvents();
-    } catch (err: any) { setEvMsg(err?.response?.data?.error || 'Action failed.'); }
-    finally { setJoiningEv(j => ({ ...j, [ev.id]: false })); }
+    } catch (err: any) {
+      // Roll back optimistic update
+      setEvents(prev => prev.map(e => e.id === ev.id
+        ? { ...e, i_joined: ev.i_joined, registered_count: +ev.registered_count }
+        : e
+      ));
+      setEvMsg(err?.response?.data?.error || 'Action failed.');
+    } finally { setJoiningEv(j => ({ ...j, [ev.id]: false })); }
   };
 
   const createEvent = async (e: React.FormEvent) => {
@@ -1640,8 +1652,10 @@ export default function CitizenHub() {
             <div className="grid sm:grid-cols-2 gap-4">
               {events.map((ev: any) => {
                 const et = EVENT_TYPES[ev.event_type] || { label: ev.event_type, color: '#6b7280', icon: '📅' };
-                const pct = Math.min(100, Math.round((ev.registered_count / ev.max_volunteers) * 100));
-                const full = ev.registered_count >= ev.max_volunteers;
+                const registered = +ev.registered_count;
+                const maxVol = +ev.max_volunteers;
+                const pct = Math.min(100, Math.round((registered / maxVol) * 100));
+                const full = registered >= maxVol;
                 return (
                   <div key={ev.id} className="card flex flex-col border-t-4" style={{ borderTopColor: et.color }}>
                     <div className="flex items-start justify-between mb-2">
@@ -1683,8 +1697,8 @@ export default function CitizenHub() {
                     })()}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-500">{ev.registered_count} / {ev.max_volunteers} volunteers</span>
-                        <span className={full ? 'text-red-600 font-bold' : 'text-emerald-600'}>{full ? 'FULL' : `${ev.max_volunteers - ev.registered_count} spots left`}</span>
+                        <span className="text-gray-500">{registered} / {maxVol} volunteers</span>
+                        <span className={full ? 'text-red-600 font-bold' : 'text-emerald-600'}>{full ? 'FULL' : `${maxVol - registered} spots left`}</span>
                       </div>
                       <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: full ? '#dc2626' : et.color }} />

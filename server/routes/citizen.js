@@ -368,7 +368,7 @@ router.post('/events/:id/join', authMiddleware, async (req, res) => {
   if (!ev) return res.status(404).json({ success: false, error: 'Event not found' });
   const count = (await db.prepare(`SELECT COUNT(*) as c FROM event_registrations WHERE event_id=?`).get(eid)).c;
   if (count >= ev.max_volunteers) return res.status(400).json({ success: false, error: 'Event is full' });
-  await db.prepare(`INSERT INTO event_registrations (event_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING`).run(eid, req.user.id);
+  await db.prepare(`INSERT INTO event_registrations (event_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING RETURNING event_id`).run(eid, req.user.id);
 
   // Personal confirmation notification for the person who joined
   const dateLabel = ev.event_date + (ev.event_time ? ` at ${ev.event_time}` : '');
