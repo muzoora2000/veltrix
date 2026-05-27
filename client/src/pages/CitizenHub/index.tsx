@@ -370,7 +370,7 @@ export default function CitizenHub() {
   const readMediaFile = (file: File): Promise<{url:string;type:'video'|'audio'}> =>
     new Promise((resolve, reject) => {
       const isAudio = file.type.startsWith('audio/');
-      const limit = isAudio ? 20 : 10;
+      const limit = isAudio ? 10 : 20;
       if (file.size > limit * 1024 * 1024) {
         reject(new Error(`${isAudio ? 'Audio' : 'Video'} must be under ${limit} MB`));
         return;
