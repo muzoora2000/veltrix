@@ -84,7 +84,7 @@ router.get('/discussions', authMiddleware, async (req, res) => {
 router.post('/discussions', authMiddleware, async (req, res) => {
   const db = await getDb();
   const { title, content, category = 'general', media_url = null, media_type = null } = req.body;
-  if (!title?.trim() || !content?.trim()) return res.status(400).json({ success: false, error: 'Title and content required' });
+  if (!title?.trim() || (!content?.trim() && !media_url)) return res.status(400).json({ success: false, error: 'Title and content (or a media attachment) required' });
   const VALID_CATS = ['general', 'water_quality', 'pollution', 'climate', 'health', 'events', 'governance'];
   if (!VALID_CATS.includes(category)) return res.status(400).json({ success: false, error: 'Invalid category' });
   const r = await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category, media_url, media_type) VALUES (?,?,?,?,?,?,?)`).run(req.user.id, req.user.name, title.trim(), content.trim(), category, media_url || null, media_type || null);
@@ -157,7 +157,7 @@ router.delete('/discussions/:id/replies/:replyId', authMiddleware, async (req, r
 router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
   const db = await getDb();
   const { content, media_url = null, media_type = null } = req.body;
-  if (!content?.trim()) return res.status(400).json({ success: false, error: 'Reply content required' });
+  if (!content?.trim() && !media_url) return res.status(400).json({ success: false, error: 'Reply content or media required' });
   const did = +req.params.id;
   await db.prepare(`INSERT INTO citizen_replies (discussion_id, user_id, author_name, content, media_url, media_type) VALUES (?,?,?,?,?,?)`).run(did, req.user.id, req.user.name, content.trim(), media_url || null, media_type || null);
   await db.prepare(`UPDATE citizen_discussions SET reply_count=reply_count+1 WHERE id=?`).run(did);

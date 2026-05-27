@@ -251,6 +251,13 @@ export default function CitizenHub() {
   const discMediaRef  = useRef<HTMLInputElement>(null);
   const replyMediaRef = useRef<HTMLInputElement>(null);
   const replyMediaDiscId = useRef<number>(0);
+  // Voice recording
+  const [discRecording,   setDiscRecording]   = useState(false);
+  const [replyRecording,  setReplyRecording]  = useState<number|null>(null);
+  const [recordingSecs,   setRecordingSecs]   = useState(0);
+  const mediaRecorderRef  = useRef<MediaRecorder|null>(null);
+  const audioChunksRef    = useRef<Blob[]>([]);
+  const recordingTimer    = useRef<ReturnType<typeof setInterval>|null>(null);
 
   /* volunteer */
   const [events,    setEvents]    = useState<any[]>([]);
@@ -350,6 +357,47 @@ export default function CitizenHub() {
     if (file.type.startsWith('image/')) return compressImage(file);
     return readMediaFile(file);
   };
+
+  const fmtTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+  const startRecording = async (forDiscId?: number) => {
+    setMediaError('');
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setMediaError('Microphone access denied. Please allow microphone access and try again.');
+      return;
+    }
+    const mr = new MediaRecorder(stream);
+    audioChunksRef.current = [];
+    mr.ondataavailable = e => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+    mr.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (recordingTimer.current) clearInterval(recordingTimer.current);
+      setRecordingSecs(0);
+      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const url = ev.target!.result as string;
+        const media = { url, type: 'audio' as const };
+        if (forDiscId != null) setReplyMedia(prev => ({ ...prev, [forDiscId]: media }));
+        else setNewDiscMedia(media);
+      };
+      reader.readAsDataURL(blob);
+      setDiscRecording(false);
+      setReplyRecording(null);
+    };
+    mr.start();
+    mediaRecorderRef.current = mr;
+    setRecordingSecs(0);
+    recordingTimer.current = setInterval(() => setRecordingSecs(s => s + 1), 1000);
+    if (forDiscId != null) setReplyRecording(forDiscId);
+    else setDiscRecording(true);
+  };
+
+  const stopRecording = () => mediaRecorderRef.current?.stop();
 
   const handleDiscMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -965,8 +1013,22 @@ export default function CitizenHub() {
                 </div>
                 <input className="input" required placeholder="Discussion title..."
                   value={newDiscTitle} onChange={e => setNewDiscTitle(e.target.value)} />
-                <textarea className="input" rows={4} required placeholder="Share your thoughts, questions, or observations..."
+                <textarea className="input" rows={4} placeholder="Share your thoughts, questions, or observations (optional if you attach media)..."
                   value={newDiscBody} onChange={e => setNewDiscBody(e.target.value)} />
+                {/* Voice recording */}
+                {!newDiscMedia && (
+                  discRecording ? (
+                    <button type="button" onClick={stopRecording}
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold animate-pulse">
+                      <MicOff size={13} /> Stop · {fmtTime(recordingSecs)}
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => startRecording()}
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-500 hover:text-red-600 text-xs font-semibold transition-colors">
+                      <Mic size={13} /> Record voice note
+                    </button>
+                  )
+                )}
                 {/* Media attachment */}
                 {newDiscMedia ? (
                   <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -1109,17 +1171,32 @@ export default function CitizenHub() {
                             </button>
                           </div>
                         )}
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex gap-2 mt-2 items-center">
+                          {/* Attach file */}
                           <button onClick={() => { replyMediaDiscId.current = d.id; replyMediaRef.current?.click(); }}
+                            title="Attach photo / video / audio"
                             className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-emerald-600 hover:border-emerald-400 transition-colors flex-shrink-0">
                             <Paperclip size={14} />
                           </button>
+                          {/* Voice record */}
+                          {replyRecording === d.id ? (
+                            <button onClick={stopRecording}
+                              className="flex items-center gap-1 px-2 py-2 rounded-xl bg-red-500 text-white text-xs font-bold animate-pulse flex-shrink-0">
+                              <MicOff size={13} /> {fmtTime(recordingSecs)}
+                            </button>
+                          ) : (
+                            <button onClick={() => startRecording(d.id)} disabled={replyRecording !== null}
+                              title="Record voice note"
+                              className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-red-500 hover:border-red-400 transition-colors flex-shrink-0 disabled:opacity-40">
+                              <Mic size={14} />
+                            </button>
+                          )}
                           <input className="input flex-1 text-sm py-2"
-                            placeholder="Write a reply..."
+                            placeholder="Write a reply or record a voice note…"
                             value={replyText}
                             onChange={e => setReplyText(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(d.id); } }} />
-                          <button onClick={() => submitReply(d.id)} disabled={replySaving || !replyText.trim()}
+                          <button onClick={() => submitReply(d.id)} disabled={replySaving || (!replyText.trim() && !replyMedia[d.id])}
                             className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 transition-colors">
                             {replySaving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                           </button>
