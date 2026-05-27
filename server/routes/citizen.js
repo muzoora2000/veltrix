@@ -199,7 +199,7 @@ router.post('/discussions/batch-view', authMiddleware, async (req, res) => {
   for (const id of validIds) {
     await db.prepare(
       `INSERT INTO discussion_views (discussion_id, user_id) VALUES (?,?)
-       ON CONFLICT (discussion_id, user_id) DO NOTHING`
+       ON CONFLICT (discussion_id, user_id) DO NOTHING RETURNING discussion_id`
     ).run(id, req.user.id);
   }
   res.json({ success: true });
@@ -222,7 +222,8 @@ router.post('/discussions/:id/read', authMiddleware, async (req, res) => {
     `INSERT INTO discussion_views (discussion_id, user_id, seen_at, read_at)
      VALUES (?,?,NOW(),NOW())
      ON CONFLICT (discussion_id, user_id) DO UPDATE
-       SET read_at = COALESCE(discussion_views.read_at, NOW())`
+       SET read_at = COALESCE(discussion_views.read_at, NOW())
+     RETURNING discussion_id`
   ).run(did, req.user.id);
 
   // Notify discussion author the first time this user reads it

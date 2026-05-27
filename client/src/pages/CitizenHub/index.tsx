@@ -309,14 +309,13 @@ export default function CitizenHub() {
     setDashLoad(true);
     getCitizenDashboard().then(r => setDashData(r.data.data)).finally(() => setDashLoad(false));
   };
-  const loadDisc = () => {
-    setDiscLoad(true);
+  const loadDisc = (silent = false) => {
+    if (!silent) setDiscLoad(true);
     getDiscussions({ category: discCat === 'all' ? undefined : discCat, limit: 30 })
       .then(r => {
         const rows = r.data.data || [];
         setDiscussions(rows);
         if (rows.length > 0) batchMarkDiscussionsViewed(rows.map((d: any) => d.id)).catch(() => {});
-        // Re-fetch replies for any currently-expanded discussion
         setExpandedDisc(prev => {
           if (prev !== null) {
             getDiscussionReplies(prev)
@@ -326,7 +325,7 @@ export default function CitizenHub() {
           return prev;
         });
       })
-      .finally(() => setDiscLoad(false));
+      .finally(() => { if (!silent) setDiscLoad(false); });
   };
   const loadEvents = () => {
     setEvLoad(true);
@@ -341,7 +340,7 @@ export default function CitizenHub() {
   useEffect(() => {
     if (tab !== 'discussions') return;
     loadDisc();
-    const poll = setInterval(loadDisc, 15000);
+    const poll = setInterval(() => loadDisc(true), 15000);
     return () => clearInterval(poll);
   }, [tab, discCat]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'volunteer')   loadEvents(); }, [tab]);
@@ -1157,15 +1156,19 @@ export default function CitizenHub() {
                               {d.author_name?.charAt(0).toUpperCase()}
                             </div>}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => toggleReplies(d.id)}
+                      >
                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
                           <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">{d.title}</span>
                           {d.pinned === 1 && <span className="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full border border-yellow-200">📌 PINNED</span>}
                           {cat && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: cat.color }}>{cat.label}</span>}
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{d.content}</p>
+                        <p className={`text-sm text-gray-600 dark:text-gray-400 ${expandedDisc === d.id ? '' : 'line-clamp-2'}`}>{d.content}</p>
                         {d.link_url && (
                           <a href={d.link_url} target="_blank" rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
                             className="inline-flex items-center gap-1.5 mt-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline truncate max-w-full">
                             <ExternalLink size={11} /> {d.link_url}
                           </a>
