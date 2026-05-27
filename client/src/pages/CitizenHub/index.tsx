@@ -15,6 +15,7 @@ import {
   getDiscussionReplies, postDiscussionReply,
   deleteDiscussion as deleteDiscussionApi, deleteDiscussionReply as deleteDiscussionReplyApi,
   batchMarkDiscussionsViewed, markDiscussionRead, getDiscussionViewers,
+  searchMentions,
   getVolunteerEvents, joinEvent, leaveEvent,
   getCitizenAchievements, submitObservation, voiceTranslate,
 } from '../../api/client';
@@ -271,6 +272,13 @@ export default function CitizenHub() {
   const [seenByUsers,   setSeenByUsers]   = useState<any[]>([]);
   const [seenByLoading, setSeenByLoading] = useState(false);
   const longPressTimer  = useRef<ReturnType<typeof setTimeout>|null>(null);
+
+  // @mention state
+  const [mentionFor,     setMentionFor]     = useState<'disc' | number | null>(null);
+  const [mentionQuery,   setMentionQuery]   = useState('');
+  const [mentionResults, setMentionResults] = useState<any[]>([]);
+  const [mentionStart,   setMentionStart]   = useState(-1);
+  const discBodyRef = useRef<HTMLTextAreaElement>(null);
 
   /* volunteer */
   const [events,    setEvents]    = useState<any[]>([]);
@@ -560,6 +568,49 @@ export default function CitizenHub() {
       setDiscussions(prev => prev.map(d => d.id === discId ? { ...d, reply_count: Math.max(0, d.reply_count - 1) } : d));
     } catch {}
   };
+
+  /* ── @mention helpers ── */
+  const closeMention = () => {
+    setMentionFor(null); setMentionQuery(''); setMentionResults([]); setMentionStart(-1);
+  };
+
+  const detectMention = (text: string, cursor: number, target: 'disc' | number) => {
+    const before = text.slice(0, cursor);
+    const atIdx  = before.lastIndexOf('@');
+    if (atIdx === -1) { if (mentionFor !== null) closeMention(); return; }
+    const fragment = before.slice(atIdx + 1);
+    if (fragment.includes(' ') || fragment.includes('\n')) { if (mentionFor !== null) closeMention(); return; }
+    setMentionStart(atIdx);
+    setMentionFor(target);
+    setMentionQuery(fragment);
+    if (fragment.length >= 1) {
+      searchMentions(fragment).then(r => setMentionResults(r.data.data || [])).catch(() => {});
+    } else {
+      setMentionResults([]);
+    }
+  };
+
+  const insertMention = (tag: string) => {
+    if (mentionFor === 'disc') {
+      const before = newDiscBody.slice(0, mentionStart);
+      const after  = newDiscBody.slice(mentionStart + 1 + mentionQuery.length);
+      setNewDiscBody(before + tag + ' ' + after);
+      setTimeout(() => discBodyRef.current?.focus(), 0);
+    } else if (typeof mentionFor === 'number') {
+      const before = replyText.slice(0, mentionStart);
+      const after  = replyText.slice(mentionStart + 1 + mentionQuery.length);
+      setReplyText(before + tag + ' ' + after);
+    }
+    closeMention();
+  };
+
+  // Close mention on Escape
+  useEffect(() => {
+    if (mentionFor === null) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeMention(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mentionFor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleJoinLeave = async (ev: any) => {
     setJoiningEv(j => ({ ...j, [ev.id]: true }));
@@ -1096,8 +1147,24 @@ export default function CitizenHub() {
                 </div>
                 <input className="input" required placeholder="Discussion title..."
                   value={newDiscTitle} onChange={e => setNewDiscTitle(e.target.value)} />
-                <textarea className="input" rows={4} placeholder="Share your thoughts, questions, or observations (optional if you attach media)..."
-                  value={newDiscBody} onChange={e => setNewDiscBody(e.target.value)} />
+                <div className="relative">
+                  <textarea ref={discBodyRef} className="input" rows={4}
+                    placeholder="Share your thoughts… type @ to mention someone"
+                    value={newDiscBody}
+                    onChange={e => { setNewDiscBody(e.target.value); detectMention(e.target.value, e.target.selectionStart, 'disc'); }} />
+                  {mentionFor === 'disc' && mentionResults.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                      {mentionResults.map((m, i) => (
+                        <button key={i} type="button"
+                          onMouseDown={e => { e.preventDefault(); insertMention(m.tag); }}
+                          className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-2 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
+                          <span className="text-blue-600 dark:text-blue-400 font-semibold">{m.tag}</span>
+                          {m.role !== 'citizen' && <span className="text-gray-400 text-xs">{m.name}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {/* Link field — non-citizen roles only */}
                 {user?.role !== 'citizen' && (
                   <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
@@ -1319,11 +1386,25 @@ export default function CitizenHub() {
                               <Mic size={14} />
                             </button>
                           )}
-                          <input className="input flex-1 text-sm py-2"
-                            placeholder="Write a reply or record a voice note…"
-                            value={replyText}
-                            onChange={e => setReplyText(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(d.id); } }} />
+                          <div className="relative flex-1">
+                            <input className="input w-full text-sm py-2"
+                              placeholder="Write a reply… @ to mention"
+                              value={replyText}
+                              onChange={e => { setReplyText(e.target.value); detectMention(e.target.value, e.target.selectionStart, d.id); }}
+                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(d.id); } }} />
+                            {mentionFor === d.id && mentionResults.length > 0 && (
+                              <div className="absolute left-0 right-0 bottom-full mb-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                                {mentionResults.map((m, i) => (
+                                  <button key={i} type="button"
+                                    onMouseDown={e => { e.preventDefault(); insertMention(m.tag); }}
+                                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-2 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
+                                    <span className="text-blue-600 dark:text-blue-400 font-semibold">{m.tag}</span>
+                                    {m.role !== 'citizen' && <span className="text-gray-400 text-xs">{m.name}</span>}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <button onClick={() => submitReply(d.id)} disabled={replySaving || (!replyText.trim() && !replyMedia[d.id])}
                             className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 transition-colors">
                             {replySaving ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

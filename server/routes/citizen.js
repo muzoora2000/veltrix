@@ -266,6 +266,49 @@ router.get('/discussions/:id/views', authMiddleware, async (req, res) => {
 });
 
 /* ─────────────────────────────────────────────────────────────
+   MENTION SEARCH — find users to @tag in discussions
+───────────────────────────────────────────────────────────── */
+const ROLE_LABELS = {
+  national_admin: 'National Admin', district_officer: 'District Officer',
+  community_committee: 'Community Committee', ngo_officer: 'NGO Officer',
+  technician: 'Technician', health_officer: 'Health Officer',
+  climate_scientist: 'Climate Scientist',
+};
+
+router.get('/users/mention-search', authMiddleware, async (req, res) => {
+  const db = await getDb();
+  const q = String(req.query.q || '').trim().toLowerCase();
+  if (!q) return res.json({ success: true, data: [] });
+
+  // Citizens: search by name. Officials: also match role label.
+  const byName = await db.prepare(
+    `SELECT id, name, role FROM users WHERE id != ? AND LOWER(name) LIKE ? ORDER BY name LIMIT 30`
+  ).all(req.user.id, `%${q}%`);
+
+  const seen = new Set(byName.map(r => r.id));
+  const byRoleLabel = [];
+  for (const [slug, label] of Object.entries(ROLE_LABELS)) {
+    if (label.toLowerCase().includes(q)) {
+      const officials = await db.prepare(
+        `SELECT id, name, role FROM users WHERE id != ? AND role = ? ORDER BY name LIMIT 10`
+      ).all(req.user.id, slug);
+      for (const r of officials) { if (!seen.has(r.id)) { seen.add(r.id); byRoleLabel.push(r); } }
+    }
+  }
+
+  const combined = [...byName, ...byRoleLabel].slice(0, 8);
+  const results = combined.map(row => {
+    if (row.role === 'citizen') {
+      return { id: row.id, name: row.name, role: row.role, tag: `@${row.name}`, display: row.name };
+    }
+    const label = ROLE_LABELS[row.role] || row.role.replace(/_/g, ' ');
+    return { id: row.id, name: row.name, role: row.role, tag: `@${label}`, display: `${label} — ${row.name}` };
+  });
+
+  res.json({ success: true, data: results });
+});
+
+/* ─────────────────────────────────────────────────────────────
    VOLUNTEER EVENTS (auth required)
 ───────────────────────────────────────────────────────────── */
 router.get('/events', authMiddleware, async (req, res) => {

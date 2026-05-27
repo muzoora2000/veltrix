@@ -112,6 +112,7 @@ export const deleteDiscussionReply = (discussionId: number, replyId: number) =>
 export const batchMarkDiscussionsViewed = (ids: number[]) => api.post('/citizen/discussions/batch-view', { ids });
 export const markDiscussionRead = (id: number) => api.post(`/citizen/discussions/${id}/read`);
 export const getDiscussionViewers = (id: number) => api.get(`/citizen/discussions/${id}/views`);
+export const searchMentions = (q: string) => api.get('/citizen/users/mention-search', { params: { q } });
 export const getVolunteerEvents = (params?: object) => api.get('/citizen/events', { params });
 export const createVolunteerEvent = (data: object) => api.post('/citizen/events', data);
 export const joinEvent = (id: number) => api.post(`/citizen/events/${id}/join`);
