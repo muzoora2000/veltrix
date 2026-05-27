@@ -1300,7 +1300,7 @@ export default function CitizenHub() {
                         )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                           <span>👤 {d.author_name}</span>
-                          <span>🕐 {new Date(d.created_at).toLocaleDateString()}</span>
+                          <span>🕐 {new Date(d.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -1356,7 +1356,7 @@ export default function CitizenHub() {
                                 ? <img src={r.user_avatar} className="w-5 h-5 rounded-lg object-cover" alt="" />
                                 : <div className="w-5 h-5 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-[10px] font-bold">{r.author_name?.charAt(0)}</div>}
                               <span className="font-semibold text-xs text-gray-700 dark:text-gray-300">{r.author_name}</span>
-                              <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleDateString()}</span>
+                              <span className="text-[10px] text-gray-400">{new Date(r.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                               {(+r.user_id === +user?.id || FORUM_ADMINS.includes(user?.role ?? '')) && (
                                 <button onClick={() => handleDeleteReply(d.id, r.id)}
                                   className="ml-auto text-gray-300 hover:text-red-500 transition-colors p-0.5 rounded">
