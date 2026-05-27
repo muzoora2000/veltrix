@@ -1341,12 +1341,26 @@ export default function CitizenHub() {
                         : ev.location && <div className="flex items-center gap-1.5"><MapPin size={10} /> {ev.location}</div>}
                       {ev.district && <div className="flex items-center gap-1.5"><Globe size={10} /> {ev.district} District</div>}
                     </div>
-                    {ev.event_link && (
-                      <a href={ev.event_link} target="_blank" rel="noopener noreferrer"
-                        className="w-full mb-3 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white transition-colors">
-                        <ExternalLink size={13} /> Join Meeting
-                      </a>
-                    )}
+                    {ev.event_link && (() => {
+                      const evStart = new Date(
+                        `${String(ev.event_date).split('T')[0]}T${ev.event_time || '00:00'}:00`
+                      );
+                      const isCreator = ev.created_by === user?.id;
+                      const isOpen    = new Date() >= evStart;
+                      const canJoin   = isCreator || isOpen;
+                      const openLabel = evStart.toLocaleString([], { dateStyle:'medium', timeStyle:'short' });
+                      return canJoin ? (
+                        <a href={ev.event_link} target="_blank" rel="noopener noreferrer"
+                          className="w-full mb-3 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+                          <ExternalLink size={13} />
+                          {isCreator && !isOpen ? '🔑 Preview (Host only)' : 'Join Meeting'}
+                        </a>
+                      ) : (
+                        <div className="w-full mb-3 py-2 rounded-xl text-sm flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 cursor-not-allowed select-none">
+                          <Clock size={13} /> Opens {openLabel}
+                        </div>
+                      );
+                    })()}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-gray-500">{ev.registered_count} / {ev.max_volunteers} volunteers</span>
