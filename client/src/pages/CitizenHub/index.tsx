@@ -1279,7 +1279,7 @@ export default function CitizenHub() {
                       {evForm.event_mode === 'online' && <span className="ml-1 text-blue-500 font-normal">(Google Meet limit: 100)</span>}
                     </label>
                     <input type="number" className="input" min="1"
-                      max={evForm.event_mode === 'online' ? 100 : 500}
+                      max={evForm.event_mode === 'online' ? 100 : 1000}
                       value={evForm.max_volunteers}
                       onChange={e => {
                         const cap = evForm.event_mode === 'online' ? 100 : 500;
