@@ -121,10 +121,10 @@ router.post('/discussions/:id/like', authMiddleware, async (req, res) => {
   const existing = await db.prepare(`SELECT 1 FROM discussion_likes WHERE discussion_id=? AND user_id=?`).get(did, req.user.id);
   if (existing) {
     await db.prepare(`DELETE FROM discussion_likes WHERE discussion_id=? AND user_id=?`).run(did, req.user.id);
-    await db.prepare(`UPDATE citizen_discussions SET like_count=MAX(0,like_count-1) WHERE id=?`).run(did);
+    await db.prepare(`UPDATE citizen_discussions SET like_count=GREATEST(0,like_count-1) WHERE id=?`).run(did);
     res.json({ success: true, liked: false });
   } else {
-    await db.prepare(`INSERT INTO discussion_likes (discussion_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING`).run(did, req.user.id);
+    await db.prepare(`INSERT INTO discussion_likes (discussion_id, user_id) VALUES (?,?) ON CONFLICT DO NOTHING RETURNING discussion_id`).run(did, req.user.id);
     await db.prepare(`UPDATE citizen_discussions SET like_count=like_count+1 WHERE id=?`).run(did);
     res.json({ success: true, liked: true });
   }

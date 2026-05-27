@@ -503,9 +503,21 @@ export default function CitizenHub() {
     } finally { setDiscSaving(false); }
   };
 
-  const handleLike = async (id: number) => {
-    await likeDiscussion(id);
-    setDiscussions(prev => prev.map(d => d.id === id ? { ...d, like_count: d.i_liked ? d.like_count - 1 : d.like_count + 1, i_liked: !d.i_liked } : d));
+  const handleLike = (id: number) => {
+    // Optimistic update first so UI responds instantly
+    setDiscussions(prev => prev.map(d =>
+      d.id === id
+        ? { ...d, like_count: d.i_liked ? Math.max(0, d.like_count - 1) : d.like_count + 1, i_liked: !d.i_liked }
+        : d
+    ));
+    likeDiscussion(id).catch(() => {
+      // Roll back on failure
+      setDiscussions(prev => prev.map(d =>
+        d.id === id
+          ? { ...d, like_count: d.i_liked ? Math.max(0, d.like_count - 1) : d.like_count + 1, i_liked: !d.i_liked }
+          : d
+      ));
+    });
   };
 
   const toggleReplies = async (id: number) => {
