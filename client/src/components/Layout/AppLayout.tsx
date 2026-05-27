@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import ChatBot from '../ai/ChatBot';
 import SessionTimeoutWarning from '../common/SessionTimeoutWarning';
+import EventAlarmMonitor from '../common/EventAlarmMonitor';
 
 const pageTitles: Record<string, string> = {
   '/dashboard':           'Dashboard Overview',
@@ -48,6 +49,9 @@ export default function AppLayout() {
 
       {/* Session timeout warning */}
       <SessionTimeoutWarning />
+      
+      {/* Global event alarm monitor */}
+      <EventAlarmMonitor />
     </div>
   );
 }
