@@ -83,11 +83,14 @@ router.get('/discussions', authMiddleware, async (req, res) => {
 
 router.post('/discussions', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const { title, content, category = 'general', media_url = null, media_type = null } = req.body;
+  const { title, content, category = 'general', media_url = null, media_type = null, link_url = null } = req.body;
   if (!title?.trim() || (!content?.trim() && !media_url)) return res.status(400).json({ success: false, error: 'Title and content (or a media attachment) required' });
   const VALID_CATS = ['general', 'water_quality', 'pollution', 'climate', 'health', 'events', 'governance'];
   if (!VALID_CATS.includes(category)) return res.status(400).json({ success: false, error: 'Invalid category' });
-  const r = await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category, media_url, media_type) VALUES (?,?,?,?,?,?,?)`).run(req.user.id, req.user.name, title.trim(), content.trim(), category, media_url || null, media_type || null);
+  // Only non-citizen roles may attach a link
+  const canPostLink = req.user.role !== 'citizen';
+  const safeLink = canPostLink && link_url?.trim() ? link_url.trim() : null;
+  const r = await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category, media_url, media_type, link_url) VALUES (?,?,?,?,?,?,?,?)`).run(req.user.id, req.user.name, title.trim(), content.trim() || '', category, media_url || null, media_type || null, safeLink);
 
   // Notify roles that care about this category
   const CAT_ROLES = {
@@ -207,14 +210,18 @@ router.post('/events', authMiddleware, async (req, res) => {
   const db = await getDb();
   const ALLOWED = ['national_admin', 'district_officer', 'ngo_officer', 'community_committee'];
   if (!ALLOWED.includes(req.user.role)) return res.status(403).json({ success: false, error: 'Only admins and NGOs can create events' });
-  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50 } = req.body;
+  const { title, description, location, district, event_date, event_time, event_type = 'cleanup', max_volunteers = 50, event_mode = 'physical', event_link = null } = req.body;
   if (!title || !event_date) return res.status(400).json({ success: false, error: 'Title and date required' });
-  const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by) VALUES (?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, max_volunteers, req.user.id);
+  if (event_mode === 'online' && !event_link?.trim()) {
+    return res.status(400).json({ success: false, error: 'A meeting link is required for online events' });
+  }
+  const safeLink = event_mode === 'online' ? (event_link?.trim() || null) : null;
+  const r = await db.prepare(`INSERT INTO volunteer_events (title, description, location, district, event_date, event_time, event_type, max_volunteers, created_by, event_mode, event_link) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(title, description, location, district, event_date, event_time, event_type, max_volunteers, req.user.id, event_mode, safeLink);
   const eid = r.lastInsertRowid;
 
   // Notify all community-relevant roles about the new event
   const dateLabel = event_date + (event_time ? ` at ${event_time}` : '');
-  const locationLabel = location ? ` at ${location}` : '';
+  const locationLabel = event_mode === 'online' ? ' (online)' : (location ? ` at ${location}` : '');
   notifyRoles(
     ['citizen', 'community_committee', 'ngo_officer', 'district_officer', 'national_admin'],
     district || null,
@@ -222,6 +229,13 @@ router.post('/events', authMiddleware, async (req, res) => {
     `${req.user.name} has scheduled a ${event_type.replace(/_/g, ' ')} event on ${dateLabel}${locationLabel}${district ? ` in ${district}` : ''}. Join now!`,
     'volunteer_event', eid
   );
+
+  // Auto-post a forum thread for online events with the meeting link
+  if (event_mode === 'online' && safeLink) {
+    const body = `📅 *${title}* — an online ${event_type.replace(/_/g,' ')} event on ${dateLabel}${district ? ` in ${district}` : ''}.\n\nJoin via: ${safeLink}`;
+    await db.prepare(`INSERT INTO citizen_discussions (user_id, author_name, title, content, category, link_url) VALUES (?,?,?,?,?,?)`)
+      .run(req.user.id, req.user.name, `🌐 Online Event: ${title}`, body, 'events', safeLink);
+  }
 
   res.status(201).json({ success: true, id: eid });
 });
@@ -259,11 +273,15 @@ router.delete('/events/:id/leave', authMiddleware, async (req, res) => {
 /* ─────────────────────────────────────────────────────────────
    CITIZEN OBSERVATIONS (auth required)
 ───────────────────────────────────────────────────────────── */
-// Ensure media columns exist on discussions and replies (fire-and-forget)
+// Ensure media + link columns exist on discussions and replies (fire-and-forget)
 getDb().exec(`ALTER TABLE citizen_discussions ADD COLUMN media_url TEXT`).catch(() => {});
 getDb().exec(`ALTER TABLE citizen_discussions ADD COLUMN media_type TEXT`).catch(() => {});
+getDb().exec(`ALTER TABLE citizen_discussions ADD COLUMN link_url TEXT`).catch(() => {});
 getDb().exec(`ALTER TABLE citizen_replies ADD COLUMN media_url TEXT`).catch(() => {});
 getDb().exec(`ALTER TABLE citizen_replies ADD COLUMN media_type TEXT`).catch(() => {});
+// Ensure event mode + link columns exist on volunteer_events (fire-and-forget)
+getDb().exec(`ALTER TABLE volunteer_events ADD COLUMN event_mode TEXT DEFAULT 'physical'`).catch(() => {});
+getDb().exec(`ALTER TABLE volunteer_events ADD COLUMN event_link TEXT`).catch(() => {});
 
 // Ensure status column exists (fire-and-forget migrations)
 getDb().exec(`ALTER TABLE citizen_observations ADD COLUMN status TEXT DEFAULT 'new'`).catch(() => {});

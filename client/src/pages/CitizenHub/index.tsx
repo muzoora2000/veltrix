@@ -5,7 +5,7 @@ import {
   MapPin, Calendar, Clock, ChevronRight, Star, Award,
   Leaf, CloudRain, Zap, Camera, Eye, X, Loader2,
   CheckCircle, Globe, Wind, Flame, ImagePlus, Navigation, Crosshair,
-  Mic, MicOff, Languages, Trash2, Paperclip, Video,
+  Mic, MicOff, Languages, Trash2, Paperclip, Video, ExternalLink, Link2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTranslations } from '../../hooks/useTranslations';
@@ -247,6 +247,7 @@ export default function CitizenHub() {
   const [replies,     setReplies]       = useState<Record<number,any[]>>({});
   const [replyText,   setReplyText]     = useState('');
   const [replySaving, setReplySaving]   = useState(false);
+  const [newDiscLink,  setNewDiscLink]   = useState('');
   const [newDiscMedia,  setNewDiscMedia]  = useState<{url:string;type:'image'|'video'|'audio'}|null>(null);
   const [replyMedia,    setReplyMedia]    = useState<Record<number,{url:string;type:'image'|'video'|'audio'}|null>>({});
   const [mediaError,    setMediaError]    = useState('');
@@ -265,7 +266,7 @@ export default function CitizenHub() {
   const [events,    setEvents]    = useState<any[]>([]);
   const [evLoad,    setEvLoad]    = useState(false);
   const [showNewEv, setShowNewEv] = useState(false);
-  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50' });
+  const [evForm,    setEvForm]    = useState({ title:'', description:'', location:'', district:'Kampala', event_date:'', event_time:'09:00', event_type:'cleanup', max_volunteers:'50', event_mode:'physical', event_link:'' });
   const [evSaving,  setEvSaving]  = useState(false);
   const [evMsg,     setEvMsg]     = useState('');
   const [joiningEv, setJoiningEv] = useState<Record<number,boolean>>({});
@@ -430,8 +431,9 @@ export default function CitizenHub() {
       await createDiscussion({
         title: newDiscTitle.trim(), content: newDiscBody.trim(), category: newDiscCat,
         media_url: newDiscMedia?.url ?? null, media_type: newDiscMedia?.type ?? null,
+        link_url: newDiscLink.trim() || null,
       });
-      setShowNewDisc(false); setNewDiscTitle(''); setNewDiscBody(''); setNewDiscMedia(null);
+      setShowNewDisc(false); setNewDiscTitle(''); setNewDiscBody(''); setNewDiscMedia(null); setNewDiscLink('');
       loadDisc();
     } finally { setDiscSaving(false); }
   };
@@ -498,7 +500,11 @@ export default function CitizenHub() {
     e.preventDefault();
     setEvSaving(true);
     try {
-      await import('../../api/client').then(m => m.createVolunteerEvent({ ...evForm, max_volunteers: +evForm.max_volunteers }));
+      await import('../../api/client').then(m => m.createVolunteerEvent({
+        ...evForm,
+        max_volunteers: +evForm.max_volunteers,
+        event_link: evForm.event_mode === 'online' ? evForm.event_link : null,
+      }));
       setShowNewEv(false);
       loadEvents();
     } catch (err: any) { setEvMsg(err?.response?.data?.error || 'Failed to create event.'); }
@@ -1017,6 +1023,15 @@ export default function CitizenHub() {
                   value={newDiscTitle} onChange={e => setNewDiscTitle(e.target.value)} />
                 <textarea className="input" rows={4} placeholder="Share your thoughts, questions, or observations (optional if you attach media)..."
                   value={newDiscBody} onChange={e => setNewDiscBody(e.target.value)} />
+                {/* Link field — non-citizen roles only */}
+                {user?.role !== 'citizen' && (
+                  <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
+                    <Link2 size={14} className="text-gray-400 flex-shrink-0" />
+                    <input className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
+                      type="url" placeholder="Attach a link (e.g. Google Meet, Google Form…)"
+                      value={newDiscLink} onChange={e => setNewDiscLink(e.target.value)} />
+                  </div>
+                )}
                 {/* Voice recording */}
                 {!newDiscMedia && (
                   discRecording ? (
@@ -1053,7 +1068,7 @@ export default function CitizenHub() {
                 {mediaError && <p className="text-xs text-red-500">{mediaError}</p>}
                 <input ref={discMediaRef} type="file" accept="image/*,video/*,audio/*" className="hidden" onChange={handleDiscMediaChange} />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => { setShowNewDisc(false); setNewDiscMedia(null); }} className="btn-secondary flex-1">Cancel</button>
+                  <button type="button" onClick={() => { setShowNewDisc(false); setNewDiscMedia(null); setNewDiscLink(''); }} className="btn-secondary flex-1">Cancel</button>
                   <button type="submit" disabled={discSaving}
                     className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                     style={{ background: 'linear-gradient(135deg,#065f46,#0891b2)' }}>
@@ -1096,6 +1111,12 @@ export default function CitizenHub() {
                           {cat && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: cat.color }}>{cat.label}</span>}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{d.content}</p>
+                        {d.link_url && (
+                          <a href={d.link_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-1.5 text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline truncate max-w-full">
+                            <ExternalLink size={11} /> {d.link_url}
+                          </a>
+                        )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                           <span>👤 {d.author_name}</span>
                           <span>🕐 {new Date(d.created_at).toLocaleDateString()}</span>
@@ -1254,6 +1275,31 @@ export default function CitizenHub() {
                   <div><label className="label">Location / Venue</label><input className="input" placeholder="Meeting point..." value={evForm.location} onChange={e => setEvForm(f => ({ ...f, location: e.target.value }))} /></div>
                   <div><label className="label">Max Volunteers</label><input type="number" className="input" min="1" max="500" value={evForm.max_volunteers} onChange={e => setEvForm(f => ({ ...f, max_volunteers: e.target.value }))} /></div>
                 </div>
+                {/* Event mode toggle */}
+                <div>
+                  <label className="label">Event Mode *</label>
+                  <div className="flex gap-2">
+                    {(['physical','online'] as const).map(mode => (
+                      <button key={mode} type="button"
+                        onClick={() => setEvForm(f => ({ ...f, event_mode: mode, event_link: mode === 'physical' ? '' : f.event_link }))}
+                        className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${evForm.event_mode === mode ? (mode === 'online' ? 'bg-blue-600 text-white border-blue-600' : 'bg-emerald-600 text-white border-emerald-600') : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-400'}`}>
+                        {mode === 'physical' ? '📍 Physical' : '🌐 Online'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {evForm.event_mode === 'online' && (
+                  <div>
+                    <label className="label">Meeting Link *</label>
+                    <div className="flex items-center gap-2 border border-blue-300 dark:border-blue-700 rounded-xl px-3 py-2 bg-blue-50 dark:bg-blue-900/20">
+                      <Link2 size={14} className="text-blue-500 flex-shrink-0" />
+                      <input className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400"
+                        type="url" required placeholder="https://meet.google.com/… or Zoom link"
+                        value={evForm.event_link} onChange={e => setEvForm(f => ({ ...f, event_link: e.target.value }))} />
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">This link will be automatically shared in the community forum.</p>
+                  </div>
+                )}
                 <div className="flex gap-3"><button type="button" onClick={() => setShowNewEv(false)} className="btn-secondary flex-1">Cancel</button>
                   <button type="submit" disabled={evSaving} className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
                     {evSaving && <Loader2 size={13} className="animate-spin" />} {evSaving ? 'Creating...' : '📅 Create Event'}
@@ -1290,9 +1336,17 @@ export default function CitizenHub() {
                     {ev.description && <p className="text-sm text-gray-500 mb-2 line-clamp-2">{ev.description}</p>}
                     <div className="space-y-1 text-xs text-gray-400 mb-3">
                       {ev.event_date && <div className="flex items-center gap-1.5"><Calendar size={10} /> {new Date(ev.event_date).toLocaleDateString()} {ev.event_time && `at ${ev.event_time}`}</div>}
-                      {ev.location && <div className="flex items-center gap-1.5"><MapPin size={10} /> {ev.location}</div>}
+                      {ev.event_mode === 'online'
+                        ? <div className="flex items-center gap-1.5 text-blue-500 font-semibold"><Globe size={10} /> Online Event</div>
+                        : ev.location && <div className="flex items-center gap-1.5"><MapPin size={10} /> {ev.location}</div>}
                       {ev.district && <div className="flex items-center gap-1.5"><Globe size={10} /> {ev.district} District</div>}
                     </div>
+                    {ev.event_link && (
+                      <a href={ev.event_link} target="_blank" rel="noopener noreferrer"
+                        className="w-full mb-3 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+                        <ExternalLink size={13} /> Join Meeting
+                      </a>
+                    )}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-gray-500">{ev.registered_count} / {ev.max_volunteers} volunteers</span>
