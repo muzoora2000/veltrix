@@ -104,8 +104,9 @@ router.post('/discussions', authMiddleware, async (req, res) => {
     general:       ['citizen', 'community_committee', 'ngo_officer'],
   };
   const roles = CAT_ROLES[category] || ['citizen', 'community_committee'];
+  // null district → visible to all users regardless of district
   notifyRoles(
-    roles, req.user.district || null,
+    roles, null,
     `New discussion: ${title.trim().slice(0, 60)}`,
     `${req.user.name} posted in ${category.replace(/_/g, ' ')}: "${title.trim().slice(0, 80)}"`,
     'discussion', r.lastInsertRowid
@@ -177,12 +178,12 @@ router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
       // Insert a personal notification for the discussion author
       await db.prepare(
         `INSERT INTO notification_log (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
-         VALUES (?, ?, 'in_app', ?, ?, 'sent', 'discussion', ?, ?)`
+         VALUES (?, ?, 'in_app', ?, ?, 'sent', 'discussion', ?, NULL)`
       ).run(
         author.role, disc.user_id,
         `New reply on your discussion`,
         `${req.user.name} replied to your post "${disc.title.slice(0, 60)}": "${content.trim().slice(0, 100)}"`,
-        did, disc.district || null
+        did
       );
     }
   }
@@ -236,8 +237,8 @@ router.post('/discussions/:id/read', authMiddleware, async (req, res) => {
       if (author) {
         await db.prepare(
           `INSERT INTO notification_log
-             (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id)
-           VALUES (?,?,'in_app',?,?,'sent','discussion',?)`
+             (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
+           VALUES (?,?,'in_app',?,?,'sent','discussion',?,NULL)`
         ).run(
           author.role, disc.user_id,
           `Your post was read`,

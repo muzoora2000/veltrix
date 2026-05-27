@@ -864,6 +864,17 @@ async function initSchema(db) {
     )
   `);
 
+  // Column migrations — add columns that were missing from the original schema
+  await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_url TEXT`);
+  await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_type TEXT`);
+  await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS link_url TEXT`);
+  await e(`ALTER TABLE citizen_replies ADD COLUMN IF NOT EXISTS media_url TEXT`);
+  await e(`ALTER TABLE citizen_replies ADD COLUMN IF NOT EXISTS media_type TEXT`);
+  await e(`ALTER TABLE volunteer_events ADD COLUMN IF NOT EXISTS event_mode TEXT DEFAULT 'physical'`);
+  await e(`ALTER TABLE volunteer_events ADD COLUMN IF NOT EXISTS event_link TEXT`);
+  await e(`ALTER TABLE volunteer_events ADD COLUMN IF NOT EXISTS paid_plan INTEGER DEFAULT 0`);
+  await e(`ALTER TABLE discussion_views ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ`);
+
   // Indexes
   await e(`CREATE INDEX IF NOT EXISTS idx_wp_district ON water_points(district)`);
   await e(`CREATE INDEX IF NOT EXISTS idx_sr_time ON sensor_readings(timestamp)`);
