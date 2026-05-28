@@ -73,11 +73,22 @@ router.get('/users/:id/public', async (req, res) => {
   res.json({ success: true, user });
 });
 
-/* ── Citizen Registration ── */
+/* ── Citizen / Committee / NGO Self-Registration ── */
+const SELF_REGISTER_ROLES = new Set(['citizen', 'community_committee', 'ngo_officer']);
+
 router.post('/register', async (req, res) => {
   try {
     const db = getDb();
-    const { name, email, password, phone, national_id, community_id, district, sub_county, location, language } = req.body;
+    const {
+      name, email, password, phone, district, sub_county, location, language,
+      role: rawRole,
+      // Community committee extras
+      organization, committee_position, jurisdiction_area, office_contact,
+      // NGO extras
+      ngo_reg_number, area_of_operation,
+    } = req.body;
+
+    const role = SELF_REGISTER_ROLES.has(rawRole) ? rawRole : 'citizen';
 
     if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Name is required' });
     if (!email || !email.trim()) return res.status(400).json({ success: false, error: 'Email is required' });
@@ -88,14 +99,34 @@ router.post('/register', async (req, res) => {
     const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(emailKey);
     if (existing) return res.status(409).json({ success: false, error: 'An account with this email already exists' });
 
+    // Build org name: committee name or NGO name
+    const orgName = role === 'community_committee'
+      ? (organization || null)
+      : role === 'ngo_officer'
+        ? (organization || null)
+        : null;
+
+    // committee_position or ngo_reg_number stored in committee_position column
+    const committeePos = role === 'community_committee'
+      ? (committee_position || null)
+      : role === 'ngo_officer'
+        ? (ngo_reg_number || null)
+        : null;
+
+    // jurisdiction_area / area_of_operation stored in location if not already set
+    const locationVal = location || jurisdiction_area || area_of_operation || null;
+    const officeContactVal = office_contact || null;
+
     const hash = bcrypt.hashSync(password, 10);
     const result = await db.prepare(`
-      INSERT INTO users (name, email, password_hash, role, phone, national_id, community_id, district, sub_county, location, language, active, otp_verified)
-      VALUES (?, ?, ?, 'citizen', ?, ?, ?, ?, ?, ?, ?, 1, 1)
+      INSERT INTO users (name, email, password_hash, role, phone, organization, committee_position,
+        district, sub_county, location, language, office_contact, active, otp_verified)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)
     `).run(
-      name.trim(), emailKey, hash, phone,
-      national_id || null, community_id || null, district || null,
-      sub_county || null, location || null, language || 'en'
+      name.trim(), emailKey, hash, role, phone,
+      orgName, committeePos,
+      district || null, sub_county || null, locationVal, language || 'en',
+      officeContactVal
     );
 
     const user = await db.prepare(
@@ -123,7 +154,7 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    console.log(`[REGISTER] New citizen: ${emailKey}`);
+    console.log(`[REGISTER] New ${role}: ${emailKey}`);
     res.status(201).json({
       success: true,
       message: 'Account created successfully! Welcome to HydroSense.',

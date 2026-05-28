@@ -1071,6 +1071,9 @@ async function initSchema(db) {
   await e(`ALTER TABLE volunteer_events ADD COLUMN IF NOT EXISTS event_link TEXT`);
   await e(`ALTER TABLE volunteer_events ADD COLUMN IF NOT EXISTS paid_plan INTEGER DEFAULT 0`);
   await e(`ALTER TABLE discussion_views ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ`);
+  await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS committee_position TEXT`);
+  await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'active'`);
+  await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS office_contact TEXT`);
 
   // Indexes
   await e(`CREATE INDEX IF NOT EXISTS idx_wp_district ON water_points(district)`);

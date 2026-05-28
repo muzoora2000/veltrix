@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 const CommitteeDashboard = lazy(() => import('../CommitteeDashboard'));
+const CitizenDashboard   = lazy(() => import('../CitizenDashboard'));
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Droplets, AlertTriangle, Wrench, TestTube, Heart, CloudRain,
@@ -245,13 +246,18 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Dual RBAC isolation: community_committee role gets a dedicated governance
-  // dashboard instead of the core HydroSense operational dashboard, preventing
-  // role confusion and enforcing the committee governance layer separation.
   if (user?.role === 'community_committee') {
     return (
       <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>}>
         <CommitteeDashboard />
+      </Suspense>
+    );
+  }
+
+  if (user?.role === 'citizen') {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
+        <CitizenDashboard />
       </Suspense>
     );
   }
