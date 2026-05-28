@@ -232,7 +232,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             💧
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-white text-sm tracking-wide truncate">HYDROSENSE</div>
+            <div className="font-bold text-white text-sm tracking-wide truncate">HydroSense</div>
             <div className="text-gray-500 text-[11px]">Climate-Resilient · Uganda</div>
           </div>
           <button onClick={onClose} className="lg:hidden text-gray-500 hover:text-white transition-colors">
@@ -339,7 +339,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <span>{tl('Sign Out')}</span>
           </button>
           <div className="text-center text-[10px] text-gray-700 pt-1">
-            HYDROSENSE v2.0 &copy; 2026
+            HydroSense v2.0 &copy; 2026
           </div>
         </div>
       </aside>

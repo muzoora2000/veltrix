@@ -520,12 +520,12 @@ export default function AIHub() {
     const pendMaint= sysStats.pending_maintenance  || 0;
 
     return {
-      title: 'HYDROSENSE AI Executive Summary Report',
+      title: 'HydroSense AI Executive Summary Report',
       generated_at: now,
       scope,
       role,
       executive_summary:
-        `As of ${now.slice(0, 10)}, HYDROSENSE AI has analysed ${total} water points across ${scope}. ` +
+        `As of ${now.slice(0, 10)}, HydroSense AI has analysed ${total} water points across ${scope}. ` +
         `${func} (${funcPct}%) are currently functional. ` +
         `${critical} sites are at critical failure risk, ${hotspots} contamination hotspots detected, ` +
         `and ${anomCount} sensor anomalies flagged in the last 24 hours. ` +
@@ -581,7 +581,7 @@ export default function AIHub() {
             style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>
             <Brain size={30} className="text-white" />
           </div>
-          <div className="text-blue-700 dark:text-blue-400 font-bold">HYDROSENSE AI</div>
+          <div className="text-blue-700 dark:text-blue-400 font-bold">HydroSense AI</div>
           <div className="text-gray-400 text-sm mt-1">Loading intelligence engine...</div>
           <div className="mt-3 flex justify-center">
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -631,7 +631,7 @@ export default function AIHub() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <Brain size={16} className="text-cyan-300 flex-shrink-0" />
-              <span className="text-cyan-300 text-xs font-semibold tracking-wide">HYDROSENSE AI ENGINE</span>
+              <span className="text-cyan-300 text-xs font-semibold tracking-wide">HydroSense AI ENGINE</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">AI Intelligence Hub</h2>
             <p className="text-blue-200 text-xs sm:text-sm mt-0.5 truncate">

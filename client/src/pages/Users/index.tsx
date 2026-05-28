@@ -297,7 +297,7 @@ export default function UserManagement() {
         <div class="card">
           <div class="header">
             <span class="icon">💧</span>
-            <span class="sys">HYDROSENSE</span>
+            <span class="sys">HydroSense</span>
           </div>
           <img src="${url}" alt="QR" />
           <div class="name">${u.name}</div>
@@ -308,7 +308,7 @@ export default function UserManagement() {
         </div>`;
     }).join('');
 
-    win.document.documentElement.innerHTML = `<head><title>HYDROSENSE — User QR Cards</title>
+    win.document.documentElement.innerHTML = `<head><title>HydroSense — User QR Cards</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
@@ -333,7 +333,7 @@ export default function UserManagement() {
     .no-print { display: none; }
   }
 </style></head><body>
-<h1>HYDROSENSE — User Credential QR Cards &nbsp;|&nbsp; ${new Date().toLocaleDateString()}</h1>
+<h1>HydroSense — User Credential QR Cards &nbsp;|&nbsp; ${new Date().toLocaleDateString()}</h1>
 <div class="no-print" style="text-align:center;margin-bottom:16px">
   <button onclick="window.print()" style="padding:10px 24px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer">🖨️ Print All Cards</button>
 </div>
@@ -509,7 +509,7 @@ export default function UserManagement() {
                       <td className="td">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {/* Email */}
-                          <a href={`mailto:${u.email}?subject=HYDROSENSE`}
+                          <a href={`mailto:${u.email}?subject=HydroSense`}
                             title={`Email ${u.name}`}
                             className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                             onClick={e => e.stopPropagation()}>
@@ -817,7 +817,7 @@ export default function UserManagement() {
                 {/* Logo */}
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <span className="text-2xl">💧</span>
-                  <span className="font-black text-sm tracking-widest text-indigo-900 dark:text-indigo-300">HYDROSENSE</span>
+                  <span className="font-black text-sm tracking-widest text-indigo-900 dark:text-indigo-300">HydroSense</span>
                 </div>
 
                 {/* QR image */}
@@ -899,7 +899,7 @@ export default function UserManagement() {
   @media print{body{background:white}.no-print{display:none}}
 </style></head><body>
 <div class="card">
-  <div class="logo"><span style="font-size:22px">💧</span><span class="logo-text">HYDROSENSE</span></div>
+  <div class="logo"><span style="font-size:22px">💧</span><span class="logo-text">HydroSense</span></div>
   <img src="${qrUrl(qrText(qrUser, qrPassword || undefined), 180)}" alt="QR" />
   <div class="name">${qrUser.name}</div>
   <div class="email">📧 ${qrUser.email}</div>

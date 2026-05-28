@@ -88,7 +88,7 @@ export default function OTPVerification() {
           <div className="flex items-center gap-3 mb-10">
             <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl border border-white/20">💧</div>
             <div>
-              <div className="font-bold text-white text-lg">HYDROSENSE</div>
+              <div className="font-bold text-white text-lg">HydroSense</div>
               <div className="text-blue-200 text-xs">Ministry of Water & Environment</div>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function OTPVerification() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">💧</div>
-            <div className="font-bold text-gray-900 text-sm">HYDROSENSE</div>
+            <div className="font-bold text-gray-900 text-sm">HydroSense</div>
           </div>
 
           {error && (

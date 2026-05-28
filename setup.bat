@@ -1,11 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-title HYDROSENSE — First-Time Setup
+title HydroSense — First-Time Setup
 color 1F
 
 echo.
 echo  ============================================================
-echo   HYDROSENSE — First-Time Setup
+echo   HydroSense — First-Time Setup
 echo   Run this ONCE on each computer before starting the system.
 echo  ============================================================
 echo.

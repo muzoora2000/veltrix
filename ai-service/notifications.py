@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 Multi-Channel Notification Engine
+HydroSense v4.0 Multi-Channel Notification Engine
 SMS, WhatsApp, Email, and In-App notification delivery with automatic
 translation for citizen-facing notifications.
 """
@@ -19,7 +19,7 @@ DB_PATH = os.getenv("DB_PATH", "../server/watermonitor.db")
 
 SMS_GATEWAY_URL = os.getenv("SMS_GATEWAY_URL", "")
 SMS_API_KEY = os.getenv("SMS_API_KEY", "")
-SMS_SENDER_ID = os.getenv("SMS_SENDER_ID", "HYDROSENSE")
+SMS_SENDER_ID = os.getenv("SMS_SENDER_ID", "HydroSense")
 WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "")
 WHATSAPP_API_KEY = os.getenv("WHATSAPP_API_KEY", "")
 EMAIL_FROM = os.getenv("EMAIL_FROM", "noreply@hydrosense.ug")
@@ -33,17 +33,17 @@ NOTIFICATION_TEMPLATES = {
             "swa": "Ripoti #{report_id} Imewasilishwa",
         },
         "sms": {
-            "en": "HYDROSENSE: Your report (#{report_id}) about {category} in {district} has been submitted. Track: hydrosense.ug/track/{report_id}",
-            "lug": "HYDROSENSE: Lipoota yo (#{report_id}) ku {category} mu {district} yetebeddwa. Londolola: hydrosense.ug/track/{report_id}",
-            "swa": "HYDROSENSE: Ripoti yako (#{report_id}) kuhusu {category} katika {district} imewasilishwa. Fuata: hydrosense.ug/track/{report_id}",
+            "en": "HydroSense: Your report (#{report_id}) about {category} in {district} has been submitted. Track: hydrosense.ug/track/{report_id}",
+            "lug": "HydroSense: Lipoota yo (#{report_id}) ku {category} mu {district} yetebeddwa. Londolola: hydrosense.ug/track/{report_id}",
+            "swa": "HydroSense: Ripoti yako (#{report_id}) kuhusu {category} katika {district} imewasilishwa. Fuata: hydrosense.ug/track/{report_id}",
         },
         "email": {
             "en": "<h3>Report #{report_id} Submitted</h3><p>Your {category} report in {district} has been received.</p><p><b>Reference:</b> #{report_id}</p><p><b>Status:</b> Submitted</p><p>Track progress: <a href='https://hydrosense.ug/track/{report_id}'>hydrosense.ug/track/{report_id}</a></p>",
         },
         "whatsapp": {
-            "en": "✅ *HYDROSENSE Report #{report_id}*\nCategory: {category}\nLocation: {district}\nStatus: Submitted\nTrack: hydrosense.ug/track/{report_id}",
-            "lug": "✅ *HYDROSENSE Lipoota #{report_id}*\nEkika: {category}\nWalawo: {district}\nEmbeera: Yetebeddwa\nLondolola: hydrosense.ug/track/{report_id}",
-            "swa": "✅ *HYDROSENSE Ripoti #{report_id}*\nAina: {category}\nMahali: {district}\nHali: Imewasilishwa\nFuata: hydrosense.ug/track/{report_id}",
+            "en": "✅ *HydroSense Report #{report_id}*\nCategory: {category}\nLocation: {district}\nStatus: Submitted\nTrack: hydrosense.ug/track/{report_id}",
+            "lug": "✅ *HydroSense Lipoota #{report_id}*\nEkika: {category}\nWalawo: {district}\nEmbeera: Yetebeddwa\nLondolola: hydrosense.ug/track/{report_id}",
+            "swa": "✅ *HydroSense Ripoti #{report_id}*\nAina: {category}\nMahali: {district}\nHali: Imewasilishwa\nFuata: hydrosense.ug/track/{report_id}",
         },
     },
     "status_update": {
@@ -53,17 +53,17 @@ NOTIFICATION_TEMPLATES = {
             "swa": "Ripoti #{report_id} Hali: {status}",
         },
         "sms": {
-            "en": "HYDROSENSE: Report #{report_id} status changed to {status}. {note} Track: hydrosense.ug/track/{report_id}",
-            "lug": "HYDROSENSE: Lipoota #{report_id} embeera ekya: {status}. {note} Londolola: hydrosense.ug/track/{report_id}",
-            "swa": "HYDROSENSE: Ripoti #{report_id} hali imebadilika: {status}. {note} Fuata: hydrosense.ug/track/{report_id}",
+            "en": "HydroSense: Report #{report_id} status changed to {status}. {note} Track: hydrosense.ug/track/{report_id}",
+            "lug": "HydroSense: Lipoota #{report_id} embeera ekya: {status}. {note} Londolola: hydrosense.ug/track/{report_id}",
+            "swa": "HydroSense: Ripoti #{report_id} hali imebadilika: {status}. {note} Fuata: hydrosense.ug/track/{report_id}",
         },
         "email": {
             "en": "<h3>Report #{report_id} Status Update</h3><p>Status: <b>{status}</b></p><p>{note}</p><p><a href='https://hydrosense.ug/track/{report_id}'>View details</a></p>",
         },
         "whatsapp": {
-            "en": "📋 *HYDROSENSE Report #{report_id}*\nStatus: *{status}*\n{note}\nDetails: hydrosense.ug/track/{report_id}",
-            "lug": "📋 *HYDROSENSE Lipoota #{report_id}*\nEmbeera: *{status}*\n{note}\nLondolola: hydrosense.ug/track/{report_id}",
-            "swa": "📋 *HYDROSENSE Ripoti #{report_id}*\nHali: *{status}*\n{note}\nFuata: hydrosense.ug/track/{report_id}",
+            "en": "📋 *HydroSense Report #{report_id}*\nStatus: *{status}*\n{note}\nDetails: hydrosense.ug/track/{report_id}",
+            "lug": "📋 *HydroSense Lipoota #{report_id}*\nEmbeera: *{status}*\n{note}\nLondolola: hydrosense.ug/track/{report_id}",
+            "swa": "📋 *HydroSense Ripoti #{report_id}*\nHali: *{status}*\n{note}\nFuata: hydrosense.ug/track/{report_id}",
         },
     },
     "task_assigned": {
@@ -73,17 +73,17 @@ NOTIFICATION_TEMPLATES = {
             "swa": "Kazi Mpya: {category} katika {district}",
         },
         "sms": {
-            "en": "HYDROSENSE: New task assigned! {category} incident ({severity}) in {district}. Ticket: {ticket}. Please respond.",
-            "lug": "HYDROSENSE: Omulimu omugya! {category} ({severity}) mu {district}. Tikiti: {ticket}. Nkwegayirira danamu.",
-            "swa": "HYDROSENSE: Kazi mpya! {category} ({severity}) katika {district}. Tiketi: {ticket}. Tafadhali jibu.",
+            "en": "HydroSense: New task assigned! {category} incident ({severity}) in {district}. Ticket: {ticket}. Please respond.",
+            "lug": "HydroSense: Omulimu omugya! {category} ({severity}) mu {district}. Tikiti: {ticket}. Nkwegayirira danamu.",
+            "swa": "HydroSense: Kazi mpya! {category} ({severity}) katika {district}. Tiketi: {ticket}. Tafadhali jibu.",
         },
         "email": {
             "en": "<h3>New Task Assignment</h3><p><b>Category:</b> {category}</p><p><b>Severity:</b> {severity}</p><p><b>Location:</b> {district}</p><p><b>Ticket:</b> {ticket}</p><p>{description}</p>",
         },
         "whatsapp": {
-            "en": "🆕 *HYDROSENSE Task Assigned*\nCategory: {category}\nSeverity: {severity}\nLocation: {district}\nTicket: {ticket}\n\n{description}",
-            "lug": "🆕 *HYDROSENSE Omulimu Guweebwa*\nEkika: {category}\nObuzibu: {severity}\nWalawo: {district}\nTikiti: {ticket}\n\n{description}",
-            "swa": "🆕 *HYDROSENSE Kazi Imetengwa*\nAina: {category}\nUkali: {severity}\nMahali: {district}\nTiketi: {ticket}\n\n{description}",
+            "en": "🆕 *HydroSense Task Assigned*\nCategory: {category}\nSeverity: {severity}\nLocation: {district}\nTicket: {ticket}\n\n{description}",
+            "lug": "🆕 *HydroSense Omulimu Guweebwa*\nEkika: {category}\nObuzibu: {severity}\nWalawo: {district}\nTikiti: {ticket}\n\n{description}",
+            "swa": "🆕 *HydroSense Kazi Imetengwa*\nAina: {category}\nUkali: {severity}\nMahali: {district}\nTiketi: {ticket}\n\n{description}",
         },
     },
     "emergency_alert": {

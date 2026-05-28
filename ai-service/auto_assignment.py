@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 Automated Task Assignment Engine
+HydroSense v4.0 Automated Task Assignment Engine
 Intelligently routes citizen reports to the correct personnel based on:
 - District, Sub-county, Village, Water zone, Environmental region
 - Incident category, Severity, Time of day
@@ -247,7 +247,7 @@ def _create_notification(
 ) -> Dict[str, Any]:
     """Create notifications for the assigned officer."""
     message = (
-        f"[HYDROSENSE ALERT] New {category.replace('_', ' ')} incident ({severity}) "
+        f"[HydroSense ALERT] New {category.replace('_', ' ')} incident ({severity}) "
         f"in {district}. Ticket: {ticket_num}. "
         f"Please respond promptly."
     )

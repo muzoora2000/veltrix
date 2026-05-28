@@ -24,7 +24,7 @@ LANGUAGE_CODES = {
 }
 LANG_NAMES = {v.lower(): k for k, v in LANGUAGE_CODES.items()}
 
-ML_SYSTEM_PROMPT = """You are Hydro AI, the assistant for HYDROSENSE — Uganda's national climate-resilient rural water management platform.
+ML_SYSTEM_PROMPT = """You are Hydro AI, the assistant for HydroSense — Uganda's national climate-resilient rural water management platform.
 
 MULTILINGUAL CAPABILITY: You MUST detect the user's language and respond in the SAME language they use. Supported languages:
 - English, Luganda (lug), Runyankole (nyn), Ateso (teo), Luo (luo), Lugbara (lgg), Lusoga (xog), Rukiga (cgg), Acholi (ach), Swahili (swa)
@@ -188,7 +188,7 @@ async def call_gemini_stream(
     })
     contents.append({
         "role": "model",
-        "parts": [{"text": "Understood. I have the latest HYDROSENSE system data. How can I help?"}]
+        "parts": [{"text": "Understood. I have the latest HydroSense system data. How can I help?"}]
     })
 
     for turn in history[-6:]:
@@ -205,7 +205,7 @@ async def call_gemini_stream(
                 "data": image_data,
             }
         })
-    text = message.strip() or "Please analyze this image in the context of water management and HYDROSENSE."
+    text = message.strip() or "Please analyze this image in the context of water management and HydroSense."
     current_parts.append({"text": text})
     contents.append({"role": "user", "parts": current_parts})
 
@@ -325,7 +325,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
 
         if re.search(r"what is your name|who are you|what are you called|your name", msg):
             return (
-                "I'm **Hydro AI** \u2014 the assistant powering HYDROSENSE, Uganda's national climate-resilient "
+                "I'm **Hydro AI** \u2014 the assistant powering HydroSense, Uganda's national climate-resilient "
                 "rural water management platform.\n\n"
                 "I can help you monitor water infrastructure, interpret quality data, track maintenance, "
                 "understand climate risks, and more. Type **help** to see everything I can do."
@@ -333,7 +333,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
 
         if re.search(r"hello|hi\b|hey\b|good morning|good afternoon|good evening|greetings|salamu", msg):
             return (
-                "Hello! I'm **Hydro AI**, HYDROSENSE's assistant. "
+                "Hello! I'm **Hydro AI**, HydroSense's assistant. "
                 f"I can help you with water point status, failure predictions, contamination risks, "
                 f"climate forecasts, governance, and maintenance planning.\n\n"
                 "What would you like to know today?"
@@ -374,7 +374,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
             summary = ", ".join(f"{r['c']} {r['severity']}" for r in alerts)
             total = sum(r["c"] for r in alerts)
             return (
-                f"**Active Alerts \u2014 HYDROSENSE**\n\n"
+                f"**Active Alerts \u2014 HydroSense**\n\n"
                 f"\u2022 **Total active alerts**: {total}\n"
                 f"\u2022 **Breakdown**: {summary}\n\n"
                 f"Visit the **Emergency Response** module for details, resolution workflows, and to assign response teams."
@@ -421,7 +421,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
                 f"**Health Surveillance**\n\n"
                 f"\u2022 **Active outbreaks**: {h['incidents'] or 0}\n"
                 f"\u2022 **Total reported cases**: {h['cases'] or 0}\n\n"
-                f"The HYDROSENSE AI monitors real-time correlations between water quality failures and disease incidents. "
+                f"The HydroSense AI monitors real-time correlations between water quality failures and disease incidents. "
                 f"Visit the **Health Surveillance** module for epidemiological data, outbreak maps, and response coordination."
             )
 
@@ -443,7 +443,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
             return (
                 f"**Community Impact**\n\n"
                 f"\u2022 **Total beneficiaries served**: {bens:,} people across 15 districts\n\n"
-                f"HYDROSENSE tracks household coverage, seasonal access patterns, and per-capita water availability "
+                f"HydroSense tracks household coverage, seasonal access patterns, and per-capita water availability "
                 f"to support Uganda's SDG 6 reporting obligations.\n\n"
                 f"View district-level breakdowns in the **Coverage Analytics** module."
             )
@@ -453,7 +453,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
             top = ", ".join(f"{r['district']} ({r['c']})" for r in districts[:5])
             return (
                 f"**District Coverage**\n\n"
-                f"HYDROSENSE covers **15 districts**: {top}, and more.\n\n"
+                f"HydroSense covers **15 districts**: {top}, and more.\n\n"
                 f"Each district officer has a personalised dashboard with:\n"
                 f"\u2022 Local water point status\n"
                 f"\u2022 District-specific AI predictions\n"
@@ -511,10 +511,10 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
                 date_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
                 scope = f"District: {district}" if district else "National"
                 return (
-                    f"**HYDROSENSE Situation Report \u2014 {date_str}**\n"
+                    f"**HydroSense Situation Report \u2014 {date_str}**\n"
                     f"**Scope**: {scope}\n\n"
                     f"**Executive Summary**\n"
-                    f"HYDROSENSE is monitoring {total_wp} water points serving {bens:,} beneficiaries. "
+                    f"HydroSense is monitoring {total_wp} water points serving {bens:,} beneficiaries. "
                     f"{func_wp} points ({round(func_wp / total_wp * 100) if total_wp else 0}%) are functional. "
                     f"There are {alerts} active alerts and {pending} pending maintenance requests requiring attention.\n\n"
                     f"**Key Metrics**\n"
@@ -553,7 +553,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
                 pass
             return (
                 "**Governance & Accountability**\n\n"
-                "HYDROSENSE supports transparent water sector governance through Water User Committee tracking, "
+                "HydroSense supports transparent water sector governance through Water User Committee tracking, "
                 "budget monitoring, performance dashboards, and compliance reporting for MWE.\n\n"
                 "Access the **Governance** module for full oversight and accountability tools."
             )
@@ -561,7 +561,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
         if re.search(r"train|capacity|workshop|skill|learning|education|technician skill", msg):
             return (
                 "**Capacity Building & Training**\n\n"
-                "HYDROSENSE supports water sector capacity through technician training, district officer workshops, "
+                "HydroSense supports water sector capacity through technician training, district officer workshops, "
                 "community education on hygiene, and national admin briefings on SDG 6 reporting.\n\n"
                 "Contact your district water officer to enrol in the next scheduled technician certification cycle."
             )
@@ -574,7 +574,7 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
         }.get(role, "Try asking about water points, alerts, quality, maintenance, climate, health, budget, or governance.")
 
         return (
-            "I'm **Hydro AI**, HYDROSENSE's assistant specialising in Uganda's water infrastructure intelligence.\n\n"
+            "I'm **Hydro AI**, HydroSense's assistant specialising in Uganda's water infrastructure intelligence.\n\n"
             "I didn't quite find a direct match for your query in my quick-response library, but I can help with:\n"
             "\u2022 Water point status and locations\n"
             "\u2022 Active alerts and emergencies\n"

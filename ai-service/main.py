@@ -55,7 +55,7 @@ from retry_decorator import retry, CircuitBreaker
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
-    format='%(asctime)s [HYDROSENSE AI] %(levelname)s %(message)s',
+    format='%(asctime)s [HydroSense AI] %(levelname)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logger = logging.getLogger("hydrosense")
@@ -110,7 +110,7 @@ rate_limiter = RateLimiter()
 async def lifespan(app: FastAPI):
     global _initialized, _startup_checks
     logger.info("=" * 60)
-    logger.info("  HYDROSENSE AI Microservice v4.0 — Enterprise Mode")
+    logger.info("  HydroSense AI Microservice v4.0 — Enterprise Mode")
     logger.info("  Performing startup validation...")
 
     _startup_checks = await validate_startup()
@@ -213,7 +213,7 @@ async def periodic_report_task():
 # ─────────────────────────────────────────────
 
 app = FastAPI(
-    title="HYDROSENSE AI Service v4.0",
+    title="HydroSense AI Service v4.0",
     description="Enterprise Environmental Intelligence Engine — fault-tolerant, self-healing, streaming",
     version="4.0.0",
     lifespan=lifespan,
@@ -279,7 +279,7 @@ async def health(request: Request):
     all_ok = _initialized and readback_ok and cb_state["state"] not in ("open", "half_open")
     return {
         "status": "ok" if all_ok else "degraded",
-        "service": "HYDROSENSE AI Microservice v4.0",
+        "service": "HydroSense AI Microservice v4.0",
         "version": "4.0.0",
         "uptime_seconds": int(time.time() - _AI_START_TIME),
         "database_connected": readback_ok,
@@ -637,11 +637,11 @@ async def generate_report(req: ReportRequest):
         recs = dashboard_data.get("ai_recommendations", [])
         scope = f"District: {req.district}" if req.district else "National (All Districts)"
         report = {
-            "title": f"HYDROSENSE AI {req.report_type.replace('_', ' ').title()} Report",
+            "title": f"HydroSense AI {req.report_type.replace('_', ' ').title()} Report",
             "generated_at": dashboard_data["generated_at"],
             "scope": scope, "role": req.role,
             "executive_summary": (
-                f"As of {dashboard_data['generated_at'][:10]}, HYDROSENSE AI has analysed "
+                f"As of {dashboard_data['generated_at'][:10]}, HydroSense AI has analysed "
                 f"{sys_stats.get('total_water_points', 0)} water points across {scope}. "
                 f"{ai_sum.get('critical_failure_risk', 0)} sites are at critical failure risk, "
                 f"{ai_sum.get('contamination_hotspots', 0)} contamination hotspots were detected, "
@@ -1228,7 +1228,7 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     gemini_status = "Configured" if os.getenv("GEMINI_API_KEY") else "Not configured (rule-based fallback active)"
     print("\n" + "=" * 60)
-    print("  HYDROSENSE AI Microservice v4.0")
+    print("  HydroSense AI Microservice v4.0")
     print("  Enterprise Environmental Intelligence Engine")
     print(f"  Running at : http://localhost:{port}")
     print(f"  API Docs   : http://localhost:{port}/docs")

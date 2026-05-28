@@ -245,7 +245,7 @@ app.get('/api/health-check', async (_, res) => {
   res.json({
     status: dbOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
-    service: 'HYDROSENSE API v2.0',
+    service: 'HydroSense API v2.0',
     database: dbOk ? 'connected' : 'error',
     uptime_seconds: Math.floor((Date.now() - START_TIME) / 1000)
   });
@@ -254,7 +254,7 @@ app.get('/api/health-check', async (_, res) => {
 app.get('/api/system/status', (_, res) => {
   res.json({
     status: 'running',
-    service: 'HYDROSENSE API v2.0',
+    service: 'HydroSense API v2.0',
     started_at: new Date(START_TIME).toISOString(),
     uptime_seconds: Math.floor((Date.now() - START_TIME) / 1000),
     ai_service: aiServiceStatus,
@@ -487,7 +487,7 @@ async function handleNativeNodeChat(req, res, targetPath) {
   }
 
   const systemPrompt =
-    `You are Hydro AI, the intelligent assistant for HYDROSENSE — Uganda's national climate-resilient rural water management platform.\n\n` +
+    `You are Hydro AI, the intelligent assistant for HydroSense — Uganda's national climate-resilient rural water management platform.\n\n` +
     `User role: ${role}. District: ${district || 'National'}.\n\n` +
     `LIVE SYSTEM DATA:\n` +
     `- ${statsStr}\n` +
@@ -499,7 +499,7 @@ async function handleNativeNodeChat(req, res, targetPath) {
 
   const contents = [
     { role: "user", parts: [{ text: `[SYSTEM CONTEXT]\n${systemPrompt}\n[/SYSTEM CONTEXT]` }] },
-    { role: "model", parts: [{ text: "Understood. I have the latest HYDROSENSE system data. How can I help?" }] }
+    { role: "model", parts: [{ text: "Understood. I have the latest HydroSense system data. How can I help?" }] }
   ];
 
   for (const turn of history.slice(-6)) {
@@ -588,13 +588,13 @@ async function handleNativeNodeChat(req, res, targetPath) {
           "FROM health_incidents GROUP BY disease_type, outbreak_status ORDER BY c DESC LIMIT 8"
         ).all();
         if (outbreaks.length > 0) {
-          reply = `**Disease Outbreak Summary — HYDROSENSE System**\n\n` +
+          reply = `**Disease Outbreak Summary — HydroSense System**\n\n` +
             outbreaks.map(o =>
               `- **${o.disease_type}**: ${o.c} cases, ${o.d} deaths across ${o.incidents} incident(s) in ${o.districts} — Status: *${o.outbreak_status}*`
             ).join('\n') +
             `\n\n**Action:** Investigate water-source-linked incidents and coordinate with health authorities for affected districts.`;
         } else {
-          reply = `**No active disease outbreaks** are currently recorded in the HYDROSENSE system.\n\n` +
+          reply = `**No active disease outbreaks** are currently recorded in the HydroSense system.\n\n` +
             `The system monitors health incidents linked to water sources. All districts appear to be in normal health status at this time.`;
         }
       } else if (isWater) {
@@ -620,13 +620,13 @@ async function handleNativeNodeChat(req, res, targetPath) {
         const twp = await db2.prepare("SELECT COUNT(*) as c FROM water_points").get();
         const fwp = await db2.prepare("SELECT COUNT(*) as c FROM water_points WHERE status='functional'").get();
         const ta  = await db2.prepare("SELECT COUNT(*) as c FROM alerts WHERE status='active'").get();
-        reply = `**HYDROSENSE System Overview**\n\n` +
+        reply = `**HydroSense System Overview**\n\n` +
           `- **${twp.c}** total water points · **${fwp.c}** functional\n` +
           `- **${ta.c}** active alerts\n\n` +
           `Ask me about water quality, disease outbreaks, maintenance, alerts, or citizen reports.`;
       }
     } catch {
-      reply = `I have access to HYDROSENSE water and health data. Ask me about water points, disease outbreaks, water quality, maintenance, or alerts.`;
+      reply = `I have access to HydroSense water and health data. Ask me about water points, disease outbreaks, water quality, maintenance, or alerts.`;
     }
 
     if (isStream) {
@@ -635,7 +635,7 @@ async function handleNativeNodeChat(req, res, targetPath) {
       res.write('data: ' + JSON.stringify({ type: 'done' }) + '\n\n');
       res.end();
     } else {
-      res.status(200).json({ success: true, reply, model: 'HYDROSENSE DB', source: 'database' });
+      res.status(200).json({ success: true, reply, model: 'HydroSense DB', source: 'database' });
     }
     return;
   }
@@ -707,7 +707,7 @@ async function proxyToAI(req, res, targetPath) {
   proxyReq.on('error', async (err) => {
     // FALLBACK MOCK IF AI IS DOWN ON RENDER
     if (targetPath.includes('/health') || targetPath.includes('/system/ping')) {
-      return safeRespond(200, { status: 'online', service: 'HYDROSENSE AI (Fallback Mode)', version: '2.0.1 (Node)', latency: 15 });
+      return safeRespond(200, { status: 'online', service: 'HydroSense AI (Fallback Mode)', version: '2.0.1 (Node)', latency: 15 });
     }
     
     if (targetPath.includes('/chat/stream') || targetPath.endsWith('/chat')) {
@@ -940,7 +940,7 @@ app.post('/api/ai/reports/generate', authMiddleware, async (req, res) => {
     const funcPct = stats.total > 0 ? Math.round((stats.functional / stats.total) * 100) : 0;
 
     const execSummary =
-      `As of ${now.slice(0, 10)}, HYDROSENSE AI has analysed ${stats.total} water points across ${scope}. ` +
+      `As of ${now.slice(0, 10)}, HydroSense AI has analysed ${stats.total} water points across ${scope}. ` +
       `${stats.functional} (${funcPct}%) are currently functional. ` +
       `${stats.activeAlerts} active alerts require attention, with ${stats.pendingMaint} pending maintenance requests ` +
       `and ${stats.unsafeTests} unsafe water quality records on file.`;
@@ -1001,7 +1001,7 @@ app.post('/api/ai/reports/generate', authMiddleware, async (req, res) => {
     return res.json({
       status: 'ok',
       report: {
-        title: `HYDROSENSE AI ${(req.body?.report_type || 'executive_summary').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Report`,
+        title: `HydroSense AI ${(req.body?.report_type || 'executive_summary').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Report`,
         generated_at: now,
         scope,
         role,
@@ -1453,7 +1453,7 @@ initDb().then(() => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('  HYDROSENSE — Climate-Resilient Rural Water System');
+    console.log('  HydroSense — Climate-Resilient Rural Water System');
     console.log(`  Running at: http://localhost:${PORT}`);
     console.log(`  API Base:   http://localhost:${PORT}/api`);
     console.log(`  Health:     http://localhost:${PORT}/api/health-check`);

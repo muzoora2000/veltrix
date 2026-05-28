@@ -106,7 +106,7 @@ function LoadingScreen() {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #eff6ff, #f0fdf4)' }}>
       <div className="text-center">
         <div className="text-5xl mb-4">💧</div>
-        <div className="text-blue-700 font-bold text-lg tracking-tight">HYDROSENSE</div>
+        <div className="text-blue-700 font-bold text-lg tracking-tight">HydroSense</div>
         <div className="text-gray-400 text-sm mt-1">Loading system...</div>
         <div className="mt-4 flex justify-center">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

@@ -1,15 +1,15 @@
 @echo off
 setlocal enabledelayedexpansion
-title HYDROSENSE - System Launcher
+title HydroSense - System Launcher
 color 1F
 
 :: ═══════════════════════════════════════════════════════════════
-:: HYDROSENSE v2.0 — Production Startup Sequence
+:: HydroSense v2.0 — Production Startup Sequence
 :: ═══════════════════════════════════════════════════════════════
 
 echo.
 echo  ============================================================
-echo   HYDROSENSE — Climate-Resilient Rural Water System v2.0
+echo   HydroSense — Climate-Resilient Rural Water System v2.0
 echo   Starting all services...
 echo  ============================================================
 echo.
@@ -70,7 +70,7 @@ echo   Database module OK
 :: STEP 3 — Start Backend API (port 5000)
 :: ─────────────────────────────────────────────────────────────
 echo [3/8] Starting Backend API Server...
-start "HYDROSENSE Backend" /min cmd /k "cd /d "%ROOT%server" && node index.js"
+start "HydroSense Backend" /min cmd /k "cd /d "%ROOT%server" && node index.js"
 timeout /t 4 /nobreak >nul
 
 :: Verify backend is listening
@@ -144,7 +144,7 @@ if errorlevel 1 (
 )
 
 :: Start AI service with auto-restart loop
-start "HYDROSENSE AI" /min cmd /k "cd /d "%ROOT%ai-service" && "%PYTHON%" -m uvicorn main:app --host 0.0.0.0 --port 8000 --log-level info --loop asyncio"
+start "HydroSense AI" /min cmd /k "cd /d "%ROOT%ai-service" && "%PYTHON%" -m uvicorn main:app --host 0.0.0.0 --port 8000 --log-level info --loop asyncio"
 timeout /t 8 /nobreak >nul
 
 :: Verify AI service
@@ -212,7 +212,7 @@ if !BACKEND_READY! equ 1 (
 :: STEP 7 — Start Frontend (port 3000)
 :: ─────────────────────────────────────────────────────────────
 echo [7/8] Starting Frontend Application...
-start "HYDROSENSE Frontend" /min cmd /k "cd /d "%ROOT%client" && npm run dev"
+start "HydroSense Frontend" /min cmd /k "cd /d "%ROOT%client" && npm run dev"
 timeout /t 8 /nobreak >nul
 
 :: Verify frontend
@@ -237,7 +237,7 @@ start "" "http://localhost:3000"
 :: ─────────────────────────────────────────────────────────────
 echo.
 echo  ============================================================
-echo   HYDROSENSE IS RUNNING
+echo   HydroSense IS RUNNING
 echo  ------------------------------------------------------------
 echo   Frontend App  :  http://localhost:3000
 echo   Backend API   :  http://localhost:5000/api

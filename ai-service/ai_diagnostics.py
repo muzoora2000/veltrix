@@ -137,7 +137,7 @@ class DiagnosticsReporter:
         report = self.collector.get_full_report()
         lines = [
             "=" * 60,
-            "  HYDROSENSE AI DIAGNOSTICS REPORT",
+            "  HydroSense AI DIAGNOSTICS REPORT",
             f"  Generated: {datetime.utcnow().isoformat()}",
             "=" * 60,
             "",

@@ -1,11 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-title HYDROSENSE AI Service v4.0
+title HydroSense AI Service v4.0
 color 02
 
 echo.
 echo  ================================================
-echo   HYDROSENSE AI Microservice v4.0
+echo   HydroSense AI Microservice v4.0
 echo   Enterprise Environmental Intelligence Engine
 echo  ================================================
 echo.
@@ -98,7 +98,7 @@ if errorlevel 1 (
 
 for /f "tokens=*" %%v in ('"%PYTHON%" --version 2^>^&1') do set PY_VER=%%v
 echo  [OK] %PY_VER%
-echo  [OK] Starting HYDROSENSE AI v4.0 on http://localhost:8000
+echo  [OK] Starting HydroSense AI v4.0 on http://localhost:8000
 echo  [OK] Health: http://localhost:8000/ai/health
 echo  [OK] Docs:   http://localhost:8000/docs
 echo.

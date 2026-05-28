@@ -342,7 +342,7 @@ export default function Login() {
               💧
             </div>
             <div>
-              <div className="font-bold text-white text-base leading-tight tracking-widest">HYDROSENSE</div>
+              <div className="font-bold text-white text-base leading-tight tracking-widest">HydroSense</div>
               <div className="text-blue-300/80 text-xs">Ministry of Water & Environment · Uganda</div>
             </div>
           </div>
@@ -484,7 +484,7 @@ export default function Login() {
 
           {/* Footer */}
           <div className="flex items-center justify-between text-xs text-blue-400/70">
-            <span>© 2026 HYDROSENSE · Uganda MWE</span>
+            <span>© 2026 HydroSense · Uganda MWE</span>
             <div className="flex items-center gap-1.5">
               <Shield size={11} />
               <span>ISO 27001 Secured</span>
@@ -503,7 +503,7 @@ export default function Login() {
           <div className="flex items-center gap-3 mb-7 lg:hidden">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl shadow">💧</div>
             <div>
-              <div className="font-bold text-gray-900 text-sm tracking-widest">HYDROSENSE</div>
+              <div className="font-bold text-gray-900 text-sm tracking-widest">HydroSense</div>
               <div className="text-gray-400 text-xs">Climate-Resilient Rural Water System</div>
             </div>
           </div>

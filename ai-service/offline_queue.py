@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 Offline Message Queue & Rural Optimization
+HydroSense v4.0 Offline Message Queue & Rural Optimization
 Provides offline message queuing, lightweight communication protocols,
 and sync capabilities for low-bandwidth rural environments.
 """

@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 Enhanced Multilingual Translation Engine
+HydroSense v4.0 Enhanced Multilingual Translation Engine
 Speech-to-text, language detection, environmental terminology preservation,
 SMS/WhatsApp parsing, and multi-channel report translation.
 """
@@ -73,7 +73,7 @@ async def translate_text(
         )
 
     prompt = (
-        f"You are a professional environmental translator for HYDROSENSE — Uganda's water platform. "
+        f"You are a professional environmental translator for HydroSense — Uganda's water platform. "
         f"Translate the following text from {source_name} to {target_name}. "
         f"Preserve the meaning, urgency, emotion, and ALL environmental/water terminology. "
         f"Keep numbers, locations, dates, and times EXACTLY as stated. "

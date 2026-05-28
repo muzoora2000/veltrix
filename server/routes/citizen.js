@@ -1,5 +1,5 @@
 /**
- * HYDROSENSE — Citizen Module API
+ * HydroSense — Citizen Module API
  * Public environmental data, discussions, volunteer events,
  * citizen observations, and personal achievements.
  */

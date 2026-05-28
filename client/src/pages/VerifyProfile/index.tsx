@@ -51,7 +51,7 @@ export default function VerifyProfile() {
         <div style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
             <span style={{ fontSize: '28px' }}>💧</span>
-            <span style={{ fontSize: '20px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1px' }}>HYDROSENSE</span>
+            <span style={{ fontSize: '20px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1px' }}>HydroSense</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6b7280' }}>Staff Credential Verification</div>
         </div>

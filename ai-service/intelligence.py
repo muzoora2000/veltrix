@@ -1,5 +1,5 @@
 """
-HYDROSENSE AI Intelligence Engine
+HydroSense AI Intelligence Engine
 Provides water failure prediction, anomaly detection, maintenance forecasting,
 contamination risk, and climate forecasting using real DB data.
 """

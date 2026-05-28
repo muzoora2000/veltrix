@@ -36,7 +36,7 @@ function buildEmailHTML(otp, purpose) {
         <!-- Header -->
         <tr><td style="background:linear-gradient(135deg,#1d4ed8,#0891b2);padding:28px 32px;text-align:center;">
           <div style="font-size:36px;margin-bottom:8px;">${icon}</div>
-          <h1 style="color:#ffffff;margin:0;font-size:22px;letter-spacing:-0.5px;">HYDROSENSE</h1>
+          <h1 style="color:#ffffff;margin:0;font-size:22px;letter-spacing:-0.5px;">HydroSense</h1>
           <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;">Ministry of Water &amp; Environment · Uganda</p>
         </td></tr>
 

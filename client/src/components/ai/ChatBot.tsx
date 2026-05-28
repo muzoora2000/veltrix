@@ -70,7 +70,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([{
     id: '0',
     role: 'assistant',
-    content: `Hello${user ? `, ${user.name.split(' ')[0]}` : ''}! I'm **Hydro AI**, your HYDROSENSE AI assistant.\n\nI can help with water points, alerts, predictions, climate data, and image analysis. How can I assist you today?`,
+    content: `Hello${user ? `, ${user.name.split(' ')[0]}` : ''}! I'm **Hydro AI**, your HydroSense AI assistant.\n\nI can help with water points, alerts, predictions, climate data, and image analysis. How can I assist you today?`,
     timestamp: new Date(),
     source: 'Hydro AI v4.0',
   }]);
@@ -189,7 +189,7 @@ export default function ChatBot() {
       setConversations(prev => prev.filter(c => c.id !== id));
       if (activeConvId === id) {
         setActiveConvId(null);
-        setMessages([{ id: '0', role: 'assistant', content: `Hello${user ? `, ${user.name.split(' ')[0]}` : ''}! I'm **Hydro AI**, your HYDROSENSE AI assistant.`, timestamp: new Date(), source: 'Hydro AI v4.0' }]);
+        setMessages([{ id: '0', role: 'assistant', content: `Hello${user ? `, ${user.name.split(' ')[0]}` : ''}! I'm **Hydro AI**, your HydroSense AI assistant.`, timestamp: new Date(), source: 'Hydro AI v4.0' }]);
       }
     } catch {}
   };

@@ -31,7 +31,7 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const basePath = '/' + location.pathname.split('/')[1];
-  const title = pageTitles[basePath] || 'HYDROSENSE';
+  const title = pageTitles[basePath] || 'HydroSense';
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">

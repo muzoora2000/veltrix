@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 AI Language Learning & Dialect Tracking System
+HydroSense v4.0 AI Language Learning & Dialect Tracking System
 Continuously improves understanding of local dialects, regional expressions,
 environmental terminology, voice accents, and community reporting patterns.
 """

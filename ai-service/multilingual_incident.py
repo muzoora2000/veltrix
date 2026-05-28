@@ -1,5 +1,5 @@
 """
-HYDROSENSE v4.0 Enhanced Multilingual Incident Analysis & Classification
+HydroSense v4.0 Enhanced Multilingual Incident Analysis & Classification
 AI-powered analysis of citizen reports in any Ugandan language with automatic
 translation, severity assessment, location extraction, and intelligent routing.
 """
@@ -72,7 +72,7 @@ async def _gemini_analysis(
     if source_language and source_language != "auto" and source_language != "en":
         lang_hint = lang_codes.get(source_language, source_language)
 
-    prompt = f"""You are an AI incident analyst for HYDROSENSE, Uganda's water and environmental management platform.
+    prompt = f"""You are an AI incident analyst for HydroSense, Uganda's water and environmental management platform.
 Analyze the following citizen report and extract structured information.
 The report may be in {lang_hint} or another local language.
 
