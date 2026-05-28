@@ -101,15 +101,29 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 
 ## 🏗️ System Architecture
 
-HydroSense is composed of three tightly integrated layers deployed independently:
-
-**Frontend** — React 18, TypeScript, Vite, Tailwind CSS, Leaflet, Recharts, Socket.IO Client
-
-**Backend** — Node.js, Express.js, PostgreSQL, Socket.IO, JWT Authentication, node-cron, Nodemailer, Africa's Talking
-
-**AI Service** — Python, FastAPI, Uvicorn, Google Gemini 2.5 Flash, Multilingual NLP, Risk Scoring, Auto Assignment, Offline Queue
-
-All three layers are hosted on Vercel (frontend) and Render (backend and AI service).
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│                        HydroSense                           │
+├──────────────┬──────────────────────┬───────────────────────┤
+│   Frontend   │       Backend        │      AI Service       │
+│              │                      │                       │
+│  React 18    │   Node.js / Express  │   Python / FastAPI    │
+│  TypeScript  │   PostgreSQL         │   Google Gemini       │
+│  Tailwind    │   Socket.IO          │   Multilingual NLP    │
+│  Vite        │   JWT Auth           │   Risk Scoring        │
+│  Leaflet     │   node-cron          │   Auto Assignment     │
+│  Recharts    │   Nodemailer         │   Offline Queue       │
+│  Socket.IO   │   Africa's Talking   │                       │
+└──────────────┴──────────────────────┴───────────────────────┘
+         │                  │                    │
+         └──────────────────┼────────────────────┘
+                            │
+              ┌─────────────▼─────────────┐
+              │     Deployment Layer       │
+              │  Vercel (Frontend)         │
+              │  Render (Backend + AI)     │
+              └───────────────────────────┘
+</pre>
 
 ---
 
