@@ -141,6 +141,7 @@ poetry.lock
 # ===== SCRATCH / TEST SCRIPTS =====
 server/scratch/
 scripts/
+screenshots-tool/
 diagnose.ps1
 emergency_cleanup.ps1
 

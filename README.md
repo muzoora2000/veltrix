@@ -264,7 +264,41 @@ DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
 
 ## 📸 Screenshots
 
-> *Screenshots coming soon — live demo available at the link above.*
+### Login
+![Login](screenshots/01-login.png)
+
+### Dashboard
+![Dashboard](screenshots/02-dashboard.png)
+
+### Water Infrastructure
+![Water Infrastructure](screenshots/03-water-infra.png)
+
+### IoT Sensors
+![IoT Sensors](screenshots/04-sensors.png)
+
+### Water Quality
+![Water Quality](screenshots/05-water-quality.png)
+
+### Community Reports
+![Community Reports](screenshots/06-community.png)
+
+### GIS & Spatial Mapping
+![GIS Mapping](screenshots/07-gis.png)
+
+### Health Surveillance
+![Health Surveillance](screenshots/08-health.png)
+
+### Emergency Response
+![Emergency Response](screenshots/09-emergency.png)
+
+### Analytics & AI
+![Analytics](screenshots/10-analytics.png)
+
+### Citizen Hub
+![Citizen Hub](screenshots/11-citizen-hub.png)
+
+### AI Intelligence Hub
+![AI Hub](screenshots/12-ai-hub.png)
 
 ---
 
