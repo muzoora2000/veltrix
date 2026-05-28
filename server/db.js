@@ -1079,6 +1079,7 @@ async function initSchema(db) {
   // Committee credential tables — district-controlled access system
   await pool.query(`
     CREATE TABLE IF NOT EXISTS committee_id_sequences (
+      id            BIGSERIAL,
       district_code TEXT NOT NULL,
       year          INTEGER NOT NULL,
       next_seq      INTEGER NOT NULL DEFAULT 1,
@@ -1102,6 +1103,7 @@ async function initSchema(db) {
     )
   `);
 
+  await e(`ALTER TABLE committee_id_sequences ADD COLUMN IF NOT EXISTS id BIGSERIAL`);
   await e(`CREATE INDEX IF NOT EXISTS idx_cc_user ON committee_credentials(user_id)`);
   await e(`CREATE INDEX IF NOT EXISTS idx_cc_district ON committee_credentials(district)`);
   await e(`CREATE INDEX IF NOT EXISTS idx_users_committee_id ON users(committee_id)`);

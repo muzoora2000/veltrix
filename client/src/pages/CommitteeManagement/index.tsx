@@ -504,12 +504,18 @@ export default function CommitteeManagement() {
                   </div>
                   <div>
                     <label className={labelCls}>District *</label>
-                    <select className={inputCls} required value={acctForm.district}
-                      onChange={e => setAcctForm(p => ({...p, district: e.target.value}))}
-                      disabled={user?.role === 'district_officer'}>
-                      <option value="">Select district</option>
-                      {UGANDA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                    {user?.role === 'district_officer' ? (
+                      <div className={inputCls + ' flex items-center justify-between bg-gray-50 text-gray-700 cursor-default select-none'}>
+                        <span>{acctForm.district || user?.district || '—'}</span>
+                        <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">Your district</span>
+                      </div>
+                    ) : (
+                      <select className={inputCls} required value={acctForm.district}
+                        onChange={e => setAcctForm(p => ({...p, district: e.target.value}))}>
+                        <option value="">Select district</option>
+                        {UGANDA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Committee Role</label>

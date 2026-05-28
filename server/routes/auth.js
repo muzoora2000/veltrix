@@ -84,19 +84,20 @@ async function generateCommitteeId(db, district) {
   const code = districtCode(district);
   const year = new Date().getFullYear();
 
-  // Upsert sequence row and atomically get next value
+  // Atomically increment or initialise the per-district sequence.
+  // The table has id BIGSERIAL so RETURNING id (auto-appended by run()) works.
   await db.prepare(`
     INSERT INTO committee_id_sequences (district_code, year, next_seq)
-    VALUES ($1, $2, 2)
-    ON CONFLICT (district_code, year) DO UPDATE
-      SET next_seq = committee_id_sequences.next_seq + 1
+    VALUES (?, ?, 2)
+    ON CONFLICT (district_code, year)
+    DO UPDATE SET next_seq = committee_id_sequences.next_seq + 1
   `).run(code, year);
 
   const row = await db.prepare(
-    'SELECT next_seq FROM committee_id_sequences WHERE district_code = $1 AND year = $2'
+    'SELECT next_seq FROM committee_id_sequences WHERE district_code = ? AND year = ?'
   ).get(code, year);
 
-  const seq = String(row.next_seq - 1).padStart(4, '0');
+  const seq = String((row?.next_seq ?? 2) - 1).padStart(4, '0');
   return `HSC-CC-${code}-${year}-${seq}`;
 }
 
