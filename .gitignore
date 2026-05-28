@@ -140,6 +140,16 @@ poetry.lock
 
 # ===== SCRATCH / TEST SCRIPTS =====
 server/scratch/
+scripts/
+diagnose.ps1
+emergency_cleanup.ps1
+
+# ===== TEMP / MIGRATION SCRIPTS =====
+client/update_storage.cjs
+server/datetime
+
+# ===== BUILD OUTPUT =====
+client/dist/
 
 # ===== PROFESSIONAL DEV EXCLUSIONS =====
-.devcontainer/ (keep if needed)
+.devcontainer/
