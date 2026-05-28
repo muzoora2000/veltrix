@@ -101,7 +101,7 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 
 ## 🏗️ System Architecture
 
-<pre>
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                        HydroSense                           │
 ├──────────────┬──────────────────────┬───────────────────────┤
@@ -124,7 +124,7 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
               │   Vercel  (Frontend)        │
               │   Render  (Backend + AI)    │
               └─────────────────────────────┘
-</pre>
+```
 
 ---
 
