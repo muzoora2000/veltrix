@@ -272,7 +272,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
 
 <div align="center">
 
-**Veltrix Developers**
+**HydroSense Developers**
 
 *Lead Developer & System Architect*
 
