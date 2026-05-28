@@ -11,6 +11,7 @@ import {
   getCommitteeIncidents, createCommitteeIncident, updateCommitteeIncident,
   getCommitteeProjects, createCommitteeProject, updateCommitteeProject,
   getCommitteeAnnouncements, createCommitteeAnnouncement,
+  createCommitteeAccount, getCommitteeAccounts,
 } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -112,6 +113,7 @@ export default function CommitteeManagement() {
   const { user } = useAuth();
   const isAdmin = ['national_admin', 'district_officer'].includes(user?.role || '');
 
+  const [activeView, setActiveView] = useState<'committees'|'accounts'>('committees');
   const [activeTab, setActiveTab] = useState<'overview'|'committees'|'members'|'meetings'|'incidents'|'projects'|'announcements'>('overview');
   const [stats, setStats]         = useState<any>(null);
   const [committees, setCommittees] = useState<any[]>([]);
@@ -138,6 +140,17 @@ export default function CommitteeManagement() {
   const [showAnnouncement, setShowAnnouncement]       = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+
+  // Accounts management
+  const [accounts, setAccounts]           = useState<any[]>([]);
+  const [acctLoading, setAcctLoading]     = useState(false);
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [acctSuccess, setAcctSuccess]     = useState('');
+  const [acctForm, setAcctForm] = useState({
+    name: '', email: '', password: '', phone: '',
+    district: user?.district || '', sub_county: '', location: '',
+    committee_role: 'member', jurisdiction: '', organization: '', office_contact: '',
+  });
 
   const loadStats = useCallback(async () => {
     try {
@@ -312,6 +325,32 @@ export default function CommitteeManagement() {
     finally { setSaving(false); }
   };
 
+  /* ── Committee Accounts ─────────────────────────── */
+  const loadAccounts = useCallback(async () => {
+    setAcctLoading(true);
+    try {
+      const r = await getCommitteeAccounts();
+      setAccounts(r.data.accounts || []);
+    } catch {} finally { setAcctLoading(false); }
+  }, []);
+
+  const handleViewAccounts = () => {
+    setActiveView('accounts');
+    if (accounts.length === 0) loadAccounts();
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true); setError(''); setAcctSuccess('');
+    try {
+      const res = await createCommitteeAccount(acctForm);
+      setAcctSuccess(`Account created. Committee ID: ${res.data.committee_id}`);
+      setAcctForm({ name:'', email:'', password:'', phone:'', district: user?.district || '', sub_county:'', location:'', committee_role:'member', jurisdiction:'', organization:'', office_contact:'' });
+      setShowCreateAccount(false);
+      loadAccounts();
+    } catch (err: any) { setError(err?.response?.data?.error || 'Failed to create account'); }
+    finally { setSaving(false); }
+  };
+
   const ov = stats?.overview;
 
   /* ── Render ───────────────────────────────────────── */
@@ -338,6 +377,174 @@ export default function CommitteeManagement() {
           )}
         </div>
       </div>
+
+      {/* View toggle — only for admins and district officers */}
+      {isAdmin && (
+        <div className="flex rounded-2xl bg-gray-100 dark:bg-slate-800 p-1 w-fit">
+          <button onClick={() => setActiveView('committees')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeView === 'committees' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+            <Building2 size={14}/> Committees
+          </button>
+          <button onClick={handleViewAccounts}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeView === 'accounts' ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}>
+            <UserPlus size={14}/> Committee Accounts
+          </button>
+        </div>
+      )}
+
+      {/* ── Accounts View ─────────────────────────────── */}
+      {activeView === 'accounts' && isAdmin && (
+        <div className="space-y-5">
+
+          {/* Success banner */}
+          {acctSuccess && (
+            <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-2xl flex items-start gap-3">
+              <CheckCircle size={16} className="text-emerald-600 flex-shrink-0 mt-0.5"/>
+              <div>
+                <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">Account Created Successfully</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5 font-mono">{acctSuccess}</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Share this Committee ID and the password with the member. They can log in at the Committee ID tab on the login page.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Accounts header */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-gray-900 dark:text-white">Committee Member Accounts</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  District-controlled accounts with auto-generated Committee IDs (HSC-CC-…)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={loadAccounts} className="p-2 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                  <RefreshCw size={14}/>
+                </button>
+                <button onClick={() => { setError(''); setAcctSuccess(''); setShowCreateAccount(true); }}
+                  className={btnPrimary + ' flex items-center gap-2'}>
+                  <Plus size={14}/> Create Account
+                </button>
+              </div>
+            </div>
+
+            {/* Accounts list */}
+            {acctLoading ? (
+              <div className="py-16 text-center text-gray-400">Loading accounts…</div>
+            ) : accounts.length === 0 ? (
+              <div className="py-16 text-center space-y-3">
+                <UserPlus size={32} className="text-gray-300 dark:text-gray-600 mx-auto"/>
+                <p className="text-sm text-gray-400">No committee accounts yet</p>
+                <button onClick={() => setShowCreateAccount(true)} className="text-emerald-600 text-xs font-semibold hover:underline">
+                  Create the first account
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50 dark:divide-slate-700/50">
+                {accounts.map((acct: any) => (
+                  <div key={acct.id} className="px-5 py-4 flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {acct.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm text-gray-900 dark:text-white">{acct.name}</span>
+                        {badge(acct.committee_role || 'member', 'blue')}
+                        {badge(acct.active ? 'Active' : 'Inactive', acct.active ? 'green' : 'red')}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{acct.email}</div>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-mono font-semibold border border-emerald-200 dark:border-emerald-700">
+                          🪪 {acct.committee_id || '—'}
+                        </span>
+                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                          <MapPin size={10}/>{acct.district}
+                        </span>
+                        {acct.organization && (
+                          <span className="text-xs text-gray-400">{acct.organization}</span>
+                        )}
+                        {acct.assigned_by_name && (
+                          <span className="text-xs text-gray-400">Assigned by: {acct.assigned_by_name}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Create Account Modal */}
+          {showCreateAccount && (
+            <Modal title="Create Committee Member Account" onClose={() => setShowCreateAccount(false)}>
+              {error && (
+                <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{error}</div>
+              )}
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-xs text-emerald-700 dark:text-emerald-300">
+                  A unique Committee ID (HSC-CC-…) will be auto-generated and can be used for login.
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className={labelCls}>Full Name *</label>
+                    <input className={inputCls} required value={acctForm.name} onChange={e => setAcctForm(p => ({...p, name: e.target.value}))} placeholder="Full name"/>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Email Address *</label>
+                    <input className={inputCls} type="email" required value={acctForm.email} onChange={e => setAcctForm(p => ({...p, email: e.target.value}))} placeholder="member@example.com"/>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Phone</label>
+                    <input className={inputCls} type="tel" value={acctForm.phone} onChange={e => setAcctForm(p => ({...p, phone: e.target.value}))} placeholder="+256 700 000 000"/>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Temporary Password *</label>
+                    <input className={inputCls} type="text" required minLength={6} value={acctForm.password} onChange={e => setAcctForm(p => ({...p, password: e.target.value}))} placeholder="Min 6 chars"/>
+                  </div>
+                  <div>
+                    <label className={labelCls}>District *</label>
+                    <select className={inputCls} required value={acctForm.district}
+                      onChange={e => setAcctForm(p => ({...p, district: e.target.value}))}
+                      disabled={user?.role === 'district_officer'}>
+                      <option value="">Select district</option>
+                      {UGANDA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Committee Role</label>
+                    <select className={inputCls} value={acctForm.committee_role} onChange={e => setAcctForm(p => ({...p, committee_role: e.target.value}))}>
+                      {COMMITTEE_ROLES.map(r => <option key={r} value={r.toLowerCase().replace(/ /g,'_')}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Jurisdiction Area</label>
+                    <input className={inputCls} value={acctForm.jurisdiction} onChange={e => setAcctForm(p => ({...p, jurisdiction: e.target.value}))} placeholder="e.g. Makindye Sub-County"/>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Committee / Organisation Name</label>
+                    <input className={inputCls} value={acctForm.organization} onChange={e => setAcctForm(p => ({...p, organization: e.target.value}))} placeholder="e.g. Kampala Water Users Committee"/>
+                  </div>
+                  <div className="col-span-2">
+                    <label className={labelCls}>Office Contact</label>
+                    <input className={inputCls} value={acctForm.office_contact} onChange={e => setAcctForm(p => ({...p, office_contact: e.target.value}))} placeholder="Office phone or email"/>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2">
+                  <button type="button" onClick={() => setShowCreateAccount(false)} className={btnSecondary}>Cancel</button>
+                  <button type="submit" disabled={saving} className={btnPrimary + ' flex items-center gap-2'}>
+                    {saving ? 'Creating…' : <><Plus size={14}/> Create Account</>}
+                  </button>
+                </div>
+              </form>
+            </Modal>
+          )}
+        </div>
+      )}
+
+      {/* ── Committees View (original content) — shown when activeView === 'committees' ── */}
+      {activeView === 'committees' && (<>
 
       {/* KPIs */}
       {ov && (
@@ -1050,6 +1257,8 @@ export default function CommitteeManagement() {
           </form>
         </Modal>
       )}
+
+    </>)}
 
     </div>
   );

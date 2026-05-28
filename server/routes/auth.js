@@ -73,22 +73,42 @@ router.get('/users/:id/public', async (req, res) => {
   res.json({ success: true, user });
 });
 
-/* ── Citizen / Committee / NGO Self-Registration ── */
-const SELF_REGISTER_ROLES = new Set(['citizen', 'community_committee', 'ngo_officer']);
+/* ── Committee ID generation ── */
+function districtCode(district) {
+  if (!district) return 'UGA';
+  const clean = district.trim().toUpperCase().replace(/[^A-Z]/g, '');
+  return clean.slice(0, 3) || 'UGA';
+}
 
+async function generateCommitteeId(db, district) {
+  const code = districtCode(district);
+  const year = new Date().getFullYear();
+
+  // Upsert sequence row and atomically get next value
+  await db.prepare(`
+    INSERT INTO committee_id_sequences (district_code, year, next_seq)
+    VALUES ($1, $2, 2)
+    ON CONFLICT (district_code, year) DO UPDATE
+      SET next_seq = committee_id_sequences.next_seq + 1
+  `).run(code, year);
+
+  const row = await db.prepare(
+    'SELECT next_seq FROM committee_id_sequences WHERE district_code = $1 AND year = $2'
+  ).get(code, year);
+
+  const seq = String(row.next_seq - 1).padStart(4, '0');
+  return `HSC-CC-${code}-${year}-${seq}`;
+}
+
+/* ── Public Citizen Self-Registration ── */
 router.post('/register', async (req, res) => {
   try {
     const db = getDb();
     const {
       name, email, password, phone, district, sub_county, location, language,
-      role: rawRole,
-      // Community committee extras
-      organization, committee_position, jurisdiction_area, office_contact,
-      // NGO extras
-      ngo_reg_number, area_of_operation,
     } = req.body;
 
-    const role = SELF_REGISTER_ROLES.has(rawRole) ? rawRole : 'citizen';
+    const role = 'citizen'; // only citizens may self-register
 
     if (!name || !name.trim()) return res.status(400).json({ success: false, error: 'Name is required' });
     if (!email || !email.trim()) return res.status(400).json({ success: false, error: 'Email is required' });
@@ -99,34 +119,13 @@ router.post('/register', async (req, res) => {
     const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(emailKey);
     if (existing) return res.status(409).json({ success: false, error: 'An account with this email already exists' });
 
-    // Build org name: committee name or NGO name
-    const orgName = role === 'community_committee'
-      ? (organization || null)
-      : role === 'ngo_officer'
-        ? (organization || null)
-        : null;
-
-    // committee_position or ngo_reg_number stored in committee_position column
-    const committeePos = role === 'community_committee'
-      ? (committee_position || null)
-      : role === 'ngo_officer'
-        ? (ngo_reg_number || null)
-        : null;
-
-    // jurisdiction_area / area_of_operation stored in location if not already set
-    const locationVal = location || jurisdiction_area || area_of_operation || null;
-    const officeContactVal = office_contact || null;
-
     const hash = bcrypt.hashSync(password, 10);
     const result = await db.prepare(`
-      INSERT INTO users (name, email, password_hash, role, phone, organization, committee_position,
-        district, sub_county, location, language, office_contact, active, otp_verified)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1)
+      INSERT INTO users (name, email, password_hash, role, phone, district, sub_county, location, language, active, otp_verified)
+      VALUES (?, ?, ?, 'citizen', ?, ?, ?, ?, ?, 1, 1)
     `).run(
-      name.trim(), emailKey, hash, role, phone,
-      orgName, committeePos,
-      district || null, sub_county || null, locationVal, language || 'en',
-      officeContactVal
+      name.trim(), emailKey, hash, phone,
+      district || null, sub_county || null, location || null, language || 'en'
     );
 
     const user = await db.prepare(
@@ -343,30 +342,132 @@ router.post('/resend-otp', async (req, res) => {
   });
 });
 
-/* ── Login ── */
+/* ── Login (email or Committee ID) ── */
 router.post('/login', async (req, res) => {
   const { email, password, rememberMe } = req.body;
-  if (!email || !password) return res.status(400).json({ success: false, error: 'Email and password required' });
+  if (!email || !password) return res.status(400).json({ success: false, error: 'Credentials required' });
 
   const db = await getDb();
-  const user = await db.prepare('SELECT * FROM users WHERE email = ? AND active = 1').get(email.toLowerCase().trim());
-  if (!user) return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  const identifier = email.trim();
+  let user;
+
+  // Detect Committee ID format: HSC-CC-*
+  if (/^HSC-/i.test(identifier)) {
+    const cred = await db.prepare(
+      `SELECT cc.*, u.* FROM committee_credentials cc
+       JOIN users u ON u.id = cc.user_id
+       WHERE cc.committee_id = $1 AND cc.status = 'active' AND u.active = 1`
+    ).get(identifier.toUpperCase());
+    if (!cred) return res.status(401).json({ success: false, error: 'Invalid Committee ID or account is inactive' });
+    user = { ...cred, id: cred.user_id };
+  } else {
+    user = await db.prepare('SELECT * FROM users WHERE email = $1 AND active = 1').get(identifier.toLowerCase());
+    if (!user) return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
 
   const valid = bcrypt.compareSync(password, user.password_hash);
   if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
 
-  await db.prepare("UPDATE users SET last_login = NOW() WHERE id = ?").run(user.id);
+  await db.prepare('UPDATE users SET last_login = NOW() WHERE id = $1').run(user.id);
 
-  // Long-lived token when user ticks "Remember Me", otherwise 7 days
   const expiry = rememberMe ? '365d' : '7d';
   const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role, name: user.name, district: user.district, organization: user.organization },
+    { id: user.id, email: user.email, role: user.role, name: user.name, district: user.district, organization: user.organization, committee_id: user.committee_id || null },
     SECRET,
     { expiresIn: expiry }
   );
 
   const { password_hash, ...safeUser } = user;
   res.json({ success: true, token, user: safeUser, expires_in: expiry });
+});
+
+/* ── Create Committee Member Account (district officers + admins only) ── */
+router.post('/committee-accounts', authMiddleware, requireRole('national_admin', 'district_officer'), async (req, res) => {
+  try {
+    const db = await getDb();
+    const actor = req.user;
+    const {
+      name, email, password, phone,
+      district, sub_county, location, language,
+      committee_role, jurisdiction, organization, office_contact,
+    } = req.body;
+
+    if (!name?.trim()) return res.status(400).json({ success: false, error: 'Name is required' });
+    if (!email?.trim()) return res.status(400).json({ success: false, error: 'Email is required' });
+    if (!password || password.length < 6) return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    if (!district?.trim()) return res.status(400).json({ success: false, error: 'District is required' });
+
+    // District officers can only create accounts in their own district
+    if (actor.role === 'district_officer' && actor.district && actor.district !== district) {
+      return res.status(403).json({ success: false, error: 'You can only create accounts in your assigned district' });
+    }
+
+    const emailKey = email.toLowerCase().trim();
+    const existing = await db.prepare('SELECT id FROM users WHERE email = $1').get(emailKey);
+    if (existing) return res.status(409).json({ success: false, error: 'An account with this email already exists' });
+
+    const committeeId = await generateCommitteeId(db, district);
+    const hash = bcrypt.hashSync(password, 10);
+
+    const result = await db.prepare(`
+      INSERT INTO users (name, email, password_hash, role, phone, district, sub_county, location,
+        language, organization, committee_position, office_contact, committee_id, active, otp_verified, approval_status)
+      VALUES ($1, $2, $3, 'community_committee', $4, $5, $6, $7, $8, $9, $10, $11, $12, 1, 1, 'active')
+    `).run(
+      name.trim(), emailKey, hash, phone || null,
+      district, sub_county || null, location || null, language || 'en',
+      organization || null, committee_role || 'member', office_contact || null, committeeId
+    );
+
+    await db.prepare(`
+      INSERT INTO committee_credentials (committee_id, user_id, district, committee_role, jurisdiction, assigned_by, status)
+      VALUES ($1, $2, $3, $4, $5, $6, 'active')
+    `).run(committeeId, result.lastInsertRowid, district, committee_role || 'member', jurisdiction || district, actor.id);
+
+    const newUser = await db.prepare(
+      'SELECT id, name, email, role, district, phone, committee_id, committee_position, organization, active FROM users WHERE id = $1'
+    ).get(result.lastInsertRowid);
+
+    console.log(`[COMMITTEE-ACCOUNT] Created ${committeeId} for ${emailKey} by ${actor.email}`);
+    res.status(201).json({
+      success: true,
+      message: `Committee account created. ID: ${committeeId}`,
+      committee_id: committeeId,
+      user: newUser,
+    });
+  } catch (err) {
+    console.error('[COMMITTEE-ACCOUNT] Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to create committee account' });
+  }
+});
+
+/* ── List Committee Accounts (district officers see own district; admins see all) ── */
+router.get('/committee-accounts', authMiddleware, requireRole('national_admin', 'district_officer'), async (req, res) => {
+  try {
+    const db = await getDb();
+    const actor = req.user;
+    const { district: qDistrict } = req.query;
+
+    let districtFilter = qDistrict || null;
+    if (actor.role === 'district_officer') districtFilter = actor.district;
+
+    const rows = await db.prepare(`
+      SELECT u.id, u.name, u.email, u.district, u.phone, u.committee_position,
+             u.organization, u.committee_id, u.active, u.created_at,
+             cc.committee_role, cc.jurisdiction, cc.status as credential_status,
+             cc.assigned_at, assigner.name as assigned_by_name
+      FROM users u
+      LEFT JOIN committee_credentials cc ON cc.user_id = u.id
+      LEFT JOIN users assigner ON assigner.id = cc.assigned_by
+      WHERE u.role = 'community_committee'
+        ${districtFilter ? 'AND u.district = $1' : ''}
+      ORDER BY u.created_at DESC
+    `).all(...(districtFilter ? [districtFilter] : []));
+
+    res.json({ success: true, accounts: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to fetch committee accounts' });
+  }
 });
 
 /* ── Refresh token — issues a fresh token for the same user without re-login ── */

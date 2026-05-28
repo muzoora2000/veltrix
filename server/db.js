@@ -1074,6 +1074,37 @@ async function initSchema(db) {
   await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS committee_position TEXT`);
   await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'active'`);
   await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS office_contact TEXT`);
+  await e(`ALTER TABLE users ADD COLUMN IF NOT EXISTS committee_id TEXT`);
+
+  // Committee credential tables — district-controlled access system
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS committee_id_sequences (
+      district_code TEXT NOT NULL,
+      year          INTEGER NOT NULL,
+      next_seq      INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (district_code, year)
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS committee_credentials (
+      id               BIGSERIAL PRIMARY KEY,
+      committee_id     TEXT UNIQUE NOT NULL,
+      user_id          BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      district         TEXT NOT NULL,
+      committee_role   TEXT NOT NULL DEFAULT 'member',
+      jurisdiction     TEXT,
+      assigned_by      BIGINT REFERENCES users(id),
+      assigned_at      TIMESTAMPTZ DEFAULT NOW(),
+      status           TEXT NOT NULL DEFAULT 'active',
+      last_login       TIMESTAMPTZ,
+      created_at       TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`CREATE INDEX IF NOT EXISTS idx_cc_user ON committee_credentials(user_id)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_cc_district ON committee_credentials(district)`);
+  await e(`CREATE INDEX IF NOT EXISTS idx_users_committee_id ON users(committee_id)`);
 
   // Indexes
   await e(`CREATE INDEX IF NOT EXISTS idx_wp_district ON water_points(district)`);

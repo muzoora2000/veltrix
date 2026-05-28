@@ -217,6 +217,10 @@ export const getCommitteeAnnouncements = (id: number) => api.get(`/committees/${
 export const createCommitteeAnnouncement = (id: number, data: object) => api.post(`/committees/${id}/announcements`, data);
 export const getAvailableUsers = (params?: object) => api.get('/committees/available-users', { params });
 
+// District-Controlled Committee Account Management
+export const createCommitteeAccount = (data: object) => api.post('/auth/committee-accounts', data);
+export const getCommitteeAccounts   = (params?: object) => api.get('/auth/committee-accounts', { params });
+
 // Committee dual-RBAC extensions
 export const getMyCommittees = () => api.get('/committees/my-committees');
 export const getCommitteeVotes = (id: number) => api.get(`/committees/${id}/votes`);

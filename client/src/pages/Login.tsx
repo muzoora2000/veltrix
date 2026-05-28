@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, AlertCircle, Shield, Wifi, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Shield, Wifi, UserPlus, CreditCard, Mail } from 'lucide-react';
 
 const slides = [
   {
@@ -146,14 +146,17 @@ const lightRays = [
   { left: '76%', width: '4px', rotate: '15deg', duration: '4.5s',delay: '1.2s' },
 ];
 
+type LoginMode = 'email' | 'committee_id';
+
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginMode, setLoginMode]       = useState<LoginMode>('email');
+  const [identifier, setIdentifier]     = useState('');
+  const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [rememberMe, setRememberMe]     = useState(true);
+  const [error, setError]               = useState('');
+  const [loading, setLoading]           = useState(false);
+  const [activeSlide, setActiveSlide]   = useState(0);
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [activeFeature, setActiveFeature] = useState<number | null>(null);
 
@@ -166,23 +169,30 @@ export default function Login() {
     return () => clearInterval(timer);
   }, []);
 
+  const switchMode = (mode: LoginMode) => {
+    setLoginMode(mode);
+    setIdentifier('');
+    setError('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(email, password, rememberMe);
+      await login(identifier.trim(), password, rememberMe);
       setLoginSuccess(true);
       const redirectTo = locationState?.from || '/dashboard';
       setTimeout(() => navigate(redirectTo, { replace: true }), 800);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please check your email and password.');
+      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
       setLoading(false);
     }
   };
 
   const fillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
+    setLoginMode('email');
+    setIdentifier(demoEmail);
     setPassword('password123');
     setError('');
   };
@@ -509,10 +519,38 @@ export default function Login() {
           </div>
 
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Welcome back</h2>
             <p className="text-gray-400 text-sm mt-1">Sign in to access your dashboard</p>
           </div>
+
+          {/* Login mode toggle */}
+          <div className="flex rounded-2xl bg-gray-100 p-1 mb-6">
+            <button type="button" onClick={() => switchMode('email')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                loginMode === 'email'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}>
+              <Mail size={14} /> Email Login
+            </button>
+            <button type="button" onClick={() => switchMode('committee_id')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                loginMode === 'committee_id'
+                  ? 'bg-white text-emerald-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}>
+              <CreditCard size={14} /> Committee ID
+            </button>
+          </div>
+
+          {/* Committee ID hint */}
+          {loginMode === 'committee_id' && (
+            <div className="mb-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-700">
+              <span className="font-bold block mb-0.5">Committee Member Login</span>
+              Enter your official Committee ID (e.g. <span className="font-mono font-bold">HSC-CC-KLA-2026-0001</span>) issued by your District Officer.
+            </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -533,18 +571,31 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
 
-            {/* Email */}
+            {/* Identifier field — email or Committee ID */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-              <input
-                type="email"
-                className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl text-sm bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.go.ug"
-                required
-                autoFocus
-              />
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {loginMode === 'committee_id' ? 'Committee ID' : 'Email Address'}
+              </label>
+              <div className="relative">
+                {loginMode === 'committee_id'
+                  ? <CreditCard size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" />
+                  : <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                }
+                <input
+                  type={loginMode === 'committee_id' ? 'text' : 'email'}
+                  className={`w-full pl-11 pr-4 py-3.5 border rounded-2xl text-sm bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent focus:bg-white transition-all duration-200 ${
+                    loginMode === 'committee_id'
+                      ? 'border-emerald-200 focus:ring-emerald-500 font-mono tracking-wide'
+                      : 'border-gray-200 focus:ring-blue-500'
+                  }`}
+                  value={identifier}
+                  onChange={e => setIdentifier(e.target.value)}
+                  placeholder={loginMode === 'committee_id' ? 'HSC-CC-KLA-2026-0001' : 'your@email.go.ug'}
+                  required
+                  autoFocus
+                  autoComplete="off"
+                />
+              </div>
             </div>
 
             {/* Password */}
