@@ -865,6 +865,126 @@ async function initSchema(db) {
     )
   `);
 
+  // ── Community Committee Management ──────────────────────────
+  await e(`
+    CREATE TABLE IF NOT EXISTS committees (
+      id BIGSERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      district TEXT NOT NULL,
+      sub_county TEXT,
+      village TEXT,
+      jurisdiction TEXT,
+      description TEXT,
+      chairperson_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+      status TEXT DEFAULT 'active',
+      established_date TEXT,
+      meeting_frequency TEXT DEFAULT 'monthly',
+      total_members INTEGER DEFAULT 0,
+      created_by BIGINT REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_members (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      committee_role TEXT DEFAULT 'member',
+      languages TEXT,
+      phone TEXT,
+      joined_at TIMESTAMPTZ DEFAULT NOW(),
+      status TEXT DEFAULT 'active',
+      UNIQUE(committee_id, user_id)
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_meetings (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      agenda TEXT,
+      minutes TEXT,
+      resolutions TEXT,
+      meeting_date TEXT NOT NULL,
+      meeting_time TEXT,
+      location TEXT,
+      status TEXT DEFAULT 'scheduled',
+      created_by BIGINT REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_meeting_attendees (
+      meeting_id BIGINT REFERENCES committee_meetings(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      attended INTEGER DEFAULT 0,
+      PRIMARY KEY (meeting_id, user_id)
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_incident_assignments (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      report_id BIGINT REFERENCES citizen_reports(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      incident_type TEXT DEFAULT 'water_quality',
+      district TEXT,
+      description TEXT,
+      assigned_to BIGINT REFERENCES users(id),
+      assigned_by BIGINT REFERENCES users(id),
+      status TEXT DEFAULT 'new',
+      priority TEXT DEFAULT 'medium',
+      notes TEXT,
+      evidence_url TEXT,
+      escalated INTEGER DEFAULT 0,
+      resolved_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_projects (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      project_type TEXT DEFAULT 'water',
+      description TEXT,
+      district TEXT,
+      location TEXT,
+      status TEXT DEFAULT 'planned',
+      priority TEXT DEFAULT 'medium',
+      budget REAL DEFAULT 0,
+      spent REAL DEFAULT 0,
+      start_date TEXT,
+      end_date TEXT,
+      progress_pct INTEGER DEFAULT 0,
+      lead_officer BIGINT REFERENCES users(id),
+      created_by BIGINT REFERENCES users(id),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_announcements (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      priority TEXT DEFAULT 'normal',
+      created_by BIGINT REFERENCES users(id),
+      author_name TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
   // Column migrations — add columns that were missing from the original schema
   await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_url TEXT`);
   await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_type TEXT`);

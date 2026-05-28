@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import {
   LayoutDashboard, Droplets, Cpu, CloudRain, TestTube, Users, Heart,
   AlertTriangle, BarChart3, Map, Wrench, ShieldCheck, LogOut, X, Globe,
-  Brain, Shield, Radio, Hammer, UserCog, UserCircle,
+  Brain, Shield, Radio, Hammer, UserCog, UserCircle, Building2,
 } from 'lucide-react';
 import ProfileModal from '../common/ProfileModal';
 
@@ -59,6 +59,9 @@ const navItems: NavItem[] = [
     roles:['national_admin','district_officer','health_officer','ngo_officer','climate_scientist'], group:'science' },
 
   // ── Community & Health ────────────────────────────────────
+  { to:'/committee-management', icon:Building2, label:'Community Committees',
+    roles:['national_admin','district_officer','community_committee'],
+    group:'community', badge:'NEW' },
   { to:'/community',          icon:Users,         label:'Community Reports',
     roles:['national_admin','district_officer','community_committee','ngo_officer','citizen'], group:'community' },
   { to:'/health',             icon:Heart,         label:'Health Surveillance',

@@ -193,3 +193,26 @@ export const getAIDecisionLogs = (limit?: number) => api.get('/ai-conversations/
 
 // System
 export const getSystemStatus = () => api.get('/system/status');
+
+// Community Committee Management
+export const getCommitteeStats = () => api.get('/committees/stats');
+export const getCommittees = (params?: object) => api.get('/committees', { params });
+export const createCommittee = (data: object) => api.post('/committees', data);
+export const getCommittee = (id: number) => api.get(`/committees/${id}`);
+export const updateCommittee = (id: number, data: object) => api.put(`/committees/${id}`, data);
+export const deleteCommittee = (id: number) => api.delete(`/committees/${id}`);
+export const getCommitteeMembers = (id: number) => api.get(`/committees/${id}/members`);
+export const addCommitteeMember = (id: number, data: object) => api.post(`/committees/${id}/members`, data);
+export const removeCommitteeMember = (id: number, userId: number) => api.delete(`/committees/${id}/members/${userId}`);
+export const getCommitteeMeetings = (id: number) => api.get(`/committees/${id}/meetings`);
+export const createCommitteeMeeting = (id: number, data: object) => api.post(`/committees/${id}/meetings`, data);
+export const updateCommitteeMeeting = (meetingId: number, data: object) => api.put(`/committees/meetings/${meetingId}`, data);
+export const getCommitteeIncidents = (id: number, params?: object) => api.get(`/committees/${id}/incidents`, { params });
+export const createCommitteeIncident = (id: number, data: object) => api.post(`/committees/${id}/incidents`, data);
+export const updateCommitteeIncident = (incidentId: number, data: object) => api.put(`/committees/incidents/${incidentId}`, data);
+export const getCommitteeProjects = (id: number) => api.get(`/committees/${id}/projects`);
+export const createCommitteeProject = (id: number, data: object) => api.post(`/committees/${id}/projects`, data);
+export const updateCommitteeProject = (projectId: number, data: object) => api.put(`/committees/projects/${projectId}`, data);
+export const getCommitteeAnnouncements = (id: number) => api.get(`/committees/${id}/announcements`);
+export const createCommitteeAnnouncement = (id: number, data: object) => api.post(`/committees/${id}/announcements`, data);
+export const getAvailableUsers = (params?: object) => api.get('/committees/available-users', { params });

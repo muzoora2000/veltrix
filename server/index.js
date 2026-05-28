@@ -103,6 +103,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/incident-analysis', require('./routes/incident-analysis'));
 app.use('/api/emergency-response', require('./routes/emergency-response'));
 app.use('/api/ai-conversations', require('./routes/ai-conversations'));
+app.use('/api/committees', require('./routes/committees'));
 
 // ═══════════════════════════════════════════════════════════════
 // ENHANCED MULTILINGUAL & AUTO-ASSIGNMENT ROUTES

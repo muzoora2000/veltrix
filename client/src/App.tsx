@@ -34,6 +34,7 @@ import CitizenTracking from './pages/CitizenTracking';
 import IncidentAnalysis from './pages/IncidentAnalysis';
 import TaskAssignment from './pages/TaskAssignment';
 import VerifyProfile from './pages/VerifyProfile';
+import CommitteeManagement from './pages/CommitteeManagement';
 
 /* ─────────────────────────────────────────────────────────────
    RBAC — Advanced Role-Based Access Control
@@ -96,6 +97,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   '/task-assignment':     ['national_admin','district_officer','technician','health_officer'],
 
   '/incident-command':    ['national_admin','district_officer'],
+  '/committee-management': ['national_admin','district_officer','community_committee'],
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -228,6 +230,7 @@ export default function App() {
             <Route path="technician-portal" element={<RoleRoute path="/technician-portal"><TechnicianPortal /></RoleRoute>} />
             <Route path="gwn" element={<RoleRoute path="/gwn"><GWN /></RoleRoute>} />
             <Route path="incident-command" element={<RoleRoute path="/incident-command"><IncidentCommand /></RoleRoute>} />
+            <Route path="committee-management" element={<RoleRoute path="/committee-management"><CommitteeManagement /></RoleRoute>} />
             <Route path="citizen-hub" element={<RoleRoute path="/citizen-hub"><CitizenHub /></RoleRoute>} />
           <Route path="citizen-report" element={<RoleRoute path="/water-infrastructure"><CitizenReport /></RoleRoute>} />
           <Route path="multilingual-report" element={<RoleRoute path="/water-infrastructure"><MultilingualReport /></RoleRoute>} />
