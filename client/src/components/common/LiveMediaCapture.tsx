@@ -19,7 +19,7 @@ export default function LiveMediaCapture({ mode, onCapture, onClose }: Props) {
   const [recording, setRecording] = useState(false);
   const [duration, setDuration] = useState(0);
 
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
   const startTimeRef = useRef(0);
 
   const stopStream = useCallback(() => {

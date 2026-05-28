@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageCode } from '../types/language';
 import VoiceRecorder, { VoiceResult } from '../components/reporting/VoiceRecorder';
-import CameraCapture from '../components/common/CameraCapture';
+import LiveMediaCapture from '../components/common/LiveMediaCapture';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English', lug: 'Luganda', swa: 'Swahili', luo: 'Luo',
@@ -537,8 +537,9 @@ export default function MultilingualReport() {
     </div>
 
     {showCamera && (
-      <CameraCapture
-        onCapture={(dataUrl, file) => {
+      <LiveMediaCapture
+        mode="photo"
+        onCapture={(dataUrl: string, file: File) => {
           setImagePreview(dataUrl);
           setImageFile(file);
           setShowCamera(false);
