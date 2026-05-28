@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
 
   // ── Analytics ─────────────────────────────────────────────
   { to:'/gis',                icon:Map,     label:'GIS & Mapping',
-    roles:['national_admin','district_officer','climate_scientist','ngo_officer','health_officer'], group:'analytics' },
+    roles:['national_admin','district_officer','climate_scientist','ngo_officer','health_officer','community_committee'], group:'analytics' },
   { to:'/analytics',          icon:BarChart3, label:'Analytics & AI',
     roles:['national_admin','district_officer','climate_scientist','health_officer'], group:'analytics' },
 
@@ -149,6 +149,17 @@ const groupLabels: Record<string, string> = {
   admin:     'Administration & AI',
 };
 
+// Separate group label set for community_committee role — reflects their governance context
+// without exposing internal system terminology from the core HydroSense RBAC layer.
+const committeeGroupLabels: Record<string, string> = {
+  core:      'Overview',
+  community: '🏘️ Committee Operations',
+  analytics: '🗺️ Shared — Spatial View',
+  gwn:       '🌿 Environment Watch',
+  citizen:   '📋 Reporting & Tracking',
+  tools:     'My Tasks',
+};
+
 /* ─────────────────────────────────────────────────────────────
    Badge colour helper
 ───────────────────────────────────────────────────────────── */
@@ -214,6 +225,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   });
 
   const ORDER = ['core','infra','science','community','analytics','gwn','citizen','tools','admin'];
+  const isCommitteeRole = userRole === 'community_committee';
+  const resolveGroupLabel = (group: string) =>
+    isCommitteeRole
+      ? (committeeGroupLabels[group] || groupLabels[group] || group)
+      : (groupLabels[group] || group);
 
   return (
     <>
@@ -295,7 +311,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               <div key={group} className="mb-1">
                 {group !== 'core' && (
                   <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-600 select-none">
-                    {tl(groupLabels[group] || group)}
+                    {tl(resolveGroupLabel(group))}
                   </div>
                 )}
                 {items.map(item => (

@@ -1,39 +1,51 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db');
-const { authMiddleware, requireRole } = require('../middleware/auth');
+const { authMiddleware, requireRole, requireCommitteeAccess, auditLog } = require('../middleware/auth');
 
-const ADMIN_ROLES = ['national_admin', 'district_officer'];
+// ── Role constants ────────────────────────────────────────────
+const ADMIN_ROLES     = ['national_admin', 'district_officer'];
 const COMMITTEE_ROLES = ['national_admin', 'district_officer', 'community_committee'];
+
+// ── Jurisdiction scope helper ─────────────────────────────────
+// Returns SQL fragment + params to restrict committee queries to the user's
+// geographic jurisdiction when the caller is a community_committee member.
+function jurisdictionScope(req, alias = 'c', startIndex = 1) {
+  if (ADMIN_ROLES.includes(req.user.role)) return { clause: '', params: [], nextIndex: startIndex };
+  if (req.user.role === 'community_committee' && req.user.district) {
+    return { clause: `AND ${alias}.district = $${startIndex}`, params: [req.user.district], nextIndex: startIndex + 1 };
+  }
+  return { clause: '', params: [], nextIndex: startIndex };
+}
 
 // ── Stats / Dashboard ────────────────────────────────────────
 
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const db = getDb();
-    const district = req.user.district;
     const isAdmin = ADMIN_ROLES.includes(req.user.role);
-
+    const districtParam = isAdmin ? [] : [req.user.district];
     const districtClause = isAdmin ? '' : `WHERE district = $1`;
-    const districtParam = isAdmin ? [] : [district];
+    const dAnd = isAdmin ? '' : `AND district = $1`;
 
-    const [total, active, members, meetings, incidents, projects, announcements] = await Promise.all([
+    const [total, active, members, meetings, incidents, projects] = await Promise.all([
       db.prepare(`SELECT COUNT(*) as c FROM committees ${districtClause}`).get(...districtParam),
-      db.prepare(`SELECT COUNT(*) as c FROM committees WHERE status='active' ${isAdmin ? '' : 'AND district=$1'}`).get(...districtParam),
+      db.prepare(`SELECT COUNT(*) as c FROM committees WHERE status='active' ${dAnd}`).get(...districtParam),
       db.prepare(`SELECT COUNT(*) as c FROM committee_members WHERE status='active'`).get(),
       db.prepare(`SELECT COUNT(*) as c FROM committee_meetings WHERE status='scheduled' AND meeting_date >= CURRENT_DATE::text`).get(),
       db.prepare(`SELECT COUNT(*) as c FROM committee_incident_assignments WHERE status NOT IN ('resolved','closed')`).get(),
       db.prepare(`SELECT COUNT(*) as c FROM committee_projects WHERE status NOT IN ('completed','cancelled')`).get(),
-      db.prepare(`SELECT * FROM committee_announcements ORDER BY created_at DESC LIMIT 5`).all(),
     ]);
 
-    const incidentsByStatus = await db.prepare(`
-      SELECT status, COUNT(*) as c FROM committee_incident_assignments GROUP BY status
-    `).all();
+    const announcements = await db.prepare(`SELECT * FROM committee_announcements ORDER BY created_at DESC LIMIT 5`).all();
 
-    const projectsByType = await db.prepare(`
-      SELECT project_type, COUNT(*) as c FROM committee_projects GROUP BY project_type
-    `).all();
+    const incidentsByStatus = await db.prepare(
+      `SELECT status, COUNT(*) as c FROM committee_incident_assignments GROUP BY status`
+    ).all();
+
+    const projectsByType = await db.prepare(
+      `SELECT project_type, COUNT(*) as c FROM committee_projects GROUP BY project_type`
+    ).all();
 
     const recentIncidents = await db.prepare(`
       SELECT cia.*, u.name as assigned_to_name
@@ -53,23 +65,55 @@ router.get('/stats', authMiddleware, async (req, res) => {
       success: true,
       data: {
         overview: {
-          total_committees: parseInt(total?.c || 0),
-          active_committees: parseInt(active?.c || 0),
-          total_members: parseInt(members?.c || 0),
-          upcoming_meetings: parseInt(meetings?.c || 0),
-          open_incidents: parseInt(incidents?.c || 0),
-          active_projects: parseInt(projects?.c || 0),
+          total_committees:  parseInt(total?.c   || 0),
+          active_committees: parseInt(active?.c  || 0),
+          total_members:     parseInt(members?.c || 0),
+          upcoming_meetings: parseInt(meetings?.c  || 0),
+          open_incidents:    parseInt(incidents?.c || 0),
+          active_projects:   parseInt(projects?.c  || 0),
         },
         incidents_by_status: incidentsByStatus,
-        projects_by_type: projectsByType,
-        recent_incidents: recentIncidents,
-        recent_meetings: recentMeetings,
+        projects_by_type:    projectsByType,
+        recent_incidents:    recentIncidents,
+        recent_meetings:     recentMeetings,
         announcements,
       },
     });
   } catch (err) {
     console.error('[committees/stats]', err);
     res.status(500).json({ success: false, error: 'Failed to load stats' });
+  }
+});
+
+// ── My Committees — committees where the current user is an active member ──
+
+router.get('/my-committees', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const rows = await db.prepare(`
+      SELECT c.*,
+        cm.committee_role as my_role, cm.joined_at,
+        u.name as chairperson_name,
+        (SELECT COUNT(*) FROM committee_members m WHERE m.committee_id = c.id AND m.status='active') as member_count,
+        (SELECT COUNT(*) FROM committee_meetings mtg WHERE mtg.committee_id = c.id
+          AND mtg.status='scheduled' AND mtg.meeting_date >= CURRENT_DATE::text) as upcoming_meetings,
+        (SELECT COUNT(*) FROM committee_incident_assignments cia
+          WHERE cia.committee_id = c.id AND cia.status NOT IN ('resolved','closed')) as open_incidents,
+        (SELECT COUNT(*) FROM committee_projects cp
+          WHERE cp.committee_id = c.id AND cp.status NOT IN ('completed','cancelled')) as active_projects,
+        (SELECT ca.title FROM committee_announcements ca
+          WHERE ca.committee_id = c.id ORDER BY ca.created_at DESC LIMIT 1) as latest_announcement
+      FROM committee_members cm
+      JOIN committees c ON c.id = cm.committee_id
+      LEFT JOIN users u ON u.id = c.chairperson_id
+      WHERE cm.user_id = $1 AND cm.status = 'active' AND c.status = 'active'
+      ORDER BY cm.joined_at DESC
+    `).all(req.user.id);
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    console.error('[committees/my-committees]', err);
+    res.status(500).json({ success: false, error: 'Failed to load your committees' });
   }
 });
 
@@ -84,7 +128,13 @@ router.get('/', authMiddleware, async (req, res) => {
     let i = 1;
 
     if (district) { conditions.push(`c.district = $${i++}`); params.push(district); }
-    if (status)   { conditions.push(`c.status = $${i++}`); params.push(status); }
+    if (status)   { conditions.push(`c.status = $${i++}`);   params.push(status); }
+
+    // Jurisdiction isolation: community_committee users see only their district
+    if (req.user.role === 'community_committee' && req.user.district && !district) {
+      conditions.push(`c.district = $${i++}`);
+      params.push(req.user.district);
+    }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(parseInt(limit), parseInt(offset));
@@ -104,7 +154,9 @@ router.get('/', authMiddleware, async (req, res) => {
       LIMIT $${i++} OFFSET $${i++}
     `).all(...params);
 
-    const total = await db.prepare(`SELECT COUNT(*) as c FROM committees ${where.replace(/c\./g,'')}`).get(...params.slice(0, -2));
+    const countWhere = where.replace(/c\./g, '');
+    const total = await db.prepare(`SELECT COUNT(*) as c FROM committees ${countWhere}`)
+      .get(...params.slice(0, -2));
 
     res.json({ success: true, data: rows, total: parseInt(total?.c || 0) });
   } catch (err) {
@@ -116,16 +168,20 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const db = getDb();
-    const { name, district, sub_county, village, jurisdiction, description, chairperson_id, established_date, meeting_frequency } = req.body;
+    const { name, district, sub_county, village, jurisdiction, description,
+            chairperson_id, established_date, meeting_frequency } = req.body;
     if (!name || !district) return res.status(400).json({ success: false, error: 'name and district are required' });
 
     const result = await db.prepare(`
-      INSERT INTO committees (name, district, sub_county, village, jurisdiction, description, chairperson_id, established_date, meeting_frequency, created_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-      RETURNING id
-    `).run(name, district, sub_county || null, village || null, jurisdiction || null, description || null, chairperson_id || null, established_date || null, meeting_frequency || 'monthly', req.user.id);
+      INSERT INTO committees (name, district, sub_county, village, jurisdiction, description,
+        chairperson_id, established_date, meeting_frequency, created_by)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id
+    `).run(name, district, sub_county || null, village || null, jurisdiction || null,
+           description || null, chairperson_id || null, established_date || null,
+           meeting_frequency || 'monthly', req.user.id);
 
-    res.status(201).json({ success: true, data: { id: result.lastID } });
+    await auditLog(req, 'CREATE', 'committee', result.lastInsertRowid, result.lastInsertRowid, false, { name, district });
+    res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/create]', err);
     res.status(500).json({ success: false, error: 'Failed to create committee' });
@@ -135,10 +191,24 @@ router.post('/', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) =
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const db = getDb();
+
+    // Jurisdiction boundary: community_committee may only view committees in their district
+    // or committees they are a member of
+    if (req.user.role === 'community_committee') {
+      const c = await db.prepare(`SELECT district FROM committees WHERE id = $1`).get(req.params.id);
+      if (c && c.district !== req.user.district) {
+        const membership = await db.prepare(
+          `SELECT id FROM committee_members WHERE committee_id=$1 AND user_id=$2 AND status='active'`
+        ).get(req.params.id, req.user.id);
+        if (!membership) {
+          return res.status(403).json({ success: false, error: 'Access restricted to your jurisdiction' });
+        }
+      }
+    }
+
     const committee = await db.prepare(`
       SELECT c.*, u.name as chairperson_name, u.phone as chairperson_phone
-      FROM committees c
-      LEFT JOIN users u ON u.id = c.chairperson_id
+      FROM committees c LEFT JOIN users u ON u.id = c.chairperson_id
       WHERE c.id = $1
     `).get(req.params.id);
 
@@ -146,8 +216,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 
     const members = await db.prepare(`
       SELECT cm.*, u.name, u.email, u.phone, u.district, u.avatar, u.role as system_role
-      FROM committee_members cm
-      JOIN users u ON u.id = cm.user_id
+      FROM committee_members cm JOIN users u ON u.id = cm.user_id
       WHERE cm.committee_id = $1 AND cm.status='active'
       ORDER BY cm.committee_role, u.name
     `).all(req.params.id);
@@ -162,15 +231,20 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.put('/:id', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const db = getDb();
-    const { name, district, sub_county, village, jurisdiction, description, chairperson_id, status, established_date, meeting_frequency } = req.body;
+    const { name, district, sub_county, village, jurisdiction, description,
+            chairperson_id, status, established_date, meeting_frequency } = req.body;
     await db.prepare(`
-      UPDATE committees SET name=$1, district=$2, sub_county=$3, village=$4, jurisdiction=$5, description=$6,
-        chairperson_id=$7, status=$8, established_date=$9, meeting_frequency=$10, updated_at=NOW()
+      UPDATE committees SET name=$1, district=$2, sub_county=$3, village=$4, jurisdiction=$5,
+        description=$6, chairperson_id=$7, status=$8, established_date=$9,
+        meeting_frequency=$10, updated_at=NOW()
       WHERE id=$11
-    `).run(name, district, sub_county || null, village || null, jurisdiction || null, description || null, chairperson_id || null, status || 'active', established_date || null, meeting_frequency || 'monthly', req.params.id);
+    `).run(name, district, sub_county || null, village || null, jurisdiction || null,
+           description || null, chairperson_id || null, status || 'active',
+           established_date || null, meeting_frequency || 'monthly', req.params.id);
+
+    await auditLog(req, 'UPDATE', 'committee', req.params.id, req.params.id, false);
     res.json({ success: true });
   } catch (err) {
-    console.error('[committees/update]', err);
     res.status(500).json({ success: false, error: 'Failed to update committee' });
   }
 });
@@ -179,6 +253,7 @@ router.delete('/:id', authMiddleware, requireRole('national_admin'), async (req,
   try {
     const db = getDb();
     await db.prepare(`UPDATE committees SET status='archived', updated_at=NOW() WHERE id=$1`).run(req.params.id);
+    await auditLog(req, 'ARCHIVE', 'committee', req.params.id, req.params.id, false);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to archive committee' });
@@ -187,13 +262,12 @@ router.delete('/:id', authMiddleware, requireRole('national_admin'), async (req,
 
 // ── Members ──────────────────────────────────────────────────
 
-router.get('/:id/members', authMiddleware, async (req, res) => {
+router.get('/:id/members', authMiddleware, requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const rows = await db.prepare(`
       SELECT cm.*, u.name, u.email, u.phone, u.district, u.sub_county, u.avatar, u.role as system_role, u.organization
-      FROM committee_members cm
-      JOIN users u ON u.id = cm.user_id
+      FROM committee_members cm JOIN users u ON u.id = cm.user_id
       WHERE cm.committee_id = $1
       ORDER BY cm.committee_role, u.name
     `).all(req.params.id);
@@ -216,6 +290,7 @@ router.post('/:id/members', authMiddleware, requireRole(...ADMIN_ROLES), async (
     `).run(req.params.id, user_id, committee_role || 'member', languages || null, phone || null);
 
     await db.prepare(`UPDATE committees SET updated_at=NOW() WHERE id=$1`).run(req.params.id);
+    await auditLog(req, 'ADD_MEMBER', 'committee_member', user_id, req.params.id, false, { committee_role });
     res.status(201).json({ success: true });
   } catch (err) {
     console.error('[committees/members/add]', err);
@@ -226,7 +301,10 @@ router.post('/:id/members', authMiddleware, requireRole(...ADMIN_ROLES), async (
 router.delete('/:id/members/:userId', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {
     const db = getDb();
-    await db.prepare(`UPDATE committee_members SET status='inactive' WHERE committee_id=$1 AND user_id=$2`).run(req.params.id, req.params.userId);
+    await db.prepare(
+      `UPDATE committee_members SET status='inactive' WHERE committee_id=$1 AND user_id=$2`
+    ).run(req.params.id, req.params.userId);
+    await auditLog(req, 'REMOVE_MEMBER', 'committee_member', req.params.userId, req.params.id, false);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to remove member' });
@@ -235,7 +313,7 @@ router.delete('/:id/members/:userId', authMiddleware, requireRole(...ADMIN_ROLES
 
 // ── Meetings ─────────────────────────────────────────────────
 
-router.get('/:id/meetings', authMiddleware, async (req, res) => {
+router.get('/:id/meetings', authMiddleware, requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const rows = await db.prepare(`
@@ -252,7 +330,7 @@ router.get('/:id/meetings', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/:id/meetings', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
+router.post('/:id/meetings', authMiddleware, requireRole(...COMMITTEE_ROLES), requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const { title, agenda, meeting_date, meeting_time, location } = req.body;
@@ -263,7 +341,8 @@ router.post('/:id/meetings', authMiddleware, requireRole(...COMMITTEE_ROLES), as
       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id
     `).run(req.params.id, title, agenda || null, meeting_date, meeting_time || null, location || null, req.user.id);
 
-    res.status(201).json({ success: true, data: { id: result.lastID } });
+    await auditLog(req, 'CREATE', 'meeting', result.lastInsertRowid, req.params.id, false, { title, meeting_date });
+    res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/meetings/create]', err);
     res.status(500).json({ success: false, error: 'Failed to create meeting' });
@@ -278,16 +357,18 @@ router.put('/meetings/:meetingId', authMiddleware, requireRole(...COMMITTEE_ROLE
       UPDATE committee_meetings SET title=$1, agenda=$2, minutes=$3, resolutions=$4,
         meeting_date=$5, meeting_time=$6, location=$7, status=$8, updated_at=NOW()
       WHERE id=$9
-    `).run(title, agenda || null, minutes || null, resolutions || null, meeting_date, meeting_time || null, location || null, status || 'scheduled', req.params.meetingId);
+    `).run(title, agenda || null, minutes || null, resolutions || null,
+           meeting_date, meeting_time || null, location || null, status || 'scheduled',
+           req.params.meetingId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to update meeting' });
   }
 });
 
-// ── Incident Assignments ─────────────────────────────────────
+// ── Incident Assignments (cross-system shared module) ────────
 
-router.get('/:id/incidents', authMiddleware, async (req, res) => {
+router.get('/:id/incidents', authMiddleware, requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const { status, priority, limit = 50, offset = 0 } = req.query;
@@ -295,7 +376,7 @@ router.get('/:id/incidents', authMiddleware, async (req, res) => {
     const params = [req.params.id];
     let i = 2;
 
-    if (status)   { conditions.push(`cia.status = $${i++}`); params.push(status); }
+    if (status)   { conditions.push(`cia.status = $${i++}`);   params.push(status); }
     if (priority) { conditions.push(`cia.priority = $${i++}`); params.push(priority); }
     params.push(parseInt(limit), parseInt(offset));
 
@@ -318,7 +399,7 @@ router.get('/:id/incidents', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/:id/incidents', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
+router.post('/:id/incidents', authMiddleware, requireRole(...COMMITTEE_ROLES), requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const { title, incident_type, district, description, assigned_to, priority, report_id } = req.body;
@@ -328,9 +409,12 @@ router.post('/:id/incidents', authMiddleware, requireRole(...COMMITTEE_ROLES), a
       INSERT INTO committee_incident_assignments
         (committee_id, report_id, title, incident_type, district, description, assigned_to, assigned_by, priority)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id
-    `).run(req.params.id, report_id || null, title, incident_type || 'water_quality', district || null, description || null, assigned_to || null, req.user.id, priority || 'medium');
+    `).run(req.params.id, report_id || null, title, incident_type || 'water_quality',
+           district || null, description || null, assigned_to || null, req.user.id, priority || 'medium');
 
-    res.status(201).json({ success: true, data: { id: result.lastID } });
+    // Cross-system log: incident assignment links committee governance to core HydroSense reports
+    await auditLog(req, 'ASSIGN_INCIDENT', 'incident', result.lastInsertRowid, req.params.id, !!report_id, { title, incident_type, report_id });
+    res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/incidents/create]', err);
     res.status(500).json({ success: false, error: 'Failed to create incident assignment' });
@@ -340,14 +424,21 @@ router.post('/:id/incidents', authMiddleware, requireRole(...COMMITTEE_ROLES), a
 router.put('/incidents/:incidentId', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
   try {
     const db = getDb();
-    const { status, priority, notes, assigned_to, escalated } = req.body;
-    const resolved_at = status === 'resolved' ? 'NOW()' : 'NULL';
+    const { status, priority, notes, assigned_to, escalated, committee_id } = req.body;
+
     await db.prepare(`
       UPDATE committee_incident_assignments
       SET status=$1, priority=$2, notes=$3, assigned_to=$4, escalated=$5,
           resolved_at=${status === 'resolved' ? 'NOW()' : 'NULL'}, updated_at=NOW()
       WHERE id=$6
     `).run(status, priority, notes || null, assigned_to || null, escalated ? 1 : 0, req.params.incidentId);
+
+    // Escalation is a cross-system action — always logged
+    if (escalated) {
+      await auditLog(req, 'ESCALATE', 'incident', req.params.incidentId, committee_id || null, true,
+        { status, priority, reason: notes });
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to update incident' });
@@ -356,7 +447,7 @@ router.put('/incidents/:incidentId', authMiddleware, requireRole(...COMMITTEE_RO
 
 // ── Projects ─────────────────────────────────────────────────
 
-router.get('/:id/projects', authMiddleware, async (req, res) => {
+router.get('/:id/projects', authMiddleware, requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const rows = await db.prepare(`
@@ -374,7 +465,7 @@ router.get('/:id/projects', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/:id/projects', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
+router.post('/:id/projects', authMiddleware, requireRole(...COMMITTEE_ROLES), requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const { title, project_type, description, district, location, priority, budget, start_date, end_date, lead_officer } = req.body;
@@ -384,9 +475,12 @@ router.post('/:id/projects', authMiddleware, requireRole(...COMMITTEE_ROLES), as
       INSERT INTO committee_projects
         (committee_id, title, project_type, description, district, location, priority, budget, start_date, end_date, lead_officer, created_by)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id
-    `).run(req.params.id, title, project_type || 'water', description || null, district || null, location || null, priority || 'medium', parseFloat(budget) || 0, start_date || null, end_date || null, lead_officer || null, req.user.id);
+    `).run(req.params.id, title, project_type || 'water', description || null, district || null,
+           location || null, priority || 'medium', parseFloat(budget) || 0, start_date || null,
+           end_date || null, lead_officer || null, req.user.id);
 
-    res.status(201).json({ success: true, data: { id: result.lastID } });
+    await auditLog(req, 'CREATE', 'project', result.lastInsertRowid, req.params.id, false, { title, project_type });
+    res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/projects/create]', err);
     res.status(500).json({ success: false, error: 'Failed to create project' });
@@ -396,14 +490,18 @@ router.post('/:id/projects', authMiddleware, requireRole(...COMMITTEE_ROLES), as
 router.put('/projects/:projectId', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
   try {
     const db = getDb();
-    const { title, project_type, description, district, location, status, priority, budget, spent, progress_pct, start_date, end_date, lead_officer } = req.body;
+    const { title, project_type, description, district, location, status, priority,
+            budget, spent, progress_pct, start_date, end_date, lead_officer } = req.body;
     await db.prepare(`
       UPDATE committee_projects
       SET title=$1, project_type=$2, description=$3, district=$4, location=$5, status=$6,
           priority=$7, budget=$8, spent=$9, progress_pct=$10, start_date=$11, end_date=$12,
           lead_officer=$13, updated_at=NOW()
       WHERE id=$14
-    `).run(title, project_type || 'water', description || null, district || null, location || null, status || 'planned', priority || 'medium', parseFloat(budget) || 0, parseFloat(spent) || 0, parseInt(progress_pct) || 0, start_date || null, end_date || null, lead_officer || null, req.params.projectId);
+    `).run(title, project_type || 'water', description || null, district || null, location || null,
+           status || 'planned', priority || 'medium', parseFloat(budget) || 0, parseFloat(spent) || 0,
+           parseInt(progress_pct) || 0, start_date || null, end_date || null, lead_officer || null,
+           req.params.projectId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to update project' });
@@ -412,7 +510,7 @@ router.put('/projects/:projectId', authMiddleware, requireRole(...COMMITTEE_ROLE
 
 // ── Announcements ────────────────────────────────────────────
 
-router.get('/:id/announcements', authMiddleware, async (req, res) => {
+router.get('/:id/announcements', authMiddleware, requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const rows = await db.prepare(`
@@ -420,8 +518,7 @@ router.get('/:id/announcements', authMiddleware, async (req, res) => {
       FROM committee_announcements ca
       LEFT JOIN users u ON u.id = ca.created_by
       WHERE ca.committee_id = $1
-      ORDER BY ca.created_at DESC
-      LIMIT 20
+      ORDER BY ca.created_at DESC LIMIT 20
     `).all(req.params.id);
     res.json({ success: true, data: rows });
   } catch (err) {
@@ -429,7 +526,7 @@ router.get('/:id/announcements', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/:id/announcements', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
+router.post('/:id/announcements', authMiddleware, requireRole(...COMMITTEE_ROLES), requireCommitteeAccess(), async (req, res) => {
   try {
     const db = getDb();
     const { title, content, priority } = req.body;
@@ -446,7 +543,118 @@ router.post('/:id/announcements', authMiddleware, requireRole(...COMMITTEE_ROLES
   }
 });
 
-// ── Available Users (for member picker) ─────────────────────
+// ── Votes (committee internal governance — not shared with core system) ──
+
+router.get('/:id/votes', authMiddleware, requireCommitteeAccess(), async (req, res) => {
+  try {
+    const db = getDb();
+    const rows = await db.prepare(`
+      SELECT cv.*,
+        u.name as created_by_name,
+        (SELECT COUNT(*) FROM committee_vote_responses WHERE vote_id = cv.id) as total_votes,
+        (SELECT COUNT(*) FROM committee_vote_responses WHERE vote_id = cv.id AND response = 'yes') as yes_count,
+        (SELECT COUNT(*) FROM committee_vote_responses WHERE vote_id = cv.id AND response = 'no') as no_count,
+        (SELECT COUNT(*) FROM committee_vote_responses WHERE vote_id = cv.id AND response = 'abstain') as abstain_count,
+        (SELECT response FROM committee_vote_responses WHERE vote_id = cv.id AND user_id = $2) as my_response
+      FROM committee_votes cv
+      LEFT JOIN users u ON u.id = cv.created_by
+      WHERE cv.committee_id = $1
+      ORDER BY cv.created_at DESC
+    `).all(req.params.id, req.user.id);
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to list votes' });
+  }
+});
+
+router.post('/:id/votes', authMiddleware, requireRole(...COMMITTEE_ROLES), requireCommitteeAccess(), async (req, res) => {
+  try {
+    const db = getDb();
+    const { title, description, vote_type, meeting_id, closes_at } = req.body;
+    if (!title) return res.status(400).json({ success: false, error: 'title required' });
+
+    const result = await db.prepare(`
+      INSERT INTO committee_votes (committee_id, meeting_id, title, description, vote_type, created_by, closes_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id
+    `).run(req.params.id, meeting_id || null, title, description || null,
+           vote_type || 'yes_no', req.user.id, closes_at || null);
+
+    await auditLog(req, 'CREATE', 'vote', result.lastInsertRowid, req.params.id, false, { title });
+    res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to create vote' });
+  }
+});
+
+router.post('/votes/:voteId/respond', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const { response } = req.body;
+    if (!['yes', 'no', 'abstain'].includes(response)) {
+      return res.status(400).json({ success: false, error: 'response must be yes, no, or abstain' });
+    }
+
+    const vote = await db.prepare(`SELECT committee_id, status FROM committee_votes WHERE id=$1`).get(req.params.voteId);
+    if (!vote) return res.status(404).json({ success: false, error: 'Vote not found' });
+    if (vote.status !== 'open') return res.status(400).json({ success: false, error: 'Vote is closed' });
+
+    // Only committee members may vote — core system users are excluded
+    const membership = await db.prepare(
+      `SELECT id FROM committee_members WHERE committee_id=$1 AND user_id=$2 AND status='active'`
+    ).get(vote.committee_id, req.user.id);
+    if (!membership && !ADMIN_ROLES.includes(req.user.role)) {
+      return res.status(403).json({ success: false, error: 'Only committee members may vote' });
+    }
+
+    await db.prepare(`
+      INSERT INTO committee_vote_responses (vote_id, user_id, response)
+      VALUES ($1,$2,$3)
+      ON CONFLICT (vote_id, user_id) DO UPDATE SET response=$3, voted_at=NOW()
+    `).run(req.params.voteId, req.user.id, response);
+
+    await auditLog(req, 'VOTE', 'vote', req.params.voteId, vote.committee_id, false, { response });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to record vote' });
+  }
+});
+
+router.put('/votes/:voteId/close', authMiddleware, requireRole(...COMMITTEE_ROLES), async (req, res) => {
+  try {
+    const db = getDb();
+    await db.prepare(`UPDATE committee_votes SET status='closed' WHERE id=$1`).run(req.params.voteId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to close vote' });
+  }
+});
+
+// ── Audit Log (admin-only cross-system visibility) ───────────
+
+router.get('/:id/audit-log', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) => {
+  try {
+    const db = getDb();
+    const { limit = 50, offset = 0 } = req.query;
+    const rows = await db.prepare(`
+      SELECT cal.*, u.name as actor_name_full, u.role as actor_system_role
+      FROM committee_audit_log cal
+      LEFT JOIN users u ON u.id = cal.actor_id
+      WHERE cal.committee_id = $1
+      ORDER BY cal.created_at DESC
+      LIMIT $2 OFFSET $3
+    `).all(req.params.id, parseInt(limit), parseInt(offset));
+
+    const total = await db.prepare(
+      `SELECT COUNT(*) as c FROM committee_audit_log WHERE committee_id = $1`
+    ).get(req.params.id);
+
+    res.json({ success: true, data: rows, total: parseInt(total?.c || 0) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to load audit log' });
+  }
+});
+
+// ── Available Users (admin member picker) ────────────────────
 
 router.get('/available-users', authMiddleware, requireRole(...ADMIN_ROLES), async (req, res) => {
   try {

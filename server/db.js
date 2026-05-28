@@ -985,6 +985,82 @@ async function initSchema(db) {
     )
   `);
 
+  // ── Dual RBAC — Committee Governance Layer ──────────────────
+  // Separate permission system for in-committee roles, isolated from core HydroSense RBAC
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_roles (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      committee_role TEXT NOT NULL DEFAULT 'member',
+      jurisdiction_level TEXT DEFAULT 'village',
+      jurisdiction_area TEXT,
+      permissions TEXT DEFAULT '[]',
+      granted_by BIGINT REFERENCES users(id),
+      granted_at TIMESTAMPTZ DEFAULT NOW(),
+      expires_at TIMESTAMPTZ,
+      status TEXT DEFAULT 'active',
+      UNIQUE(committee_id, user_id)
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_permissions (
+      id BIGSERIAL PRIMARY KEY,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      scope TEXT DEFAULT 'committee',
+      category TEXT DEFAULT 'general',
+      is_dangerous BOOLEAN DEFAULT FALSE
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_audit_log (
+      id BIGSERIAL PRIMARY KEY,
+      actor_id BIGINT REFERENCES users(id),
+      actor_role TEXT NOT NULL,
+      actor_name TEXT,
+      action TEXT NOT NULL,
+      resource_type TEXT NOT NULL,
+      resource_id BIGINT,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE SET NULL,
+      jurisdiction TEXT,
+      cross_system BOOLEAN DEFAULT FALSE,
+      details JSONB,
+      ip_address TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_votes (
+      id BIGSERIAL PRIMARY KEY,
+      committee_id BIGINT REFERENCES committees(id) ON DELETE CASCADE,
+      meeting_id BIGINT REFERENCES committee_meetings(id) ON DELETE SET NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      vote_type TEXT DEFAULT 'yes_no',
+      status TEXT DEFAULT 'open',
+      created_by BIGINT REFERENCES users(id),
+      closes_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+
+  await e(`
+    CREATE TABLE IF NOT EXISTS committee_vote_responses (
+      id BIGSERIAL PRIMARY KEY,
+      vote_id BIGINT REFERENCES committee_votes(id) ON DELETE CASCADE,
+      user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+      response TEXT NOT NULL,
+      voted_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(vote_id, user_id)
+    )
+  `);
+
   // Column migrations — add columns that were missing from the original schema
   await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_url TEXT`);
   await e(`ALTER TABLE citizen_discussions ADD COLUMN IF NOT EXISTS media_type TEXT`);

@@ -71,7 +71,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   // Emergency Response — Emergency/Disaster teams, Environmental Protection, Government Officials
   '/emergency':           ['national_admin','district_officer','health_officer'],
 
-  '/gis':                 ['national_admin','district_officer','climate_scientist','ngo_officer','health_officer'],
+  '/gis':                 ['national_admin','district_officer','climate_scientist','ngo_officer','health_officer','community_committee'],
   '/analytics':           ['national_admin','district_officer','climate_scientist','health_officer'],
   '/governance':          ['national_admin','district_officer'],
 

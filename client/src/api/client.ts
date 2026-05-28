@@ -216,3 +216,11 @@ export const updateCommitteeProject = (projectId: number, data: object) => api.p
 export const getCommitteeAnnouncements = (id: number) => api.get(`/committees/${id}/announcements`);
 export const createCommitteeAnnouncement = (id: number, data: object) => api.post(`/committees/${id}/announcements`, data);
 export const getAvailableUsers = (params?: object) => api.get('/committees/available-users', { params });
+
+// Committee dual-RBAC extensions
+export const getMyCommittees = () => api.get('/committees/my-committees');
+export const getCommitteeVotes = (id: number) => api.get(`/committees/${id}/votes`);
+export const createCommitteeVote = (id: number, data: object) => api.post(`/committees/${id}/votes`, data);
+export const respondToVote = (voteId: number, response: 'yes' | 'no' | 'abstain') => api.post(`/committees/votes/${voteId}/respond`, { response });
+export const closeVote = (voteId: number) => api.put(`/committees/votes/${voteId}/close`, {});
+export const getCommitteeAuditLog = (id: number, params?: object) => api.get(`/committees/${id}/audit-log`, { params });
