@@ -272,11 +272,11 @@ DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
 
 <div align="center">
 
-**Coleb Muzoora Muhwezi**
+**Veltrix Developers**
 
 *Lead Developer & System Architect*
 
-Bachelor of Software Engineering — Makerere University
+Bachelor of Software Engineering — Cavendish University Uganda
 
 [![GitHub](https://img.shields.io/badge/GitHub-muzoora2000-181717?style=flat-square&logo=github)](https://github.com/muzoora2000)
 
