@@ -102,27 +102,28 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 ## 🏗️ System Architecture
 
 <pre>
-┌─────────────────────────────────────────────────────────────┐
-│                        HydroSense                           │
-├──────────────┬──────────────────────┬───────────────────────┤
-│   Frontend   │       Backend        │      AI Service       │
-│              │                      │                       │
-│  React 18    │   Node.js / Express  │   Python / FastAPI    │
-│  TypeScript  │   PostgreSQL         │   Google Gemini       │
-│  Tailwind    │   Socket.IO          │   Multilingual NLP    │
-│  Vite        │   JWT Auth           │   Risk Scoring        │
-│  Leaflet     │   node-cron          │   Auto Assignment     │
-│  Recharts    │   Nodemailer         │   Offline Queue       │
-│  Socket.IO   │   Africa's Talking   │                       │
-└──────────────┴──────────────────────┴───────────────────────┘
+╔═════════════════════════════════════════════════════════════╗
+║                        HydroSense                          ║
+╠══════════════╦══════════════════════╦═══════════════════════╣
+║   Frontend   ║       Backend        ║      AI Service       ║
+║              ║                      ║                       ║
+║  React 18    ║   Node.js / Express  ║   Python / FastAPI    ║
+║  TypeScript  ║   PostgreSQL         ║   Google Gemini       ║
+║  Tailwind    ║   Socket.IO          ║   Multilingual NLP    ║
+║  Vite        ║   JWT Auth           ║   Risk Scoring        ║
+║  Leaflet     ║   node-cron          ║   Auto Assignment     ║
+║  Recharts    ║   Nodemailer         ║   Offline Queue       ║
+║  Socket.IO   ║   Africa's Talking   ║                       ║
+╚══════════════╩══════════════════════╩═══════════════════════╝
          │                  │                    │
          └──────────────────┼────────────────────┘
                             │
-              ┌─────────────▼─────────────┐
-              │     Deployment Layer       │
-              │  Vercel (Frontend)         │
-              │  Render (Backend + AI)     │
-              └───────────────────────────┘
+                            ▼
+              ╔═════════════════════════════╗
+              ║      Deployment Layer       ║
+              ║   Vercel  (Frontend)        ║
+              ║   Render  (Backend + AI)    ║
+              ╚═════════════════════════════╝
 </pre>
 
 ---
