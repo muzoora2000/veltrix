@@ -77,6 +77,14 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 - **Volunteer Events** — join, organise, and get real-time alarms for community water activities
 - **Multi-channel Reporting** — submit incidents via App, SMS, WhatsApp, Email, or Phone
 
+### 🏘️ Community Committee Management
+- **Committee Registry** — create and manage water committees per district and sub-county, with chairperson assignment and jurisdiction tracking
+- **Member Management** — enrol community members into committees with assigned roles (chairperson, secretary, treasurer, member), contact details, and languages spoken
+- **Meeting Management** — schedule meetings, record agendas, capture minutes, track resolutions, and mark attendance
+- **Incident Assignments** — assign water quality or infrastructure incidents to specific committees for local investigation and follow-up
+- **Community Projects** — track water-related community projects from planning through execution, including budget, expenditure, progress percentage, and lead officer
+- **Announcements** — post committee-level announcements with priority levels, visible to all assigned members
+
 ### 🏥 Public Health Integration
 - **Disease Outbreak Tracker** — automatic health incident creation from citizen disease reports
 - **Outbreak Alerts** — triggers when case count crosses threshold (≥10 cases)
@@ -148,6 +156,7 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 | Citizen Hub | Community forum, GWN, volunteer events | Citizens |
 | Citizen Report | Public incident submission (no login required) | Public |
 | Incident Command | Environmental emergency coordination | Officers, Admins |
+| Community Committees | Committee registry, members, meetings, incidents, projects, and announcements | Admins, Officers, Committee Leaders |
 
 ---
 
