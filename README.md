@@ -22,7 +22,7 @@
 
 <br />
 
-[🚀 Live Demo](https://hydrosense.vercel.app) · [📖 Documentation](#documentation) · [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) · [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
+[🚀 Live Demo](https://veltrix-4r2c.vercel.app) · [📖 Documentation](#documentation) · [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) · [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
 
 </div>
 
@@ -50,8 +50,6 @@ Uganda faces a critical water crisis — over **60% of rural communities** lack 
 **HydroSense** was built to change that.
 
 It is a unified platform that connects IoT sensors, citizen reporters, field technicians, health officers, climate scientists, and national administrators into a single, intelligent ecosystem. Every report, sensor reading, and maintenance request flows through a real-time pipeline that triggers the right response — automatically.
-
-Built as a prototype for the **Ministry of ICT and National Guidance — Government Systems Showcase 2026**, HydroSense demonstrates what Uganda's digital public infrastructure can look like.
 
 ---
 
@@ -103,29 +101,15 @@ Built as a prototype for the **Ministry of ICT and National Guidance — Governm
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        HydroSense                           │
-├──────────────┬──────────────────────┬───────────────────────┤
-│   Frontend   │       Backend        │      AI Service       │
-│              │                      │                       │
-│  React 18    │   Node.js / Express  │   Python / FastAPI    │
-│  TypeScript  │   PostgreSQL         │   Google Gemini       │
-│  Tailwind    │   Socket.IO          │   Multilingual NLP    │
-│  Vite        │   JWT Auth           │   Risk Scoring        │
-│  Leaflet     │   node-cron          │   Auto Assignment     │
-│  Recharts    │   Nodemailer         │   Offline Queue       │
-│  Socket.IO   │   Africa's Talking   │                       │
-└──────────────┴──────────────────────┴───────────────────────┘
-         │                  │                    │
-         └──────────────────┼────────────────────┘
-                            │
-              ┌─────────────▼─────────────┐
-              │     Deployment Layer       │
-              │  Vercel (Frontend)         │
-              │  Render (Backend + AI)     │
-              └───────────────────────────┘
-```
+HydroSense is composed of three tightly integrated layers deployed independently:
+
+**Frontend** — React 18, TypeScript, Vite, Tailwind CSS, Leaflet, Recharts, Socket.IO Client
+
+**Backend** — Node.js, Express.js, PostgreSQL, Socket.IO, JWT Authentication, node-cron, Nodemailer, Africa's Talking
+
+**AI Service** — Python, FastAPI, Uvicorn, Google Gemini 2.5 Flash, Multilingual NLP, Risk Scoring, Auto Assignment, Offline Queue
+
+All three layers are hosted on Vercel (frontend) and Render (backend and AI service).
 
 ---
 
@@ -186,64 +170,46 @@ Built as a prototype for the **Ministry of ICT and National Guidance — Governm
 
 ### Installation
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/muzoora2000/veltrix.git
-cd veltrix
-
-# 2. Install backend dependencies
-cd server && npm install
-
-# 3. Install frontend dependencies
-cd ../client && npm install
-
-# 4. Set up AI service
-cd ../ai-service
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
+1. Clone the repository — `git clone https://github.com/muzoora2000/veltrix.git` then `cd veltrix`
+2. Install backend dependencies — `cd server && npm install`
+3. Install frontend dependencies — `cd ../client && npm install`
+4. Set up the AI service — `cd ../ai-service`, create a virtual environment with `python -m venv .venv`, activate it, then run `pip install -r requirements.txt`
 
 ### Running Locally
 
-```bash
-# Terminal 1 — Backend
-cd server && npm run dev
+Open three terminal windows:
 
-# Terminal 2 — Frontend
-cd client && npm run dev
+- Terminal 1 (Backend) — `cd server && npm run dev`
+- Terminal 2 (Frontend) — `cd client && npm run dev`
+- Terminal 3 (AI Service, optional) — `cd ai-service && uvicorn main:app --reload --port 8000`
 
-# Terminal 3 — AI Service (optional)
-cd ai-service && uvicorn main:app --reload --port 8000
-```
-
-The app will be available at `http://localhost:5173`
+The app will be available at http://localhost:5173
 
 ---
 
 ## 🔐 Environment Variables
 
-### Server (`server/.env`)
+### Server — server/.env
 
-```env
-PORT=5000
-NODE_ENV=development
-DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
-JWT_SECRET=your_jwt_secret_here
-GEMINI_API_KEY=your_gemini_api_key
-AT_API_KEY=your_africas_talking_key
-AT_USERNAME=sandbox
-BREVO_API_KEY=your_brevo_key
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASS=your_app_password
-```
+| Variable | Description |
+|----------|-------------|
+| PORT | Server port (default: 5000) |
+| NODE_ENV | Environment (development / production) |
+| DATABASE_URL | PostgreSQL connection string |
+| JWT_SECRET | Secret key for JWT signing |
+| GEMINI_API_KEY | Google Gemini API key |
+| AT_API_KEY | Africa's Talking API key |
+| AT_USERNAME | Africa's Talking username |
+| BREVO_API_KEY | Brevo email API key |
+| SMTP_EMAIL | Sender email address |
+| SMTP_PASS | Email app password |
 
-### AI Service (`ai-service/.env`)
+### AI Service — ai-service/.env
 
-```env
-GEMINI_API_KEY=your_gemini_api_key
-DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
-```
+| Variable | Description |
+|----------|-------------|
+| GEMINI_API_KEY | Google Gemini API key |
+| DATABASE_URL | PostgreSQL connection string |
 
 ---
 
@@ -313,12 +279,6 @@ DATABASE_URL=postgresql://user:password@localhost:5432/hydrosense
 Bachelor of Software Engineering — Cavendish University Uganda
 
 [![GitHub](https://img.shields.io/badge/GitHub-muzoora2000-181717?style=flat-square&logo=github)](https://github.com/muzoora2000)
-
----
-
-*Built for the **Ministry of ICT and National Guidance — Government Systems Prototype Showcase 2026***
-
-*Developed to serve the 45 million people of Uganda*
 
 </div>
 
