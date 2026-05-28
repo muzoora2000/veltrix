@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Users, Plus, X, ChevronDown, Calendar, Folder, AlertTriangle,
   Megaphone, BarChart3, MapPin, CheckCircle, Clock, RefreshCw,
-  UserPlus, Pencil, Trash2, FileText, TrendingUp, Building2,
+  UserPlus, Pencil, Trash2, FileText, TrendingUp, Building2, Search,
 } from 'lucide-react';
 import {
   getCommitteeStats, getCommittees, createCommittee, updateCommittee,
@@ -14,15 +14,9 @@ import {
   createCommitteeAccount, getCommitteeAccounts,
 } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
+import { ALL_DISTRICTS } from '../../constants/districts';
 
 /* ── Helpers ─────────────────────────────────────────────── */
-const UGANDA_DISTRICTS = [
-  'Kampala','Wakiso','Mukono','Jinja','Mbale','Gulu','Lira','Arua','Mbarara','Fort Portal',
-  'Masaka','Entebbe','Soroti','Kabale','Hoima','Tororo','Kasese','Iganga','Masindi','Kitgum',
-  'Ntungamo','Rukungiri','Kanungu','Bushenyi','Mubende','Mityana','Luwero','Nakaseke','Kayunga',
-  'Buikwe','Buvuma','Kalangala','Rakai','Lyantonde','Isingiro','Kiruhura','Sembabule',
-  'Butebo','Kumi','Bukedea','Ngora','Serere','Katakwi','Amuria','Kaberamaido','Kaliro',
-];
 
 const COMMITTEE_ROLES = [
   'Chairperson','Secretary','Water Officer','Environmental Officer',
@@ -105,6 +99,53 @@ const inputCls = 'w-full px-3 py-2 rounded-xl border border-gray-200 dark:border
 const labelCls = 'block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1';
 const btnPrimary = 'px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50';
 const btnSecondary = 'px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-colors';
+
+function DistrictPicker({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(
+    () => query.trim() ? ALL_DISTRICTS.filter(d => d.toLowerCase().includes(query.toLowerCase())) : ALL_DISTRICTS,
+    [query],
+  );
+
+  const pick = (d: string) => { onChange(d); setOpen(false); setQuery(''); };
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="relative">
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          autoComplete="off"
+          required={required}
+          placeholder={value || 'Search district…'}
+          value={open ? query : value}
+          className={inputCls.replace('px-3', 'pl-8 pr-3')}
+          onFocus={() => { setQuery(''); setOpen(true); }}
+          onChange={e => setQuery(e.target.value)}
+          onBlur={() => setTimeout(() => { setOpen(false); setQuery(''); }, 150)}
+        />
+      </div>
+      {open && (
+        <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl shadow-xl text-sm">
+          {filtered.length === 0
+            ? <li className="px-3 py-2.5 text-gray-400">No districts found</li>
+            : filtered.map(d => (
+              <li key={d}
+                onMouseDown={() => pick(d)}
+                className={`px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 ${d === value ? 'bg-blue-50 dark:bg-blue-900/30 font-semibold text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-100'}`}
+              >
+                {d}
+              </li>
+            ))
+          }
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /* ══════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -504,11 +545,7 @@ export default function CommitteeManagement() {
                   </div>
                   <div>
                     <label className={labelCls}>District *</label>
-                    <select className={inputCls} required value={acctForm.district}
-                      onChange={e => setAcctForm(p => ({...p, district: e.target.value}))}>
-                      <option value="">Select district</option>
-                      {UGANDA_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                    <DistrictPicker required value={acctForm.district} onChange={v => setAcctForm(p => ({...p, district: v}))} />
                   </div>
                   <div>
                     <label className={labelCls}>Committee Role</label>
@@ -889,9 +926,7 @@ export default function CommitteeManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>District *</label>
-                <select className={inputCls} value={cForm.district} onChange={e => setCForm(p => ({...p, district: e.target.value}))}>
-                  {UGANDA_DISTRICTS.map(d => <option key={d}>{d}</option>)}
-                </select>
+                <DistrictPicker value={cForm.district} onChange={v => setCForm(p => ({...p, district: v}))} />
               </div>
               <div>
                 <label className={labelCls}>Sub-County</label>
@@ -937,9 +972,7 @@ export default function CommitteeManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>District</label>
-                <select className={inputCls} value={showEditCommittee.district} onChange={e => setShowEditCommittee((p: any) => ({...p, district: e.target.value}))}>
-                  {UGANDA_DISTRICTS.map(d => <option key={d}>{d}</option>)}
-                </select>
+                <DistrictPicker value={showEditCommittee.district} onChange={v => setShowEditCommittee((p: any) => ({...p, district: v}))} />
               </div>
               <div>
                 <label className={labelCls}>Status</label>
@@ -1085,10 +1118,7 @@ export default function CommitteeManagement() {
             </div>
             <div>
               <label className={labelCls}>District</label>
-              <select className={inputCls} value={incForm.district} onChange={e => setIncForm(p => ({...p, district: e.target.value}))}>
-                <option value="">— Select —</option>
-                {UGANDA_DISTRICTS.map(d => <option key={d}>{d}</option>)}
-              </select>
+              <DistrictPicker value={incForm.district} onChange={v => setIncForm(p => ({...p, district: v}))} />
             </div>
             <div>
               <label className={labelCls}>Description</label>
@@ -1161,10 +1191,7 @@ export default function CommitteeManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>District</label>
-                <select className={inputCls} value={prjForm.district} onChange={e => setPrjForm(p => ({...p, district: e.target.value}))}>
-                  <option value="">— Select —</option>
-                  {UGANDA_DISTRICTS.map(d => <option key={d}>{d}</option>)}
-                </select>
+                <DistrictPicker value={prjForm.district} onChange={v => setPrjForm(p => ({...p, district: v}))} />
               </div>
               <div>
                 <label className={labelCls}>Budget (UGX)</label>
