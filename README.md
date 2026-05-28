@@ -101,32 +101,7 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 
 ## 🏗️ System Architecture
 
-```mermaid
-flowchart TB
-    subgraph FE["Frontend"]
-        f["React 18 · TypeScript · Vite
-        Tailwind CSS · Leaflet · Recharts
-        Socket.IO Client"]
-    end
-    subgraph BE["Backend"]
-        b["Node.js · Express · PostgreSQL
-        Socket.IO · JWT Auth · node-cron
-        Nodemailer · Africa's Talking"]
-    end
-    subgraph AI["AI Service"]
-        a["Python · FastAPI · Uvicorn
-        Google Gemini 2.5 Flash
-        Multilingual NLP · Risk Scoring
-        Auto Assignment · Offline Queue"]
-    end
-    subgraph DL["Deployment Layer"]
-        d["Vercel — Frontend
-        Render — Backend + AI"]
-    end
-    FE --> DL
-    BE --> DL
-    AI --> DL
-```
+![System Architecture](screenshots/architecture.png)
 
 ---
 
