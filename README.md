@@ -258,6 +258,9 @@ The app will be available at http://localhost:5173
 ### AI Intelligence Hub
 ![AI Hub](screenshots/12-ai-hub.png)
 
+### Community Committee Management
+![Community Committee Management](screenshots/13-committee-management.png)
+
 ---
 
 ## 👨‍💻 Author
