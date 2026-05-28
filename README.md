@@ -101,29 +101,31 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        HydroSense                           │
-├──────────────┬──────────────────────┬───────────────────────┤
-│   Frontend   │       Backend        │      AI Service       │
-│              │                      │                       │
-│  React 18    │   Node.js / Express  │   Python / FastAPI    │
-│  TypeScript  │   PostgreSQL         │   Google Gemini       │
-│  Tailwind    │   Socket.IO          │   Multilingual NLP    │
-│  Vite        │   JWT Auth           │   Risk Scoring        │
-│  Leaflet     │   node-cron          │   Auto Assignment     │
-│  Recharts    │   Nodemailer         │   Offline Queue       │
-│  Socket.IO   │   Africa's Talking   │                       │
-└──────────────┴──────────────────────┴───────────────────────┘
-         │                  │                    │
-         └──────────────────┼────────────────────┘
-                            │
-                            ▼
-              ┌─────────────────────────────┐
-              │      Deployment Layer       │
-              │   Vercel  (Frontend)        │
-              │   Render  (Backend + AI)    │
-              └─────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph FE["Frontend"]
+        f["React 18 · TypeScript · Vite
+        Tailwind CSS · Leaflet · Recharts
+        Socket.IO Client"]
+    end
+    subgraph BE["Backend"]
+        b["Node.js · Express · PostgreSQL
+        Socket.IO · JWT Auth · node-cron
+        Nodemailer · Africa's Talking"]
+    end
+    subgraph AI["AI Service"]
+        a["Python · FastAPI · Uvicorn
+        Google Gemini 2.5 Flash
+        Multilingual NLP · Risk Scoring
+        Auto Assignment · Offline Queue"]
+    end
+    subgraph DL["Deployment Layer"]
+        d["Vercel — Frontend
+        Render — Backend + AI"]
+    end
+    FE --> DL
+    BE --> DL
+    AI --> DL
 ```
 
 ---
