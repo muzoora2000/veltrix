@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/HYDROSENSE-v2.0-0ea5e9?style=for-the-badge&logoColor=white" />
+<img src="https://img.shields.io/badge/HydroSense-v2.0-0ea5e9?style=for-the-badge&logoColor=white" />
 
-# 💧 HYDROSENSE
+# 💧 HydroSense
 ### Climate-Resilient Rural Water & Environment Management System
 
 *Empowering Uganda's communities through intelligent water stewardship*
@@ -18,7 +18,7 @@
 
 <br />
 
-> **HYDROSENSE** is a full-stack, enterprise-grade environmental monitoring platform designed for rural Uganda. It bridges the gap between government institutions, field technicians, health officers, and ordinary citizens — delivering real-time water quality intelligence, AI-powered incident response, and community-driven environmental stewardship at scale.
+> **HydroSense** is a full-stack, enterprise-grade environmental monitoring platform designed for rural Uganda. It bridges the gap between government institutions, field technicians, health officers, and ordinary citizens — delivering real-time water quality intelligence, AI-powered incident response, and community-driven environmental stewardship at scale.
 
 <br />
 
@@ -47,11 +47,11 @@
 
 Uganda faces a critical water crisis — over **60% of rural communities** lack access to safe, reliable water. Contamination, infrastructure failure, and delayed government response cost lives daily.
 
-**HYDROSENSE** was built to change that.
+**HydroSense** was built to change that.
 
 It is a unified platform that connects IoT sensors, citizen reporters, field technicians, health officers, climate scientists, and national administrators into a single, intelligent ecosystem. Every report, sensor reading, and maintenance request flows through a real-time pipeline that triggers the right response — automatically.
 
-Built as a prototype for the **Ministry of ICT and National Guidance — Government Systems Showcase 2026**, HYDROSENSE demonstrates what Uganda's digital public infrastructure can look like.
+Built as a prototype for the **Ministry of ICT and National Guidance — Government Systems Showcase 2026**, HydroSense demonstrates what Uganda's digital public infrastructure can look like.
 
 ---
 
@@ -105,7 +105,7 @@ Built as a prototype for the **Ministry of ICT and National Guidance — Governm
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        HYDROSENSE                           │
+│                        HydroSense                           │
 ├──────────────┬──────────────────────┬───────────────────────┤
 │   Frontend   │       Backend        │      AI Service       │
 │              │                      │                       │
@@ -292,7 +292,7 @@ Bachelor of Software Engineering — Cavendish University Uganda
 
 <div align="center">
 
-**HYDROSENSE** — *Because clean water is not a privilege. It is a right.*
+**HydroSense** — *Because clean water is not a privilege. It is a right.*
 
 ⭐ Star this repository if you believe in what it stands for.
 
