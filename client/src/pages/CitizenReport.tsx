@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { submitCitizenReport, createHealthIncident } from '../api/client';
 import { ALL_DISTRICTS } from '../constants/districts';
 import { AlertCircle, CheckCircle, Loader2, Upload, Camera, Mic, MessageSquare, Mail as MailIcon, Phone, Send, Image as ImageIcon } from 'lucide-react';
-import CameraCapture from '../components/common/CameraCapture';
+import LiveMediaCapture from '../components/common/LiveMediaCapture';
 
 const incidentTypes = [
   { value: 'water_pollution', label: 'Water Pollution', icon: '💧', color: 'bg-red-100 text-red-700 border-red-200' },
@@ -26,7 +26,7 @@ export default function CitizenReport() {
   const [channel, setChannel] = useState('app');
   const [anonymous, setAnonymous] = useState(false);
   const [mediaFiles, setMediaFiles]   = useState<{ type: string; data: string; mime: string }[]>([]);
-  const [showCamera, setShowCamera]   = useState(false);
+  const [mediaCaptureMode, setMediaCaptureMode] = useState<'photo' | 'video' | 'audio' | null>(null);
   const [disease, setDisease] = useState({ disease_type: 'cholera', other_name: '', cases: '', deaths: '', hospitalizations: '', water_source_linked: false });
 
   const [form, setForm] = useState({
@@ -318,7 +318,7 @@ export default function CitizenReport() {
               <div className="flex rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
                 <button
                   type="button"
-                  onClick={() => setShowCamera(true)}
+                  onClick={() => setMediaCaptureMode('photo')}
                   title="Open device camera"
                   className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all border-r border-dashed border-gray-300"
                 >
@@ -334,12 +334,17 @@ export default function CitizenReport() {
                 </button>
               </div>
 
-              <button type="button" onClick={() => handleMediaCapture('video')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-all bg-gray-50">
-                <Upload size={16} /> Upload Video
-              </button>
-              <button type="button" onClick={() => handleMediaCapture('audio')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-300 text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-all bg-gray-50">
-                <Mic size={16} /> Record Audio
-              </button>
+              <div className="flex rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                <button type="button" onClick={() => setMediaCaptureMode('video')} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                  <Camera size={16} /> Record Video
+                </button>
+              </div>
+
+              <div className="flex rounded-xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                <button type="button" onClick={() => setMediaCaptureMode('audio')} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all">
+                  <Mic size={16} /> Record Audio
+                </button>
+              </div>
             </div>
 
             {mediaFiles.length > 0 && (
@@ -389,13 +394,14 @@ export default function CitizenReport() {
         </button>
       </form>
 
-      {showCamera && (
-        <CameraCapture
+      {mediaCaptureMode && (
+        <LiveMediaCapture
+          mode={mediaCaptureMode}
           onCapture={(dataUrl, file) => {
-            setMediaFiles(prev => [...prev, { type: 'image', data: dataUrl, mime: file.type }]);
-            setShowCamera(false);
+            setMediaFiles(prev => [...prev, { type: mediaCaptureMode === 'photo' ? 'image' : mediaCaptureMode, data: dataUrl, mime: file.type }]);
+            setMediaCaptureMode(null);
           }}
-          onClose={() => setShowCamera(false)}
+          onClose={() => setMediaCaptureMode(null)}
         />
       )}
     </div>
