@@ -689,18 +689,28 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(404).json({ success: false, error: 'No account found with this email address' });
     }
 
-    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const ip  = req.ip || req.connection?.remoteAddress || 'unknown';
     const otp = await generateAndStoreOTP(db, emailKey, 'password_reset', ip);
 
-    // Send email — fire-and-forget so a slow/failed delivery never blocks the response
-    sendRealEmail(emailKey, otp, 'password_reset')
-      .then(r  => console.log(`[PASSWORD RESET] Email → ${emailKey} via ${r?.provider || 'none'} | status: ${r?.status}`))
-      .catch(e => console.error(`[PASSWORD RESET] Email error for ${emailKey}:`, e.message));
+    // Await the email so we only report success when it actually delivered
+    const emailResult = await sendRealEmail(emailKey, otp, 'password_reset').catch(e => {
+      console.error(`[PASSWORD RESET] Email error for ${emailKey}:`, e.message);
+      return null;
+    });
+
+    const emailSent = emailResult?.status === 'sent';
+    console.log(`[PASSWORD RESET] ${emailKey} | provider: ${emailResult?.provider || 'none'} | sent: ${emailSent}`);
 
     // Also attempt SMS (non-blocking)
     if (user.phone) sendSMS(user.phone, otp).catch(() => {});
 
-    console.log(`[PASSWORD RESET] OTP generated for ${emailKey}`);
+    if (!emailSent) {
+      return res.status(503).json({
+        success: false,
+        error: 'Email delivery failed. Make sure RESEND_API_KEY is set in the Render environment variables.',
+      });
+    }
+
     return res.json({
       success: true,
       message: 'A password reset code has been sent to your email. Check your inbox and spam folder.',
