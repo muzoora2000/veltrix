@@ -1,14 +1,15 @@
 /**
  * HydroSense Email Utility
- * Provider chain: Brevo API → SendGrid API → Nodemailer Gmail (fallback)
+ * Provider chain: Resend → Brevo API → SendGrid API → Nodemailer Gmail (fallback)
  *
- * Required environment variables (set at least one email provider):
+ * Required environment variables (set at least one):
+ *   RESEND_API_KEY      — Resend.com API key (recommended, free 3k/month, instant setup)
  *   BREVO_API_KEY       — Brevo (formerly Sendinblue) API key
  *   SENDGRID_API_KEY    — SendGrid API key
  *   EMAIL_USER          — Gmail address (for Nodemailer fallback)
- *   EMAIL_PASS          — Gmail app password (for Nodemailer fallback)
+ *   EMAIL_PASS          — Gmail app password (16-char, from myaccount.google.com/apppasswords)
  *   EMAIL_FROM_NAME     — Sender display name (default: HydroSense Platform)
- *   EMAIL_FROM_ADDRESS  — Sender address (default: EMAIL_USER)
+ *   EMAIL_FROM_ADDRESS  — Sender address (default: EMAIL_USER or onboarding@resend.dev)
  */
 
 const nodemailer = require('nodemailer');
@@ -90,7 +91,47 @@ function buildEmailHTML(otp, purpose) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   PROVIDER 1: Brevo (formerly Sendinblue) REST API
+   PROVIDER 1: Resend — simplest setup, free 3k emails/month
+   Sign up at resend.com → API Keys → Create API Key
+   Set RESEND_API_KEY in .env (starts with re_...)
+───────────────────────────────────────────────────────── */
+async function sendViaResend(to, otp, purpose) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || apiKey === 'YOUR_RESEND_API_KEY_HERE') return null;
+
+  // Use a verified custom sender if configured; fall back to Resend's
+  // default onboarding address which can reach any inbox without domain setup.
+  const fromAddr = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER
+    ? `${FROM_NAME()} <${process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER}>`
+    : `${FROM_NAME()} <onboarding@resend.dev>`;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from:    fromAddr,
+        to:      [to],
+        subject: `[HydroSense] Your verification code: ${otp}`,
+        html:    buildEmailHTML(otp, purpose),
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(`Resend ${response.status}: ${data.message || JSON.stringify(data)}`);
+    console.log(`[EMAIL][Resend] Sent to ${to} | id: ${data.id}`);
+    return { provider: 'resend', messageId: data.id, status: 'sent' };
+  } catch (err) {
+    console.error(`[EMAIL][Resend] Error: ${err.message}`);
+    return null;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PROVIDER 2: Brevo (formerly Sendinblue) REST API
    Best deliverability, transactional email specialist
 ───────────────────────────────────────────────────────── */
 async function sendViaBrevo(to, otp, purpose) {
@@ -203,13 +244,15 @@ async function sendViaNodemailer(to, otp, purpose) {
 ───────────────────────────────────────────────────────── */
 async function sendOTP(to, otp, purpose = 'registration') {
   const result =
+    await sendViaResend(to, otp, purpose) ||
     await sendViaBrevo(to, otp, purpose) ||
     await sendViaSendGrid(to, otp, purpose) ||
     await sendViaNodemailer(to, otp, purpose);
 
   if (!result) {
-    console.warn(`[EMAIL][MOCK] No email provider configured. To: ${to} | OTP: ${otp}`);
-    return { provider: 'mock', messageId: null, status: 'mock' };
+    console.warn(`[EMAIL][UNCONFIGURED] No email provider is set. To: ${to} | OTP: ${otp}`);
+    console.warn('[EMAIL] Add RESEND_API_KEY to .env — sign up free at resend.com');
+    return { provider: 'none', messageId: null, status: 'not_sent' };
   }
   return result;
 }

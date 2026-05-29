@@ -685,23 +685,28 @@ router.post('/forgot-password', async (req, res) => {
   const ip = req.ip || req.connection?.remoteAddress || 'unknown';
   const otp = await generateAndStoreOTP(db, emailKey, 'password_reset', ip);
 
-  // Send real email asynchronously
-  sendRealEmail(emailKey, otp, 'password_reset').catch(console.error);
+  // Send email — await so we can warn the user if delivery fails
+  const emailResult = await sendRealEmail(emailKey, otp, 'password_reset').catch(e => {
+    console.error('[PASSWORD RESET] Email error:', e.message); return null;
+  });
 
-  // Send SMS asynchronously if phone number exists
-  const phone = user.phone || null;
-  if (phone) {
-    sendSMS(phone, otp).catch(console.error);
-  } else {
-    // Fetch it if not in the 'user' object (fallback)
-    const userForPhone = await db.prepare('SELECT phone FROM users WHERE email = ?').get(emailKey);
-    if (userForPhone && userForPhone.phone) {
-      sendSMS(userForPhone.phone, otp).catch(console.error);
-    }
+  const emailSent = emailResult && emailResult.status === 'sent';
+  if (!emailSent) {
+    console.warn(`[PASSWORD RESET] Email not delivered to ${emailKey}. Provider: ${emailResult?.provider || 'none'}. OTP logged server-side only.`);
   }
 
-  console.log(`[PASSWORD RESET] OTP for ${emailKey}: ${otp}`);
-  res.json({ success: true, message: 'Password reset OTP sent to your email and phone', otp_debug: otp });
+  // Also send SMS if phone is available
+  if (user.phone) sendSMS(user.phone, otp).catch(() => {});
+
+  console.log(`[PASSWORD RESET] OTP generated for ${emailKey} via ${emailResult?.provider || 'none'}`);
+  res.json({
+    success: true,
+    message: emailSent
+      ? 'A password reset code has been sent to your email. Check your inbox (and spam folder).'
+      : 'OTP generated but email delivery failed — check server email configuration (RESEND_API_KEY in .env).',
+    email_sent: emailSent,
+    provider: emailResult?.provider || 'none',
+  });
 });
 
 /* ── Reset Password (with OTP validation) ── */
