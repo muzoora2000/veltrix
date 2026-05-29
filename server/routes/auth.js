@@ -677,36 +677,41 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
 
-  const db = await getDb();
-  const emailKey = email.toLowerCase().trim();
-  const user = await db.prepare('SELECT id, name, email, phone FROM users WHERE email = ?').get(emailKey);
-  if (!user) return res.status(404).json({ success: false, error: 'No account found with this email' });
+  try {
+    const db = getDb();
+    const emailKey = email.toLowerCase().trim();
 
-  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const otp = await generateAndStoreOTP(db, emailKey, 'password_reset', ip);
+    const user = await db.prepare(
+      'SELECT id, name, email, phone FROM users WHERE email = ?'
+    ).get(emailKey);
 
-  // Send email — await so we can warn the user if delivery fails
-  const emailResult = await sendRealEmail(emailKey, otp, 'password_reset').catch(e => {
-    console.error('[PASSWORD RESET] Email error:', e.message); return null;
-  });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'No account found with this email address' });
+    }
 
-  const emailSent = emailResult && emailResult.status === 'sent';
-  if (!emailSent) {
-    console.warn(`[PASSWORD RESET] Email not delivered to ${emailKey}. Provider: ${emailResult?.provider || 'none'}. OTP logged server-side only.`);
+    const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+    const otp = await generateAndStoreOTP(db, emailKey, 'password_reset', ip);
+
+    // Send email — fire-and-forget so a slow/failed delivery never blocks the response
+    sendRealEmail(emailKey, otp, 'password_reset')
+      .then(r  => console.log(`[PASSWORD RESET] Email → ${emailKey} via ${r?.provider || 'none'} | status: ${r?.status}`))
+      .catch(e => console.error(`[PASSWORD RESET] Email error for ${emailKey}:`, e.message));
+
+    // Also attempt SMS (non-blocking)
+    if (user.phone) sendSMS(user.phone, otp).catch(() => {});
+
+    console.log(`[PASSWORD RESET] OTP generated for ${emailKey}`);
+    return res.json({
+      success: true,
+      message: 'A password reset code has been sent to your email. Check your inbox and spam folder.',
+    });
+  } catch (err) {
+    console.error('[PASSWORD RESET] Unexpected error:', err.message, err.stack);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to process password reset. Please try again.',
+    });
   }
-
-  // Also send SMS if phone is available
-  if (user.phone) sendSMS(user.phone, otp).catch(() => {});
-
-  console.log(`[PASSWORD RESET] OTP generated for ${emailKey} via ${emailResult?.provider || 'none'}`);
-  res.json({
-    success: true,
-    message: emailSent
-      ? 'A password reset code has been sent to your email. Check your inbox (and spam folder).'
-      : 'OTP generated but email delivery failed — check server email configuration (RESEND_API_KEY in .env).',
-    email_sent: emailSent,
-    provider: emailResult?.provider || 'none',
-  });
 });
 
 /* ── Reset Password (with OTP validation) ── */
