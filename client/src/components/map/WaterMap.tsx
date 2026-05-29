@@ -7,12 +7,21 @@ import L from 'leaflet';
 import { WaterPoint } from '../../types';
 import StatusBadge from '../common/StatusBadge';
 
-// Fix Leaflet default icon paths
+// Fix Leaflet default icon — use inline SVG data URIs so map pins work without internet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
+const _defaultSvg = encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">` +
+  `<path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24S24 21 24 12C24 5.373 18.627 0 12 0z" fill="#2563eb" stroke="white" stroke-width="1.5"/>` +
+  `<circle cx="12" cy="12" r="5" fill="white" opacity="0.9"/></svg>`
+);
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconUrl:       `data:image/svg+xml,${_defaultSvg}`,
+  iconRetinaUrl: `data:image/svg+xml,${_defaultSvg}`,
+  shadowUrl:     '',
+  iconSize:      [24, 36],
+  iconAnchor:    [12, 36],
+  popupAnchor:   [0, -36],
+  shadowSize:    [0, 0],
 });
 
 const STATUS_COLORS: Record<string, string> = {

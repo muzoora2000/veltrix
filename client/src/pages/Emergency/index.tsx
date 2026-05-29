@@ -60,6 +60,16 @@ export default function EmergencyCenter() {
   };
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
 
+  // Real-time: reload immediately when server emits new_alert via Socket.io
+  useEffect(() => {
+    // Dynamically import socket.io-client to avoid SSR issues and keep bundle clean
+    import('socket.io-client').then(({ io }) => {
+      const sock = io('/', { transports: ['websocket', 'polling'] });
+      sock.on('new_alert', load);
+      return () => sock.disconnect();
+    });
+  }, []);
+
   const openModal  = () => { setShowModal(true);  setModalError(''); };
   const closeModal = () => { setShowModal(false); setModalError(''); };
 

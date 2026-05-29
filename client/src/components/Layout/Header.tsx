@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, Sun, Moon, CheckCheck, X } from 'lucide-react';
+import { io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -115,7 +117,8 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [time, setTime] = useState(new Date());
   const panelRef = useRef<HTMLDivElement>(null);
-  const bellRef = useRef<HTMLButtonElement>(null);
+  const bellRef  = useRef<HTMLButtonElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const fetchUnread = () => {
     getNotificationUnreadCount()
@@ -128,6 +131,18 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
       .then(r => setNotifications(r.data.data ?? []))
       .catch(() => {});
   };
+
+  // Real-time badge: bump count immediately when the server emits an alert or
+  // new_notification event — no need to wait for the 30-second poll.
+  useEffect(() => {
+    const sock = io('/', { transports: ['websocket', 'polling'] });
+    socketRef.current = sock;
+
+    sock.on('new_alert', () => setUnreadCount(c => c + 1));
+    sock.on('new_notification', () => setUnreadCount(c => c + 1));
+
+    return () => { sock.disconnect(); socketRef.current = null; };
+  }, []);
 
   useEffect(() => {
     fetchUnread();
@@ -201,6 +216,8 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
 
       {/* Hamburger (mobile) */}
       <button
+        type="button"
+        title="Open navigation menu"
         onClick={onMenuClick}
         className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 dark:text-gray-400"
       >
@@ -276,6 +293,8 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
                     </button>
                   )}
                   <button
+                    type="button"
+                    title="Close notifications"
                     onClick={() => setNotifOpen(false)}
                     className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
                   >

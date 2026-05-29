@@ -69,22 +69,55 @@ router.get('/trends', async (req, res) => {
   res.json({ success: true, data: { climate: climateMonthly, maintenance: maintenanceMonthly, health: healthMonthly } });
 });
 
-router.get('/predictions', (req, res) => {
+router.get('/predictions', async (req, res) => {
+  const db = await getDb();
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const cur = new Date().getMonth();
+
+  // Pull real baseline metrics from DB
+  const [infra, pending, droughtRow, floodRow, qualityRow] = await Promise.all([
+    db.prepare(`SELECT AVG(infrastructure_score) as avg_infra, COUNT(*) as total,
+      SUM(CASE WHEN status='non_functional' THEN 1 ELSE 0 END) as broken FROM water_points`).get(),
+    db.prepare(`SELECT COUNT(*) as cnt FROM maintenance_requests WHERE status NOT IN ('completed','cancelled')`).get(),
+    db.prepare(`SELECT COUNT(*) as severe FROM drought_index WHERE severity IN ('extreme_drought','severe_drought')`).get(),
+    db.prepare(`SELECT COUNT(*) as active FROM flood_alerts WHERE status='active'`).get(),
+    db.prepare(`SELECT AVG(water_safety_score) as avg_score FROM water_quality_tests`).get(),
+  ]);
+
+  const avgInfra     = parseFloat(infra?.avg_infra) || 65;
+  const totalPoints  = parseInt(infra?.total) || 1;
+  const brokenRatio  = (parseInt(infra?.broken) || 0) / totalPoints;
+  const pendingMaint = parseInt(pending?.cnt) || 5;
+  const severeD      = parseInt(droughtRow?.severe) || 0;
+  const activeFlood  = parseInt(floodRow?.active) || 0;
+  const qualityScore = parseFloat(qualityRow?.avg_score) || 60;
+
+  // Uganda rainy seasons: Mar–May (long rains), Oct–Nov (short rains)
+  const RAINY = new Set([2, 3, 4, 9, 10]);
+
   const predictions = Array.from({ length: 6 }, (_, i) => {
     const m = (cur + i) % 12;
-    const isRainy = [2, 3, 4, 9, 10].includes(m);
+    const rainy = RAINY.has(m);
+    // Borehole failure risk: driven by actual infra score + broken ratio
+    const baseFailure  = Math.round(100 - avgInfra + brokenRatio * 30);
+    const boreholeRisk = Math.min(95, rainy ? baseFailure + 8 : baseFailure);
+    // Drought: real severe-drought district count → probability
+    const droughtBase  = Math.min(90, severeD * 5 + (rainy ? 0 : 20));
+    // Flood: active flood alerts + seasonal bump
+    const floodBase    = Math.min(90, activeFlood * 10 + (rainy ? 35 : 5));
+    // Contamination: low quality score = higher risk; rain washes in pollutants
+    const contamRisk   = qualityScore < 50 ? 'critical' : qualityScore < 70 ? 'high' : rainy ? 'moderate' : 'low';
     return {
       month: months[m],
-      borehole_failure_risk_pct: isRainy ? 15 + Math.random() * 10 : 25 + Math.random() * 20,
-      water_demand_increase_pct: isRainy ? 5 + Math.random() * 10 : 20 + Math.random() * 25,
-      drought_probability_pct: isRainy ? 5 + Math.random() * 10 : 30 + Math.random() * 40,
-      flood_probability_pct: isRainy ? 40 + Math.random() * 40 : 5 + Math.random() * 10,
-      maintenance_needed_est: Math.floor(8 + Math.random() * 15),
-      contamination_risk: isRainy ? 'high' : 'moderate'
+      borehole_failure_risk_pct: boreholeRisk,
+      water_demand_increase_pct: rainy ? 8 : 22,
+      drought_probability_pct:   droughtBase,
+      flood_probability_pct:     floodBase,
+      maintenance_needed_est:    pendingMaint + (rainy ? 4 : 2),
+      contamination_risk:        contamRisk,
     };
   });
+
   res.json({ success: true, data: predictions });
 });
 
