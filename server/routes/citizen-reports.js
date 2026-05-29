@@ -109,6 +109,20 @@ router.post('/', authMiddleware, async (req, res) => {
   // Notify relevant staff roles based on incident type
   try { notifyForIncident(incident_type, severity || 'medium', district, reportId, name); } catch {}
 
+  // Proximity-based auto-assign for medium+ severity — runs in background,
+  // does not block the response. Uses Haversine distance via the task-assignment router logic.
+  if (['medium','high','critical','emergency'].includes(severity)) {
+    setImmediate(async () => {
+      try {
+        const { haversineAutoAssign } = require('./task-assignment');
+        await haversineAutoAssign(db, reportId, null, req.user.id);
+        console.log(`[CITIZEN-REPORT] Proximity auto-assign triggered for report #${reportId}`);
+      } catch (e) {
+        console.warn(`[CITIZEN-REPORT] Auto-assign skipped for #${reportId}:`, e.message);
+      }
+    });
+  }
+
   // Send notification to citizen
   postToAI('/ai/notifications/send', {
     recipient_id: req.user.id,
