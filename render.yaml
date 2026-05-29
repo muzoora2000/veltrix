@@ -18,3 +18,21 @@ services:
         sync: false
       - key: EMAIL_FROM_NAME
         value: HydroSense Platform
+      - key: AI_SERVICE_URL
+        sync: false
+
+  - type: web
+    name: hydrosense-ai
+    env: python
+    plan: free
+    buildCommand: cd ai-service && pip install -r requirements.txt
+    startCommand: cd ai-service && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: EXTRA_CORS_ORIGIN
+        sync: false

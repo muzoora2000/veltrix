@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
 const cron = require('node-cron');
 const { spawn, execFileSync } = require('child_process');
@@ -21,6 +22,9 @@ const server = http.createServer(app);
 const START_TIME = Date.now();
 const AI_PORT = parseInt(process.env.AI_PORT, 10) || 8000;
 const AI_SERVICE_DIR = path.join(__dirname, '..', 'ai-service');
+// When deployed: set AI_SERVICE_URL=https://hydrosense-ai.onrender.com in Render env vars.
+// When running locally: leave unset and the server auto-spawns the Python process.
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || null;
 
 // ═══════════════════════════════════════════════════════════════
 // PRODUCTION CONFIGURATION
@@ -661,20 +665,41 @@ async function proxyToAI(req, res, targetPath) {
   JSON.stringify(req.body) :
   null;
 
-  const options = {
-    hostname: 'localhost',
-    port: AI_PORT,
-    path: targetPath,
-    method: req.method,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Request-ID': requestId,
-      ...(bodyData ? { 'Content-Length': Buffer.byteLength(bodyData) } : {})
-    },
-    timeout: CONFIG.ai.requestTimeoutMs
-  };
+  // Route to deployed Render AI service if AI_SERVICE_URL is configured,
+  // otherwise fall back to the locally spawned process on localhost.
+  let transport, options;
+  if (AI_SERVICE_URL) {
+    const u = new URL(targetPath, AI_SERVICE_URL);
+    transport = u.protocol === 'https:' ? https : http;
+    options = {
+      hostname: u.hostname,
+      port: u.port || (u.protocol === 'https:' ? 443 : 80),
+      path: u.pathname + u.search,
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+        ...(bodyData ? { 'Content-Length': Buffer.byteLength(bodyData) } : {})
+      },
+      timeout: CONFIG.ai.requestTimeoutMs
+    };
+  } else {
+    transport = http;
+    options = {
+      hostname: 'localhost',
+      port: AI_PORT,
+      path: targetPath,
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+        ...(bodyData ? { 'Content-Length': Buffer.byteLength(bodyData) } : {})
+      },
+      timeout: CONFIG.ai.requestTimeoutMs
+    };
+  }
 
-  const proxyReq = http.request(options, (proxyRes) => {
+  const proxyReq = transport.request(options, (proxyRes) => {
     const contentType = proxyRes.headers['content-type'] || '';
     const isStream = contentType.includes('text/event-stream');
 
@@ -1128,6 +1153,10 @@ async function performHealthCheck() {
 }
 
 function attemptAIAutoRecovery() {
+  // When AI_SERVICE_URL is set the Python service runs on Render —
+  // don't try to spawn it locally.
+  if (AI_SERVICE_URL) return;
+
   const now = Date.now();
 
   if (isRecovering) return;

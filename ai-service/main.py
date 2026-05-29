@@ -155,16 +155,27 @@ async def validate_startup() -> Dict[str, Any]:
         "detail": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
     }
 
-    # Database connectivity
-    try:
-        import sqlite3
-        db_path = os.getenv("DB_PATH", "../server/watermonitor.db")
-        conn = sqlite3.connect(db_path)
-        conn.execute("SELECT 1").fetchone()
-        conn.close()
-        checks["database"] = {"status": "passed", "detail": db_path}
-    except Exception as e:
-        checks["database"] = {"status": "failed", "detail": str(e)}
+    # Database connectivity — prefer PostgreSQL (Render) over SQLite (local)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        try:
+            import psycopg2
+            conn = psycopg2.connect(db_url, connect_timeout=5)
+            conn.cursor().execute("SELECT 1")
+            conn.close()
+            checks["database"] = {"status": "passed", "detail": "postgresql"}
+        except Exception as e:
+            checks["database"] = {"status": "failed", "detail": f"postgresql: {e}"}
+    else:
+        try:
+            import sqlite3
+            db_path = os.getenv("DB_PATH", "../server/watermonitor.db")
+            conn = sqlite3.connect(db_path)
+            conn.execute("SELECT 1").fetchone()
+            conn.close()
+            checks["database"] = {"status": "passed", "detail": db_path}
+        except Exception as e:
+            checks["database"] = {"status": "failed", "detail": f"sqlite: {e}"}
 
     # Required modules
     required_modules = [
@@ -219,12 +230,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_CORS_ORIGINS = [
+    # Local development
+    "http://localhost:3000", "http://127.0.0.1:3000",
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    # Vercel frontend
+    "https://veltrix-4r2c.vercel.app",
+    # Render backend (Node server calls AI service internally)
+    "https://hydrosense-server.onrender.com",
+]
+# Allow any additional origin set via env var (e.g. custom domains)
+_extra = os.getenv("EXTRA_CORS_ORIGIN", "")
+if _extra:
+    _CORS_ORIGINS.extend([o.strip() for o in _extra.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", "http://127.0.0.1:3000",
-        "http://localhost:5173", "http://127.0.0.1:5173",
-    ],
+    allow_origins=_CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
