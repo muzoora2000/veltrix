@@ -99,10 +99,14 @@ async function sendViaResend(to, otp, purpose) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === 'YOUR_RESEND_API_KEY_HERE') return null;
 
-  // Use a verified custom sender if configured; fall back to Resend's
-  // default onboarding address which can reach any inbox without domain setup.
-  const fromAddr = process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER
-    ? `${FROM_NAME()} <${process.env.EMAIL_FROM_ADDRESS || process.env.EMAIL_USER}>`
+  // Resend requires the FROM domain to be verified in the Resend dashboard.
+  // Gmail / Yahoo / Outlook addresses cannot be used as FROM because you
+  // don't control those domains.  Use RESEND_FROM if you have verified a
+  // custom domain; otherwise fall back to Resend's own onboarding sender
+  // which delivers to any inbox with no domain setup required.
+  const customFrom = process.env.RESEND_FROM;
+  const fromAddr = customFrom
+    ? `${FROM_NAME()} <${customFrom}>`
     : `${FROM_NAME()} <onboarding@resend.dev>`;
 
   try {

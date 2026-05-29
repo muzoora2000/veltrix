@@ -18,5 +18,3 @@ services:
         sync: false
       - key: EMAIL_FROM_NAME
         value: HydroSense Platform
-      - key: EMAIL_FROM_ADDRESS
-        value: muzoora2000@gmail.com
