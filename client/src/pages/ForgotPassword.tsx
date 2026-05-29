@@ -176,9 +176,9 @@ export default function ForgotPassword() {
               <form onSubmit={handleVerifyOTP} className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">OTP Code</label>
-                  <input type="text" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full text-center text-2xl tracking-[0.5em] px-4 py-4 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                    placeholder="000000" maxLength={6} required />
+                  <input type="text" inputMode="numeric" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full text-center text-3xl font-bold text-gray-900 tracking-[0.5em] px-4 py-4 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400"
+                    placeholder="——————" maxLength={6} required />
                 </div>
                 <button type="submit" disabled={loading || otp.length < 6}
                   className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-200 flex items-center justify-center gap-2 disabled:opacity-60">
