@@ -170,6 +170,17 @@ export default function SensorsPage() {
       </div>
 
       {/* Sensor Grid */}
+      {filtered.length === 0 && !loading && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="text-5xl mb-4">📡</div>
+          <div className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">No sensors found</div>
+          <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
+            {sensors.length === 0
+              ? 'No sensors have been registered in the system yet.'
+              : 'No sensors match the current filter. Try selecting a different status or clearing the filter.'}
+          </p>
+        </div>
+      )}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map(sensor => {
           const live = readings[sensor.id];

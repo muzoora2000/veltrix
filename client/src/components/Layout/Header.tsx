@@ -312,7 +312,13 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
                 ) : (
                   notifications.map(n => {
                     const refType = n.reference_type ?? '';
-                    const route = NOTIF_ROUTE[refType] ?? '/dashboard';
+                    // Citizens and community members clicking a citizen_report notification
+                    // should land on their own tracking page, not the admin analysis tool.
+                    const citizenRoles = ['citizen', 'community_committee', 'ngo_officer'];
+                    const baseRoute = NOTIF_ROUTE[refType] ?? '/dashboard';
+                    const route = (refType === 'citizen_report' && citizenRoles.includes(user?.role ?? ''))
+                      ? '/track-reports'
+                      : baseRoute;
                     const icon  = NOTIF_ICON[refType] ?? '🔔';
                     const qs    = n.reference_id
                       ? `?ref_type=${encodeURIComponent(refType)}&ref_id=${n.reference_id}`

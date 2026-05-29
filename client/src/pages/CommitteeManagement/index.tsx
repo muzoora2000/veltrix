@@ -398,6 +398,28 @@ export default function CommitteeManagement() {
   return (
     <div className="space-y-6">
 
+      {/* Committee member identity banner — shown only to community_committee role */}
+      {user?.role === 'community_committee' && (user as any).committee_id && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg flex-shrink-0">🪪</div>
+            <div className="min-w-0">
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wide">Your Committee ID</div>
+              <div className="font-mono text-sm font-bold text-emerald-800 dark:text-emerald-200 tracking-wider truncate">
+                {(user as any).committee_id}
+              </div>
+              <div className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">Use this ID to log in. Keep it safe.</div>
+            </div>
+          </div>
+          <a
+            href="/profile"
+            className="flex-shrink-0 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-emerald-800/40 border border-emerald-300 dark:border-emerald-600 px-3 py-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-800/60 transition-colors"
+          >
+            🔑 Change Password
+          </a>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

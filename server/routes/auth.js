@@ -491,7 +491,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 /* ── Get current user ── */
 router.get('/me', authMiddleware, async (req, res) => {
   const db = await getDb();
-  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
+  const user = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, committee_id, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ success: false, error: 'User not found' });
   res.json({ success: true, user });
 });
@@ -526,7 +526,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
   if (!fields.length) return res.status(400).json({ success: false, error: 'Nothing to update' });
   vals.push(req.user.id);
   await db.prepare(`UPDATE users SET ${fields.join(',')} WHERE id=?`).run(...vals);
-  const updated = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
+  const updated = await db.prepare('SELECT id, name, email, role, district, sub_county, phone, organization, avatar, language, active, committee_id, last_login, created_at FROM users WHERE id = ?').get(req.user.id);
   res.json({ success: true, user: updated });
 });
 

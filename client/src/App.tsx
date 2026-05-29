@@ -35,6 +35,7 @@ import IncidentAnalysis from './pages/IncidentAnalysis';
 import TaskAssignment from './pages/TaskAssignment';
 import VerifyProfile from './pages/VerifyProfile';
 import CommitteeManagement from './pages/CommitteeManagement';
+import Profile from './pages/Profile';
 
 /* ─────────────────────────────────────────────────────────────
    RBAC — Advanced Role-Based Access Control
@@ -98,6 +99,9 @@ const ROUTE_ROLES: Record<string, string[]> = {
 
   '/incident-command':    ['national_admin','district_officer'],
   '/committee-management': ['national_admin','district_officer','community_committee'],
+
+  // Profile — every authenticated user can view and edit their own profile
+  '/profile': ['national_admin','district_officer','technician','health_officer','climate_scientist','ngo_officer','community_committee','citizen'],
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -238,6 +242,7 @@ export default function App() {
           <Route path="track-reports" element={<RoleRoute path="/track-reports"><CitizenTracking /></RoleRoute>} />
           <Route path="incident-analysis" element={<RoleRoute path="/incident-analysis"><IncidentAnalysis /></RoleRoute>} />
           <Route path="task-assignment" element={<RoleRoute path="/task-assignment"><TaskAssignment /></RoleRoute>} />
+          <Route path="profile" element={<RoleRoute path="/profile"><Profile /></RoleRoute>} />
           </Route>
 
           {/* Catch-all — boot to login */}

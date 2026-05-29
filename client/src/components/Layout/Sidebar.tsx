@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import {
   LayoutDashboard, Droplets, Cpu, CloudRain, TestTube, Users, Heart,
   AlertTriangle, BarChart3, Map, Wrench, ShieldCheck, LogOut, X, Globe,
-  Brain, Shield, Radio, Hammer, UserCog, UserCircle, Building2,
+  Brain, Shield, Radio, Hammer, UserCog, UserCircle, Building2, Lock as LockIcon,
 } from 'lucide-react';
 import ProfileModal from '../common/ProfileModal';
 
@@ -296,6 +296,29 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <span className="truncate">{user.district || user.organization}</span>
               </div>
             )}
+            {/* Committee ID badge — shown to community_committee members */}
+            {user.role === 'community_committee' && (user as any).committee_id && (
+              <div className="mt-2 px-2 py-1 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-[10px] font-mono text-emerald-300 tracking-wide truncate">
+                🪪 {(user as any).committee_id}
+              </div>
+            )}
+            {/* Quick links */}
+            <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-white/8">
+              <button
+                type="button"
+                onClick={() => { navigate('/profile'); onClose(); }}
+                className="flex-1 text-[10px] text-gray-400 hover:text-blue-400 flex items-center gap-1 transition-colors"
+              >
+                <UserCircle size={11}/> My Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProfile(true)}
+                className="flex-1 text-[10px] text-gray-400 hover:text-blue-400 flex items-center gap-1 transition-colors"
+              >
+                <LockIcon size={11}/> Change Password
+              </button>
+            </div>
           </div>
         )}
 

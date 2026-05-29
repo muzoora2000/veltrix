@@ -73,7 +73,7 @@ router.post('/', requireRole('national_admin', 'district_officer', 'technician')
   res.status(201).json({ success: true, id: result.lastInsertRowid, message: 'Water point created successfully' });
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('national_admin', 'district_officer', 'technician'), async (req, res) => {
   const db = await getDb();
   const { name, status, beneficiaries, households, notes, infrastructure_score, next_maintenance, last_maintained } = req.body;
   await db.prepare(`UPDATE water_points SET name=COALESCE(?,name), status=COALESCE(?,status), beneficiaries=COALESCE(?,beneficiaries), households=COALESCE(?,households), notes=COALESCE(?,notes), infrastructure_score=COALESCE(?,infrastructure_score), next_maintenance=COALESCE(?,next_maintenance), last_maintained=COALESCE(?,last_maintained) WHERE id=?`).run(name, status, beneficiaries, households, notes, infrastructure_score, next_maintenance, last_maintained, req.params.id);
