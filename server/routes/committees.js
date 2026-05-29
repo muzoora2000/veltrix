@@ -7,6 +7,40 @@ const { authMiddleware, requireRole, requireCommitteeAccess, auditLog } = requir
 const ADMIN_ROLES     = ['national_admin', 'district_officer'];
 const COMMITTEE_ROLES = ['national_admin', 'district_officer', 'community_committee'];
 
+// ── Committee notification helper ────────────────────────────
+// Inserts an in-app notification row for every active member of a committee
+// so they see it immediately in their notification feed.
+// Also pushes a role-level copy to district_officer when alsoNotifyOfficer=true.
+async function notifyCommitteeMembers(db, committeeId, subject, message, refType, refId, alsoNotifyOfficer = false) {
+  try {
+    const members = await db.prepare(`
+      SELECT cm.user_id, c.district
+      FROM committee_members cm
+      JOIN committees c ON c.id = cm.committee_id
+      WHERE cm.committee_id = $1 AND cm.status = 'active'
+    `).all(committeeId);
+
+    for (const m of members) {
+      await db.prepare(`
+        INSERT INTO notification_log
+          (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
+        VALUES ('community_committee', $1, 'in_app', $2, $3, 'sent', $4, $5, $6)
+      `).run(m.user_id, subject, message, refType || null, refId || null, m.district || null);
+    }
+
+    if (alsoNotifyOfficer && members.length > 0) {
+      const district = members[0].district;
+      await db.prepare(`
+        INSERT INTO notification_log
+          (recipient_type, channel, subject, message, status, reference_type, reference_id, district)
+        VALUES ('district_officer', 'in_app', $1, $2, 'sent', $3, $4, $5)
+      `).run(subject, message, refType || null, refId || null, district || null);
+    }
+  } catch (e) {
+    console.error('[committees/notify]', e.message);
+  }
+}
+
 // ── Jurisdiction scope helper ─────────────────────────────────
 // Returns SQL fragment + params to restrict committee queries to the user's
 // geographic jurisdiction when the caller is a community_committee member.
@@ -342,6 +376,14 @@ router.post('/:id/meetings', authMiddleware, requireRole(...COMMITTEE_ROLES), re
     `).run(req.params.id, title, agenda || null, meeting_date, meeting_time || null, location || null, req.user.id);
 
     await auditLog(req, 'CREATE', 'meeting', result.lastInsertRowid, req.params.id, false, { title, meeting_date });
+
+    notifyCommitteeMembers(
+      db, req.params.id,
+      `📅 Meeting Scheduled: ${title}`,
+      `A committee meeting has been scheduled for ${meeting_date}${meeting_time ? ' at ' + meeting_time : ''}${location ? ' — ' + location : ''}. ${agenda ? 'Agenda: ' + agenda : 'See details in Committee Management.'}`,
+      'committee_meeting', result.lastInsertRowid
+    );
+
     res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/meetings/create]', err);
@@ -414,6 +456,15 @@ router.post('/:id/incidents', authMiddleware, requireRole(...COMMITTEE_ROLES), r
 
     // Cross-system log: incident assignment links committee governance to core HydroSense reports
     await auditLog(req, 'ASSIGN_INCIDENT', 'incident', result.lastInsertRowid, req.params.id, !!report_id, { title, incident_type, report_id });
+
+    notifyCommitteeMembers(
+      db, req.params.id,
+      `⚠️ Incident Assigned: ${title}`,
+      `A ${(priority || 'medium').toUpperCase()} priority ${(incident_type || 'water quality').replace(/_/g, ' ')} incident has been logged for your committee: "${title}". Please review and coordinate a response.`,
+      'committee_incident', result.lastInsertRowid,
+      true // also alert the district officer
+    );
+
     res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/incidents/create]', err);
@@ -480,6 +531,14 @@ router.post('/:id/projects', authMiddleware, requireRole(...COMMITTEE_ROLES), re
            end_date || null, lead_officer || null, req.user.id);
 
     await auditLog(req, 'CREATE', 'project', result.lastInsertRowid, req.params.id, false, { title, project_type });
+
+    notifyCommitteeMembers(
+      db, req.params.id,
+      `🏗️ New Project: ${title}`,
+      `A new ${(project_type || 'water').replace(/_/g, ' ')} project has been created: "${title}".${description ? ' ' + description : ''} Check Committee Management for full details.`,
+      'committee_project', result.lastInsertRowid
+    );
+
     res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     console.error('[committees/projects/create]', err);
@@ -532,10 +591,18 @@ router.post('/:id/announcements', authMiddleware, requireRole(...COMMITTEE_ROLES
     const { title, content, priority } = req.body;
     if (!title || !content) return res.status(400).json({ success: false, error: 'title and content required' });
 
-    await db.prepare(`
+    const annResult = await db.prepare(`
       INSERT INTO committee_announcements (committee_id, title, content, priority, created_by, author_name)
       VALUES ($1,$2,$3,$4,$5,$6)
     `).run(req.params.id, title, content, priority || 'normal', req.user.id, req.user.name);
+
+    const preview = content.length > 120 ? content.slice(0, 117) + '…' : content;
+    notifyCommitteeMembers(
+      db, req.params.id,
+      `📢 Announcement: ${title}`,
+      `${req.user.name} posted an announcement: "${preview}"`,
+      'committee_announcement', annResult.lastInsertRowid
+    );
 
     res.status(201).json({ success: true });
   } catch (err) {
@@ -580,6 +647,14 @@ router.post('/:id/votes', authMiddleware, requireRole(...COMMITTEE_ROLES), requi
            vote_type || 'yes_no', req.user.id, closes_at || null);
 
     await auditLog(req, 'CREATE', 'vote', result.lastInsertRowid, req.params.id, false, { title });
+
+    notifyCommitteeMembers(
+      db, req.params.id,
+      `🗳️ New Vote: ${title}`,
+      `A vote has been opened for your committee: "${title}".${description ? ' ' + description : ''} ${closes_at ? 'Closes: ' + closes_at + '.' : ''} Please cast your vote in Committee Management.`,
+      'committee_vote', result.lastInsertRowid
+    );
+
     res.status(201).json({ success: true, data: { id: result.lastInsertRowid } });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to create vote' });
