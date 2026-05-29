@@ -92,7 +92,9 @@ const ROUTE_ROLES: Record<string, string[]> = {
 
   '/citizen-report':      ['citizen','community_committee','ngo_officer','national_admin','district_officer'],
   '/multilingual-report': ['citizen','community_committee','ngo_officer','national_admin','district_officer'],
-  '/report-status':       ['citizen','community_committee','ngo_officer','district_officer','health_officer','national_admin'],
+  // /report-status renders the AI Incident Analysis tool — admin/officer only.
+  // Citizens and community members use /track-reports to view their own submissions.
+  '/report-status':       ['national_admin','district_officer','health_officer'],
   '/track-reports':       ['citizen','community_committee','ngo_officer','national_admin','district_officer'],
   '/incident-analysis':   ['national_admin','district_officer','health_officer','climate_scientist'],
   '/task-assignment':     ['national_admin','district_officer','technician','health_officer'],

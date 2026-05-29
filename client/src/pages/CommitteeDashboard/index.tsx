@@ -177,12 +177,26 @@ export default function CommitteeDashboard() {
             </div>
           </div>
 
-          {/* Committee isolation notice */}
-          <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/15 w-fit">
-            <Shield size={12} className="text-emerald-200 flex-shrink-0" />
-            <p className="text-xs text-emerald-100">
-              Jurisdiction-scoped view — {user?.district || 'your district'} · Committee governance layer active
-            </p>
+          {/* Committee ID + quick account links */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {(user as any)?.committee_id && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 border border-white/20">
+                <span className="text-sm">🪪</span>
+                <span className="text-xs text-white font-mono font-bold tracking-wider">
+                  {(user as any).committee_id}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-emerald-100">
+              <Shield size={11} className="flex-shrink-0" />
+              {user?.district || 'your district'} · Jurisdiction-scoped
+            </div>
+            <Link
+              to="/profile"
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/20 text-xs text-white font-semibold transition-colors"
+            >
+              🔑 Change Password
+            </Link>
           </div>
         </div>
       </div>
