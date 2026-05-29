@@ -10,20 +10,61 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 
 // Maps notification reference_type → app route
 const NOTIF_ROUTE: Record<string, string> = {
-  discussion:           '/citizen-hub',
-  volunteer_event:      '/citizen-hub',
-  citizen_observation:  '/citizen-hub',
-  gwn_report:           '/citizen-hub',
-  alert:                '/alerts',
-  maintenance_request:  '/maintenance',
-  water_point:          '/waterpoints',
-  waterpoint:           '/waterpoints',
-  health_incident:      '/health',
-  incident:             '/health',
-  sensor:               '/sensors',
-  climate:              '/climate',
-  quality_test:         '/water-quality',
-  report:               '/reports',
+  // Community / forum
+  discussion:              '/citizen-hub',
+  volunteer_event:         '/citizen-hub',
+  citizen_observation:     '/citizen-hub',
+  gwn_report:              '/gwn',
+  // Committee governance — all land on committee management
+  committee_meeting:       '/committee-management',
+  committee_announcement:  '/committee-management',
+  committee_incident:      '/committee-management',
+  committee_project:       '/committee-management',
+  committee_vote:          '/committee-management',
+  // Core system
+  alert:                   '/emergency',
+  citizen_report:          '/report-status',
+  maintenance_request:     '/maintenance',
+  water_point:             '/water-infrastructure',
+  waterpoint:              '/water-infrastructure',
+  health_incident:         '/health',
+  incident:                '/incident-command',
+  sensor:                  '/sensors',
+  climate:                 '/climate',
+  quality_test:            '/water-quality',
+  report:                  '/community',
+  meeting:                 '/committee-management',
+  announcement:            '/committee-management',
+  project:                 '/committee-management',
+  vote:                    '/committee-management',
+};
+
+// Emoji icon per notification type for quick visual scanning
+const NOTIF_ICON: Record<string, string> = {
+  discussion:              '🗣️',
+  volunteer_event:         '🙌',
+  citizen_observation:     '👁️',
+  gwn_report:              '🛡️',
+  committee_meeting:       '📅',
+  committee_announcement:  '📢',
+  committee_incident:      '⚠️',
+  committee_project:       '🏗️',
+  committee_vote:          '🗳️',
+  alert:                   '🚨',
+  citizen_report:          '📝',
+  maintenance_request:     '🔧',
+  water_point:             '💧',
+  waterpoint:              '💧',
+  health_incident:         '🏥',
+  incident:                '⚡',
+  sensor:                  '📡',
+  climate:                 '🌦️',
+  quality_test:            '🧪',
+  report:                  '📋',
+  meeting:                 '📅',
+  announcement:            '📢',
+  project:                 '🏗️',
+  vote:                    '🗳️',
 };
 
 const roleColors: Record<string, string> = {
@@ -116,11 +157,12 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
 
   const handleBellClick = () => {
     if (!notifOpen) {
+      // Always fetch fresh list when opening
       fetchNotifications();
+      // Mark all as read in the background — don't clear the list so users can still see & click
       if (unreadCount > 0) {
         markAllNotificationsRead().catch(() => {});
         setUnreadCount(0);
-        setNotifications([]);
       }
     }
     setNotifOpen(v => !v);
@@ -249,47 +291,62 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
                     {tNoNotifications}
                   </div>
                 ) : (
-                  notifications.map(n => (
-                    <button
-                      key={n.id}
-                      onClick={() => {
-                        const route = NOTIF_ROUTE[n.reference_type ?? ''];
-                        if (route) {
-                          setNotifOpen(false);
-                          const qs = n.reference_id
-                            ? `?ref_type=${encodeURIComponent(n.reference_type ?? '')}&ref_id=${n.reference_id}`
-                            : '';
-                          navigate(`${route}${qs}`);
-                        }
-                      }}
-                      className={`w-full text-left px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        n.read_at ? '' : 'bg-blue-50/60 dark:bg-blue-950/30'
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        {/* Unread dot */}
-                        <div className="mt-1.5 flex-shrink-0">
-                          {n.read_at
-                            ? <div className="w-2 h-2 rounded-full bg-transparent border border-gray-300 dark:border-gray-600" />
-                            : <div className="w-2 h-2 rounded-full bg-blue-500" />
-                          }
+                  notifications.map(n => {
+                    const refType = n.reference_type ?? '';
+                    const route = NOTIF_ROUTE[refType] ?? '/dashboard';
+                    const icon  = NOTIF_ICON[refType] ?? '🔔';
+                    const qs    = n.reference_id
+                      ? `?ref_type=${encodeURIComponent(refType)}&ref_id=${n.reference_id}`
+                      : '';
+                    return (
+                      <button
+                        key={n.id}
+                        onClick={() => { setNotifOpen(false); navigate(`${route}${qs}`); }}
+                        className={`w-full text-left px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 group ${
+                          !n.read_at ? 'bg-blue-50/60 dark:bg-blue-950/30' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-2.5">
+
+                          {/* Type icon */}
+                          <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-center text-base mt-0.5">
+                            {icon}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="flex-1 min-w-0">
+                                {n.subject && (
+                                  <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate leading-snug">
+                                    {n.subject}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5 leading-snug">
+                                  {n.message}
+                                </p>
+                              </div>
+                              {/* Unread dot */}
+                              <div className="flex-shrink-0 mt-1">
+                                {!n.read_at
+                                  ? <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                  : <div className="w-2 h-2 rounded-full border border-gray-300 dark:border-gray-600" />
+                                }
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-1.5">
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                {timeAgo(n.sent_at)}
+                              </p>
+                              <span className="text-[10px] text-blue-500 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity font-semibold flex items-center gap-0.5">
+                                Open →
+                              </span>
+                            </div>
+                          </div>
+
                         </div>
-                        <div className="flex-1 min-w-0">
-                          {n.subject && (
-                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                              {n.subject}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                            {n.message}
-                          </p>
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
-                            {timeAgo(n.sent_at)}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  ))
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </div>
