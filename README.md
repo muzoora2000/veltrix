@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/HydroSense-v2.0-0ea5e9?style=for-the-badge&logoColor=white" />
+<img src="https://img.shields.io/badge/HydroSense-v3.0-0ea5e9?style=for-the-badge&logoColor=white" />
 
 # 💧 HydroSense
 ### Climate-Resilient Rural Water & Environment Management System
@@ -9,20 +9,20 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-24+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Live-brightgreen?style=flat-square)]()
 
 <br />
 
-> **HydroSense** is a full-stack, enterprise-grade environmental monitoring platform designed for rural Uganda. It bridges the gap between government institutions, field technicians, health officers, and ordinary citizens — delivering real-time water quality intelligence, AI-powered incident response, and community-driven environmental stewardship at scale.
+> **HydroSense** is a full-stack, enterprise-grade water resource management and environmental monitoring platform built for Uganda's Ministry of Water & Environment. It connects national administrators, district officers, field technicians, health officers, climate scientists, NGOs, community committees, and citizens on a single secure platform — enabling real-time incident reporting, proximity-based task dispatch, AI-powered analysis, and community-driven environmental stewardship.
 
 <br />
 
-[🚀 Live Demo](https://veltrix-4r2c.vercel.app) · [📖 Documentation](#documentation) · [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) · [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
+[🚀 Live Demo](https://veltrix-4r2c.vercel.app) · [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) · [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
 
 </div>
 
@@ -34,12 +34,12 @@
 - [Key Features](#-key-features)
 - [System Architecture](#-system-architecture)
 - [Tech Stack](#-tech-stack)
+- [User Roles & Access](#-user-roles--access)
 - [Modules](#-modules)
 - [Getting Started](#-getting-started)
 - [Environment Variables](#-environment-variables)
-- [User Roles](#-user-roles)
-- [Screenshots](#-screenshots)
-- [Author](#-author)
+- [Deployment](#-deployment)
+- [Authors](#-authors)
 
 ---
 
@@ -51,65 +51,93 @@ Uganda faces a critical water crisis — over **60% of rural communities** lack 
 
 It is a unified platform that connects IoT sensors, citizen reporters, field technicians, health officers, climate scientists, and national administrators into a single, intelligent ecosystem. Every report, sensor reading, and maintenance request flows through a real-time pipeline that triggers the right response — automatically.
 
+### What makes it different
+
+- **Proximity-based task assignment** — Haversine distance formula automatically dispatches the nearest available technician the moment a report is submitted, using GPS from the citizen's phone
+- **Real climate data** — 6-month rainfall forecasts sourced live from Open-Meteo historical climate records, not simulated numbers
+- **District-controlled committee access** — Community Committee members receive a unique `HSC-CC-{DISTRICT}-{YEAR}-{SEQ}` identity code, managed by District Officers, not self-registered
+- **Full OTP email delivery** — Forgot-password and account verification via Resend transactional email
+- **Real-time push** — Socket.IO delivers new alerts and notifications to the browser instantly, not on a 30-second poll
+
 ---
 
 ## ✨ Key Features
 
-### 🔬 Real-Time Monitoring
-- **IoT Sensor Dashboard** — live readings from water quality sensors (pH, turbidity, TDS, flow rate)
-- **Climate & Drought Intelligence** — drought index, flood alerts, 7-day forecasts per district
-- **Water Quality Lab** — lab test submissions, trend analysis, contamination alerts
+### 📡 Real-Time Monitoring
+- **IoT Sensor Dashboard** — live readings from water quality sensors (pH, turbidity, TDS, flow rate) via Socket.IO WebSocket
+- **Climate Intelligence** — real drought index (SPI), flood alerts, and 6-month rainfall forecast from Open-Meteo API with WMO fallback
+- **Water Quality Lab** — lab test submissions with automatic WHO safe-drinking-water threshold alerts
 
 ### 🗺️ GIS & Spatial Intelligence
-- **Interactive Map** — all water points, sensors, and incidents on a live Uganda map
-- **District Boundary Overlays** — all 146 Uganda districts with water access layers
-- **Live GPS Location** — field officers share real-time location with reverse geocoding
+- **Interactive Leaflet Map** — all water points, drought zones, and flood risk areas on a live Uganda map, offline-capable (SVG pin icons, no CDN dependency)
+- **3 switchable layers** — Water Points · Drought Index · Flood Risk
+- **Click-to-inspect** — popup shows point name, status, and beneficiary count
 
-### 🤖 AI Intelligence Hub
-- **HYDRA Chatbot** — context-aware AI assistant with full system data access
-- **Incident Analysis Engine** — automated risk scoring and priority classification
-- **AI Forecasting** — predictive analytics for water security and climate risk
-- **Multilingual Voice Input** — voice reports transcribed and translated across all Ugandan languages
+### 🤖 AI Intelligence Hub (Gemini 2.5 Flash)
+- **AI Chatbot** — context-aware Gemini-powered assistant with full environmental data access and streaming responses
+- **Incident Analysis Engine** — automated risk scoring, priority classification, and duplicate detection
+- **Predictive Analytics** — borehole failure probability, drought risk, flood probability, derived from real DB metrics
+- **Multilingual Voice Input** — voice reports transcribed and translated across 10+ Ugandan languages
 
-### 👥 Community & Citizen Science
-- **Community Forum** — discussions with @mentions, media attachments, likes, and read receipts
-- **Guardian Water Network (GWN)** — citizen science programme for environmental observation
-- **Volunteer Events** — join, organise, and get real-time alarms for community water activities
-- **Multi-channel Reporting** — submit incidents via App, SMS, WhatsApp, Email, or Phone
+### 🏘️ District-Controlled Committee System
+- **Committee ID** — unique `HSC-CC-KAM-2026-0001` identifiers auto-generated per district, used for login
+- **Dual login modes** — Email (staff/citizens) and Committee ID (community committee members)
+- **Committee governance** — meetings, incidents, projects, announcements, and votes with instant in-app notifications to all members
 
-### 🏘️ Community Committee Management
-- **Committee Registry** — create and manage water committees per district and sub-county, with chairperson assignment and jurisdiction tracking
-- **Member Management** — enrol community members into committees with assigned roles (chairperson, secretary, treasurer, member), contact details, and languages spoken
-- **Meeting Management** — schedule meetings, record agendas, capture minutes, track resolutions, and mark attendance
-- **Incident Assignments** — assign water quality or infrastructure incidents to specific committees for local investigation and follow-up
-- **Community Projects** — track water-related community projects from planning through execution, including budget, expenditure, progress percentage, and lead officer
-- **Announcements** — post committee-level announcements with priority levels, visible to all assigned members
+### 📣 Instant Notifications
+- **Personal per-member delivery** — committee meeting/announcement/incident/vote notifications pushed individually via Socket.IO `new_alert` + `new_notification` events
+- **Role-aware routing** — clicking a notification navigates to the exact relevant page
+- **Bell badge** — increments in real-time without polling
+
+### 📝 Multi-channel Citizen Reporting
+- **Standard and multilingual report forms** — 8 incident types, GPS capture, anonymous option, photo/video/audio attachments
+- **Proximity auto-assign** — as soon as a report is submitted, the system scores all available technicians by (distance from incident) + (open-task penalty) + (role suitability) and assigns instantly
+- **Status tracking** — citizens follow their report through Submitted → Investigating → Assigned → Resolved
 
 ### 🏥 Public Health Integration
-- **Disease Outbreak Tracker** — automatic health incident creation from citizen disease reports
-- **Outbreak Alerts** — triggers when case count crosses threshold (≥10 cases)
-- **Health Authority Dashboard** — district-level surveillance and trend mapping
+- **Disease outbreak tracker** — Cholera, Typhoid, Diarrhea, Dysentery, Hepatitis A, Schistosomiasis
+- **Automatic outbreak alert** — triggered when cases ≥ 10 in a district
+- **Water-linked incident tagging** — connects health incidents to specific water points
 
 ### ⚡ Emergency Response
-- **Incident Command Centre** — classify, assign, and track environmental emergencies
-- **Response Tickets** — full lifecycle management from detection to resolution
-- **Live Emergency Map** — real-time field agent locations and incident clusters
+- **Emergency Center** — real-time alert panel with severity levels (Emergency · Critical · Warning · Info)
+- **Acknowledge / Resolve** — officers update status; Socket.IO pushes the change to all connected clients instantly
+- **Incident Command** — multi-agency coordination with escalation to national level
 
-### 🔔 Smart Notifications
-- **Role-based Alerts** — each role receives only relevant system notifications
-- **Event Alarms** — popup + sound alerts at 30 min, 5 min, and event start
-- **In-app Notification Panel** — with deep-link navigation to the relevant record
-
-### 🏛️ Governance & Transparency
-- **Audit Trail** — complete log of all system actions with user attribution
-- **Budget Tracking** — water infrastructure fund allocation and expenditure
-- **Performance Metrics** — KPI dashboards for accountability reporting
+### 🔐 Security & Governance
+- **JWT + bcrypt** — all sessions token-secured, passwords hashed at cost 10
+- **Role-Based Access Control (RBAC)** — 8 roles, 25+ route guards, API-level `requireRole()` enforcement
+- **Full audit trail** — every CREATE, UPDATE, DELETE, APPROVE, RESOLVE, DISPATCH action logged with actor and timestamp
+- **OTP password reset** — 6-digit OTP delivered via Resend, bcrypt-hashed in DB, single-use, 5-minute expiry
 
 ---
 
 ## 🏗️ System Architecture
 
-![System Architecture](screenshots/architecture.png)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    HYDROSENSE PLATFORM                          │
+├──────────────────┬──────────────────────┬───────────────────────┤
+│  Vercel          │  Render (Node.js)    │  Render (Python)      │
+│  React + Vite    │  Express + Socket.IO │  FastAPI + Gemini AI  │
+│  Static frontend │  REST API + RBAC     │  AI microservice      │
+│  veltrix-4r2c    │  hydrosense-server   │  hydrosense-ai        │
+│  .vercel.app     │  .onrender.com       │  .onrender.com        │
+└──────────────────┴──────────┬───────────┴───────────────────────┘
+                              │
+                   ┌──────────▼──────────┐
+                   │   PostgreSQL DB      │
+                   │   Render Managed     │
+                   │   Shared by both     │
+                   │   Node.js + Python   │
+                   └─────────────────────┘
+```
+
+**Request flow:**
+1. Browser → Vercel (static assets)
+2. `/api/*` → Vercel rewrites to → Render `hydrosense-server`
+3. `/api/ai/*` → `hydrosense-server` proxies to → `hydrosense-ai`
+4. Socket.IO → direct WebSocket to `hydrosense-server`
 
 ---
 
@@ -119,44 +147,68 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 |-------|-----------|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS |
 | **State & Routing** | React Router v6, Context API |
-| **Charts & Maps** | Recharts, Leaflet, React-Leaflet |
-| **Real-time** | Socket.IO Client |
-| **Backend** | Node.js, Express.js |
+| **Charts** | Recharts |
+| **Maps** | Leaflet, React-Leaflet (offline SVG icons) |
+| **Real-time** | Socket.IO Client + Server |
+| **Backend** | Node.js 24, Express.js |
 | **Database** | PostgreSQL (Render managed) |
-| **Authentication** | JWT, bcryptjs |
-| **Real-time** | Socket.IO |
+| **Authentication** | JWT (jsonwebtoken), bcryptjs |
 | **Scheduling** | node-cron |
-| **SMS / OTP** | Africa's Talking, Twilio |
-| **Email** | Nodemailer, Brevo |
-| **AI Service** | Python, FastAPI, Uvicorn |
-| **AI Models** | Google Gemini 2.5 Flash |
-| **Deployment** | Vercel (frontend), Render (backend + AI) |
+| **Email** | Resend (primary) → Brevo → SendGrid → Gmail SMTP |
+| **SMS** | Africa's Talking |
+| **AI Service** | Python 3.11, FastAPI, Uvicorn |
+| **AI Model** | Google Gemini 2.5 Flash |
+| **Climate Data** | Open-Meteo Archive API (free, no key) |
+| **Deployment** | Vercel (frontend), Render (Node + Python) |
+
+---
+
+## 👤 User Roles & Access
+
+| Role | Description | Login method |
+|------|-------------|--------------|
+| `national_admin` | Full system access — all districts, all users, governance | Email |
+| `district_officer` | District-level management — creates committee accounts, assigns tasks | Email |
+| `technician` | Field work — sensors, maintenance, task completion | Email |
+| `health_officer` | Water quality and disease surveillance | Email |
+| `climate_scientist` | Climate monitoring, drought/flood analysis, predictions | Email |
+| `ngo_officer` | Community reports, GWN, water quality access | Email |
+| `community_committee` | Local water governance — meetings, incidents, projects | Committee ID (`HSC-CC-…`) |
+| `citizen` | Report incidents, track submissions, community hub | Email |
+
+### How committee accounts work
+District Officers create committee member accounts via **Committee Management → Committee Accounts**. The system auto-generates a unique ID (`HSC-CC-KAM-2026-0001`). The member logs in at the **Committee ID tab** on the login page using that ID and the temporary password assigned by the officer.
 
 ---
 
 ## 📦 Modules
 
-| Module | Description | Access |
-|--------|-------------|--------|
-| Dashboard | System-wide KPIs and live activity feed | All staff |
-| Water Infrastructure | Water point registry and condition tracking | All staff |
-| IoT Sensors | Live sensor readings and historical graphs | All staff |
-| Climate Monitor | Drought, flood, and forecast data | All staff |
-| Water Quality | Lab test submissions and quality analysis | All staff |
-| Maintenance Tracker | Work order lifecycle management | Technicians, Admins |
-| Community Reports | Multi-channel incident reports from citizens | All staff |
-| Public Health | Disease surveillance and outbreak detection | Health Officers, Admins |
-| Emergency Response | Incident command and field coordination | All staff |
-| GIS Mapping | Spatial visualisation of all system data | All staff |
-| Analytics | AI predictions and trend forecasting | All staff |
-| AI Hub | HYDRA chatbot and AI report generation | All staff |
-| Governance | Audit logs, budget, and transparency reports | Admins |
-| User Management | Role assignment and account control | Admins |
-| Technician Portal | Personal task queue for field technicians | Technicians |
-| Citizen Hub | Community forum, GWN, volunteer events | Citizens |
-| Citizen Report | Public incident submission (no login required) | Public |
-| Incident Command | Environmental emergency coordination | Officers, Admins |
-| Community Committees | Committee registry, members, meetings, incidents, projects, and announcements | Admins, Officers, Committee Leaders |
+| Module | Description | Roles |
+|--------|-------------|-------|
+| Dashboard | Role-specific KPI cards, live map, weather, alerts | All |
+| Water Infrastructure | Registry of all water points with GPS, status, sensors | All |
+| IoT Sensors | Live sensor readings via WebSocket, 24h charts | Admin, Officer, Technician, Health, Climate |
+| Climate Monitor | SPI drought index, flood alerts, 6-month rainfall forecast | Admin, Officer, Health, Climate |
+| Water Quality | Lab tests, WHO threshold checking, contamination alerts | Admin, Officer, Health, NGO, Climate |
+| Maintenance | Work orders from creation to completion, fund tracking | Admin, Officer, Technician |
+| Community Reports | Citizen-submitted reports across all channels | Admin, Officer, Committee, NGO, Citizen |
+| Health Surveillance | Disease tracking, outbreak detection, case mapping | Admin, Officer, Health, NGO |
+| Emergency Center | Real-time alerts, acknowledge/resolve, response tickets | Admin, Officer, Health |
+| GIS Map | Leaflet map — water points, drought, flood layers | Admin, Officer, Climate, NGO, Health, Committee |
+| Analytics | AI-driven water security, predictions, climate risk | Admin, Officer, Climate, Health |
+| AI Hub | Gemini chatbot, risk summaries, incident analysis, reports | Admin, Officer, Technician, Health, Climate |
+| Governance | Audit log, budget tracking, transparency reporting | Admin, Officer |
+| User Management | Full CRUD + QR badge generation | Admin |
+| Technician Portal | Personal task queue (Pending / In Progress / Done) | All |
+| Citizen Hub | Community forum, volunteer events, achievements | All |
+| Guardian Water Network | Crowdsourced pollution reporting with community voting | All |
+| Citizen Report | Incident submission with GPS, media, anonymous option | Citizen, Committee, NGO |
+| Multilingual Report | 3-step form with voice recording and AI translation | Citizen, Committee, NGO |
+| Track Reports | Personal report history with status timeline | Citizen, Committee, NGO |
+| Task Assignment | Manual + proximity-based auto-assignment | Admin, Officer, Technician, Health |
+| Committee Management | Committees, members, meetings, incidents, projects, votes | Admin, Officer, Committee |
+| Incident Analysis | AI batch analysis of pending reports | Admin, Officer, Health, Climate |
+| Profile | Name, phone, avatar, password change — every user | All |
 
 ---
 
@@ -167,120 +219,96 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 - Node.js 18+
 - Python 3.11+
 - PostgreSQL 15+
-- npm or yarn
 
-### Installation
+### Local installation
 
-1. Clone the repository — `git clone https://github.com/muzoora2000/veltrix.git` then `cd veltrix`
-2. Install backend dependencies — `cd server && npm install`
-3. Install frontend dependencies — `cd ../client && npm install`
-4. Set up the AI service — `cd ../ai-service`, create a virtual environment with `python -m venv .venv`, activate it, then run `pip install -r requirements.txt`
+```bash
+# 1. Clone
+git clone https://github.com/muzoora2000/veltrix.git
+cd veltrix
 
-### Running Locally
+# 2. Backend
+cd server && npm install
+cp .env.example .env   # fill in DATABASE_URL, GEMINI_API_KEY, RESEND_API_KEY
 
-Open three terminal windows:
+# 3. Frontend
+cd ../client && npm install
 
-- Terminal 1 (Backend) — `cd server && npm run dev`
-- Terminal 2 (Frontend) — `cd client && npm run dev`
-- Terminal 3 (AI Service, optional) — `cd ai-service && uvicorn main:app --reload --port 8000`
+# 4. AI service
+cd ../ai-service
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-The app will be available at http://localhost:5173
+### Running locally
+
+Open three terminals:
+
+```bash
+# Terminal 1 — Backend (port 5000)
+cd server && npm run dev
+
+# Terminal 2 — Frontend (port 5173)
+cd client && npm run dev
+
+# Terminal 3 — AI Service (port 8000)
+cd ai-service && uvicorn main:app --reload --port 8000
+```
+
+App available at **http://localhost:5173**
 
 ---
 
 ## 🔐 Environment Variables
 
-### Server — server/.env
+### `server/.env`
 
 | Variable | Description |
 |----------|-------------|
-| PORT | Server port (default: 5000) |
-| NODE_ENV | Environment (development / production) |
-| DATABASE_URL | PostgreSQL connection string |
-| JWT_SECRET | Secret key for JWT signing |
-| GEMINI_API_KEY | Google Gemini API key |
-| AT_API_KEY | Africa's Talking API key |
-| AT_USERNAME | Africa's Talking username |
-| BREVO_API_KEY | Brevo email API key |
-| SMTP_EMAIL | Sender email address |
-| SMTP_PASS | Email app password |
+| `PORT` | Server port (default 5000) |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Secret for JWT signing |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `RESEND_API_KEY` | Resend transactional email key |
+| `EMAIL_FROM_NAME` | Sender display name |
+| `AI_SERVICE_URL` | Deployed AI service URL (production only) |
+| `AT_API_KEY` | Africa's Talking SMS key |
 
-### AI Service — ai-service/.env
+### `ai-service/.env`
 
 | Variable | Description |
 |----------|-------------|
-| GEMINI_API_KEY | Google Gemini API key |
-| DATABASE_URL | PostgreSQL connection string |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `DATABASE_URL` | PostgreSQL connection string |
 
 ---
 
-## 👤 User Roles
+## ☁️ Deployment
 
-| Role | Description |
-|------|-------------|
-| `national_admin` | Full system access, user management, governance |
-| `district_officer` | District-level oversight and reporting |
-| `community_committee` | Community liaison and local coordination |
-| `ngo_officer` | NGO partner access to relevant modules |
-| `technician` | Field task management and maintenance |
-| `health_officer` | Public health surveillance and incident review |
-| `climate_scientist` | Climate data analysis and forecasting |
-| `citizen` | Community forum, GWN, volunteer events, reporting |
+HydroSense runs across three cloud services:
 
----
+| Service | Platform | URL |
+|---------|----------|-----|
+| Frontend (React) | Vercel | `veltrix-4r2c.vercel.app` |
+| Backend (Node.js) | Render | `hydrosense-server.onrender.com` |
+| AI Service (Python) | Render | `hydrosense-ai.onrender.com` |
+| Database | Render PostgreSQL | Managed, internal access only |
 
-## 📸 Screenshots
+### Render environment variables required
 
-### Login
-![Login](screenshots/01-login.png)
+**hydrosense-server:** `DATABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `AI_SERVICE_URL`
 
-### Dashboard
-![Dashboard](screenshots/02-dashboard.png)
-
-### Water Infrastructure
-![Water Infrastructure](screenshots/03-water-infra.png)
-
-### IoT Sensors
-![IoT Sensors](screenshots/04-sensors.png)
-
-### Water Quality
-![Water Quality](screenshots/05-water-quality.png)
-
-### Community Reports
-![Community Reports](screenshots/06-community.png)
-
-### GIS & Spatial Mapping
-![GIS Mapping](screenshots/07-gis.png)
-
-### Health Surveillance
-![Health Surveillance](screenshots/08-health.png)
-
-### Emergency Response
-![Emergency Response](screenshots/09-emergency.png)
-
-### Analytics & AI
-![Analytics](screenshots/10-analytics.png)
-
-### Citizen Hub
-![Citizen Hub](screenshots/11-citizen-hub.png)
-
-### AI Intelligence Hub
-![AI Hub](screenshots/12-ai-hub.png)
-
-### Community Committee Management
-![Community Committee Management](screenshots/13-committee-management.png)
+**hydrosense-ai:** `DATABASE_URL`, `GEMINI_API_KEY`
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Authors
 
 <div align="center">
 
-**HydroSense Developers**
+**HydroSense — Bachelor of Software Engineering**
 
-*Lead Developer & System Architect*
-
-Bachelor of Software Engineering — Cavendish University Uganda
+Cavendish University Uganda
 
 [![GitHub](https://img.shields.io/badge/GitHub-muzoora2000-181717?style=flat-square&logo=github)](https://github.com/muzoora2000)
 

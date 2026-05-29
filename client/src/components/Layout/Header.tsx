@@ -7,7 +7,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getNotifications, getNotificationUnreadCount, markAllNotificationsRead } from '../../api/client';
-import AIStatusIndicator from '../common/AIStatusIndicator';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 
 // Maps notification reference_type → app route
@@ -236,11 +235,6 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
 
       {/* Right controls */}
       <div className="flex items-center gap-2">
-
-        {/* AI Status Indicator */}
-        <div className="hidden sm:block">
-          <AIStatusIndicator compact />
-        </div>
 
         {/* Language Switcher */}
         <LanguageSwitcher compact />
