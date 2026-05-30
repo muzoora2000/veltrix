@@ -74,7 +74,7 @@ Please respond with a JSON object (no markdown, raw JSON only) in this exact for
     console.error('voice-translate error:', err);
     res.status(500).json({ error: 'Translation failed. Please type your report manually.' });
   }
-});
+};
 
 // ═══════════════════════════════════════════════════════════════
 // AUDIO / VIDEO TRANSCRIBE — raw audio blob → Gemini multimodal
@@ -161,7 +161,7 @@ Respond ONLY with raw JSON (no markdown, no explanation outside JSON):
     console.error('audio-transcribe error:', err);
     res.status(500).json({ error: 'Transcription failed' });
   }
-});
+};
 
 // ═══════════════════════════════════════════════════════════════
 // NATIVE NODE.JS GEMINI CHAT FALLBACK
@@ -581,7 +581,7 @@ exports.operationalInsights = async (req, res) => {
     const funcRate = s.total > 0 ? Math.round((s.func / s.total) * 100) : 0;
     res.json({ status: 'ok', insights: { total_water_points: s.total, functionality_rate: funcRate, active_alerts: s.allAlerts, pending_maintenance: s.pendMaint } });
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
+};
 
 exports.liveSummary = async (req, res) => {
   try {
@@ -598,7 +598,7 @@ exports.liveSummary = async (req, res) => {
       generated_at: new Date().toISOString(),
     }});
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
+};
 
 exports.districtSummaries = async (req, res) => {
   try {
@@ -629,7 +629,7 @@ exports.districtSummaries = async (req, res) => {
     });
     res.json({ status: 'ok', summaries });
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
+};
 
 exports.heatmap = async (req, res) => {
   try {
@@ -652,7 +652,7 @@ exports.heatmap = async (req, res) => {
     });
     res.json({ status: 'ok', heatmap });
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
+};
 
 exports.environmentalIndex = async (req, res) => {
   try {
@@ -666,7 +666,7 @@ exports.environmentalIndex = async (req, res) => {
     const risk_level = overall >= 75 ? 'critical' : overall >= 50 ? 'high' : overall >= 25 ? 'medium' : 'low';
     res.json({ status: 'ok', risk_index: { overall_risk_score: overall, risk_level, components: { infrastructure: infraRisk, water_quality: qualRisk, alerts: alertRisk, community: commRisk, climate: 25 } } });
   } catch (e) { res.status(500).json({ error: e.message }); }
-});
+};
 
 // ── Native Node.js report generation (Gemini + DB — no Python service needed) ──
 exports.generateReport = async (req, res) => {
@@ -781,11 +781,11 @@ exports.generateReport = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
-});
+};
 
 // Wildcard route that captures full path after /api/ai/
 exports.proxyWildcard = (req, res) => {
   const targetPath = '/ai/' + req.params.path;
   proxyToAI(req, res, targetPath);
-});
+};
 
