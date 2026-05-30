@@ -8,12 +8,12 @@
 
   /* Force placeholder text to be clearly visible on all browsers / mobile */
   ::placeholder {
-    color: #4b5563;   /* gray-600 — readable on white & light backgrounds */
-    opacity: 1;       /* Firefox reduces placeholder opacity by default */
+    color: #6b7280 !important;   /* gray-500 — clear contrast on light mode */
+    opacity: 1 !important;
   }
-  .dark ::placeholder {
-    color: #9ca3af;   /* gray-400 — readable on dark backgrounds */
-    opacity: 1;
+  .dark ::placeholder, .dark input::placeholder, .dark textarea::placeholder {
+    color: #d1d5db !important;   /* gray-300 — high contrast on dark mode */
+    opacity: 1 !important;
   }
 
   /* Select — make the empty/placeholder option visually distinct */
@@ -22,6 +22,12 @@
   }
   .dark select.select-placeholder {
     color: #9ca3af;
+  }
+
+  /* Force input text color globally on dark mode to prevent black text on dark backgrounds */
+  .dark input, .dark textarea, .dark select {
+    color: #f3f4f6 !important; /* gray-100 */
+    background-color: #1f2937; /* gray-800 */
   }
 }
 
