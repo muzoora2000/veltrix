@@ -252,7 +252,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-white text-sm tracking-wide truncate">HydroSense</div>
-            <div className="text-gray-500 text-[11px]">Climate-Resilient · Uganda</div>
+            <div className="text-gray-500 text-[11px]">AI-Powered Water & Health · Uganda</div>
           </div>
           <button onClick={onClose} className="lg:hidden text-gray-500 hover:text-white transition-colors">
             <X size={17}/>

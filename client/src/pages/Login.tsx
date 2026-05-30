@@ -514,7 +514,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl shadow">💧</div>
             <div>
               <div className="font-bold text-gray-900 text-sm tracking-widest">HydroSense</div>
-              <div className="text-gray-400 text-xs">Climate-Resilient Rural Water System</div>
+              <div className="text-gray-400 text-xs">AI-Powered Climate-Resilient Rural Water & Health System</div>
             </div>
           </div>
 
@@ -702,7 +702,7 @@ export default function Login() {
           <div className="mt-3 pt-3 border-t border-gray-100">
             <p className="text-[11px] text-gray-400 text-center">
               © {new Date().getFullYear()} HydroSense. All rights reserved.<br />
-              Climate-Resilient Water Management · Uganda
+              AI-Powered Climate-Resilient Water & Public Health Management · Uganda
             </p>
           </div>
 

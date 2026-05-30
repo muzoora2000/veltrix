@@ -99,7 +99,7 @@ exports.audioTranscribe = async (req, res) => {
     const { audioBase64, mimeType = 'audio/webm' } = req.body;
     if (!audioBase64) return res.status(400).json({ error: 'No audio data provided' });
 
-    const prompt = `You are an expert transcription and translation assistant for Uganda's HydroSense water management platform.
+    const prompt = `You are an expert transcription and translation assistant for Uganda's HydroSense, an AI-powered climate-resilient rural water and public health management platform.
 
 Listen carefully to this audio recording. The speaker may be speaking in ANY Ugandan or East African language, including but not limited to:
 - Luganda, Acholi, Ateso/Teso, Lugbara, Runyankore/Nkore, Lusoga, Rukiga, Luo, Langi, Madi, Alur, Kakwa
@@ -233,7 +233,7 @@ async function handleNativeNodeChat(req, res, targetPath) {
   }
 
   const systemPrompt =
-    `You are Hydro AI, the intelligent assistant for HydroSense — Uganda's national climate-resilient rural water management platform.\n\n` +
+    `You are Hydro AI, the intelligent assistant for HydroSense — Uganda's AI-powered national climate-resilient rural water and public health management platform.\n\n` +
     `User role: ${role}. District: ${district || 'National'}.\n\n` +
     `LIVE SYSTEM DATA:\n` +
     `- ${statsStr}\n` +

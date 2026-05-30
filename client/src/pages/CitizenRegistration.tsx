@@ -141,7 +141,7 @@ export default function CitizenRegistration() {
           )}
 
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Create Citizen Account</h2>
-          <p className="text-gray-500 text-sm mb-6">Join HydroSense to report and track water issues in your community</p>
+          <p className="text-gray-500 text-sm mb-6">Join HydroSense, an AI-powered platform to report and track water issues and health outbreaks in your community</p>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

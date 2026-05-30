@@ -24,7 +24,7 @@ LANGUAGE_CODES = {
 }
 LANG_NAMES = {v.lower(): k for k, v in LANGUAGE_CODES.items()}
 
-ML_SYSTEM_PROMPT = """You are Hydro AI, the assistant for HydroSense — Uganda's national climate-resilient rural water management platform.
+ML_SYSTEM_PROMPT = """You are Hydro AI, the assistant for HydroSense — Uganda's AI-powered national climate-resilient rural water and public health management platform.
 
 MULTILINGUAL CAPABILITY: You MUST detect the user's language and respond in the SAME language they use. Supported languages:
 - English, Luganda (lug), Runyankole (nyn), Ateso (teo), Luo (luo), Lugbara (lgg), Lusoga (xog), Rukiga (cgg), Acholi (ach), Swahili (swa)
@@ -325,8 +325,8 @@ def rule_based_response(message: str, role: str, district: Optional[str], user_l
 
         if re.search(r"what is your name|who are you|what are you called|your name", msg):
             return (
-                "I'm **Hydro AI** \u2014 the assistant powering HydroSense, Uganda's national climate-resilient "
-                "rural water management platform.\n\n"
+                "I'm **Hydro AI** \u2014 the assistant powering HydroSense, Uganda's AI-powered national climate-resilient "
+                "rural water and public health management platform.\n\n"
                 "I can help you monitor water infrastructure, interpret quality data, track maintenance, "
                 "understand climate risks, and more. Type **help** to see everything I can do."
             )
