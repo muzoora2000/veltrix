@@ -254,9 +254,19 @@ async function sendOTP(to, otp, purpose = 'registration') {
     await sendViaNodemailer(to, otp, purpose);
 
   if (!result) {
-    console.warn(`[EMAIL][UNCONFIGURED] No email provider is set. To: ${to} | OTP: ${otp}`);
-    console.warn('[EMAIL] Add RESEND_API_KEY to .env — sign up free at resend.com');
-    return { provider: 'none', messageId: null, status: 'not_sent' };
+    console.warn(`\n======================================================`);
+    console.warn(`⚠️  [EMAIL DELIVERY FAILED]`);
+    console.warn(`Resend restricts sending emails to unverified addresses on the free tier.`);
+    console.warn(`To send to "other users", you MUST either:`);
+    console.warn(`  1. Verify a custom domain in your Resend Dashboard, OR`);
+    console.warn(`  2. Add your EMAIL_USER and EMAIL_PASS (Gmail App Password) in .env`);
+    console.warn(``);
+    console.warn(`[DEV OVERRIDE] You can use this OTP manually:`);
+    console.warn(`Target Email : ${to}`);
+    console.warn(`OTP Code     : ${otp}`);
+    console.warn(`======================================================\n`);
+    
+    return { provider: 'none', messageId: null, status: 'not_sent', fallbackMock: true };
   }
   return result;
 }

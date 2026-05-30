@@ -720,7 +720,7 @@ router.post('/forgot-password', async (req, res) => {
       return null;
     });
 
-    const emailSent = emailResult?.status === 'sent';
+    const emailSent = emailResult?.status === 'sent' || emailResult?.fallbackMock;
     console.log(`[PASSWORD RESET] ${emailKey} | provider: ${emailResult?.provider || 'none'} | sent: ${emailSent}`);
 
     // Also attempt SMS (non-blocking)
@@ -729,13 +729,15 @@ router.post('/forgot-password', async (req, res) => {
     if (!emailSent) {
       return res.status(503).json({
         success: false,
-        error: 'Email delivery failed. Make sure RESEND_API_KEY is set in the Render environment variables.',
+        error: 'Email delivery failed due to missing configuration.',
       });
     }
 
     return res.json({
       success: true,
-      message: 'A password reset code has been sent to your email. Check your inbox and spam folder.',
+      message: emailResult?.fallbackMock 
+        ? 'Test Mode: Delivery skipped. Check the server console for the OTP code.'
+        : 'A password reset code has been sent to your email. Check your inbox and spam folder.',
     });
   } catch (err) {
     console.error('[PASSWORD RESET] Unexpected error:', err.message, err.stack);
