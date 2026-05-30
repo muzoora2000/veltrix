@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HydroSense — Complete User Manual</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#1e293b;background:#f8fafc;padding:0;}
+
+/* ── Print ── */
+@media print{
+  body{background:white;font-size:11px;}
+  .no-print{display:none!important;}
+  .page-break{page-break-before:always;}
+  h2{page-break-after:avoid;}
+  .card,.role-section{page-break-inside:avoid;}
+  a{color:inherit;text-decoration:none;}
+}
+
+/* ── Layout ── */
+.wrapper{max-width:1040px;margin:0 auto;padding:32px 24px;}
+
+/* ── Cover page ── */
+.cover{
+  background:linear-gradient(150deg,#0f2d6b 0%,#1e5f9b 50%,#0891b2 100%);
+  color:white;border-radius:0;
+  padding:80px 60px;
+  min-height:100vh;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.cover::before{
+  content:'';position:absolute;top:-100px;right:-100px;
+  width:500px;height:500px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.04);
+}
+.cover::after{
+  content:'';position:absolute;bottom:-80px;left:-60px;
+  width:400px;height:400px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.03);
+}
+.cover-logo{font-size:56px;margin-bottom:16px;position:relative;z-index:1;}
+.cover h1{font-size:42px;font-weight:900;line-height:1.1;position:relative;z-index:1;}
+.cover h1 span{color:#7dd3fc;}
+.cover-subtitle{font-size:17px;color:rgba(255,255,255,0.75);margin-top:12px;position:relative;z-index:1;}
+.cover-meta{margin-top:48px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;position:relative;z-index:1;}
+.cover-meta-item{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:14px 18px;}
+.cover-meta-item .label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.55);margin-bottom:4px;}
+.cover-meta-item .value{font-size:13px;font-weight:600;}
+.cover-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 14px;font-size:11px;margin-top:28px;position:relative;z-index:1;}
+
+/* ── Print button ── */
+.print-bar{background:white;border-bottom:1px solid #e2e8f0;padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.print-btn{background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.print-btn:hover{background:#1d4ed8;}
+.print-bar-title{font-weight:700;color:#0f172a;font-size:14px;}
+
+/* ── TOC ── */
+.toc{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:28px 32px;margin:28px 0;}
+.toc h2{font-size:18px;color:#0f172a;margin-bottom:18px;padding-bottom:10px;border-bottom:2px solid #e2e8f0;}
+.toc-section{margin-bottom:14px;}
+.toc-section-title{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;margin-bottom:6px;}
+.toc-items{display:grid;grid-template-columns:repeat(2,1fr);gap:3px;}
+.toc-item{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:6px;color:#1e40af;font-size:12px;cursor:pointer;}
+.toc-item:hover{background:#eff6ff;}
+.toc-item .num{color:#94a3b8;font-size:11px;}
+
+/* ── Section headings ── */
+h2.sec{font-size:22px;font-weight:800;color:#0f172a;margin:36px 0 16px;padding-bottom:10px;border-bottom:3px solid #2563eb;display:flex;align-items:center;gap:10px;}
+h2.sec .icon{font-size:22px;}
+h3{font-size:14px;font-weight:700;color:#1e40af;margin:18px 0 8px;}
+h4{font-size:12px;font-weight:700;color:#475569;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.5px;}
+
+/* ── Cards ── */
+.card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px 22px;margin-bottom:14px;}
+.card-sm{background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+
+/* ── Info boxes ── */
+.box{border-radius:10px;padding:12px 16px;margin-bottom:12px;border-left:4px solid;font-size:12px;line-height:1.6;}
+.box-blue{background:#eff6ff;border-color:#2563eb;color:#1e3a8a;}
+.box-green{background:#f0fdf4;border-color:#16a34a;color:#14532d;}
+.box-amber{background:#fffbeb;border-color:#d97706;color:#78350f;}
+.box-red{background:#fef2f2;border-color:#dc2626;color:#7f1d1d;}
+.box-purple{background:#faf5ff;border-color:#7c3aed;color:#4c1d95;}
+
+/* ── Role pills ── */
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.role-pill{border-radius:10px;padding:12px 14px;border:1px solid;}
+.role-pill .name{font-weight:700;font-size:12px;margin-bottom:3px;}
+.role-pill .desc{font-size:11px;opacity:0.8;}
+.r-admin  {background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+.r-dist   {background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
+.r-tech   {background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+.r-health {background:#fdf4ff;border-color:#e9d5ff;color:#6b21a8;}
+.r-climate{background:#ecfeff;border-color:#a5f3fc;color:#155e75;}
+.r-ngo    {background:#fefce8;border-color:#fde68a;color:#713f12;}
+.r-comm   {background:#f0fdf4;border-color:#86efac;color:#14532d;}
+.r-citizen{background:#f8fafc;border-color:#cbd5e1;color:#334155;}
+
+/* ── Step list ── */
+ol.steps{padding-left:0;list-style:none;counter-reset:step;}
+ol.steps li{counter-increment:step;padding:10px 14px 10px 44px;position:relative;margin-bottom:6px;background:#f8fafc;border-radius:8px;font-size:12px;line-height:1.6;border:1px solid #f1f5f9;}
+ol.steps li::before{content:counter(step);position:absolute;left:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;background:#2563eb;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:22px;text-align:center;}
+ol.steps li strong{color:#1e40af;}
+
+/* ── Feature list ── */
+ul.feat{padding-left:0;list-style:none;}
+ul.feat li{padding:7px 12px 7px 30px;position:relative;font-size:12px;line-height:1.6;border-bottom:1px solid #f1f5f9;}
+ul.feat li::before{content:'→';position:absolute;left:10px;color:#2563eb;font-weight:700;}
+ul.feat li:last-child{border-bottom:none;}
+
+/* ── Page reference cards ── */
+.page-card{background:white;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:18px;overflow:hidden;}
+.page-card-header{padding:14px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;}
+.page-card-header .pg-icon{font-size:20px;}
+.page-card-header .pg-title{font-weight:700;font-size:14px;color:#0f172a;}
+.page-card-header .pg-route{font-size:11px;color:#94a3b8;font-family:monospace;background:#f8fafc;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.page-card-body{padding:16px 18px;}
+.page-card-body .pg-desc{font-size:12px;color:#475569;margin-bottom:12px;line-height:1.6;}
+.access-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.chip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px;border:1px solid;}
+.chip-admin  {background:#eff6ff;border-color:#bfdbfe;color:#1e40af;}
+.chip-dist   {background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
+.chip-tech   {background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+.chip-health {background:#fdf4ff;border-color:#e9d5ff;color:#6b21a8;}
+.chip-climate{background:#ecfeff;border-color:#a5f3fc;color:#155e75;}
+.chip-ngo    {background:#fefce8;border-color:#fde68a;color:#713f12;}
+.chip-comm   {background:#f0fdf4;border-color:#86efac;color:#14532d;}
+.chip-citizen{background:#f8fafc;border-color:#cbd5e1;color:#334155;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;font-size:11px;margin:12px 0;}
+th{background:#1e3a8a;color:white;padding:8px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.3px;}
+td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top;}
+tr:nth-child(even) td{background:#f8fafc;}
+.tick{color:#16a34a;font-weight:700;}
+.cross{color:#e2e8f0;}
+
+/* ── Code ── */
+code{font-family:'Consolas','Courier New',monospace;background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px;color:#0f172a;}
+
+/* ── Quickstart ── */
+.qs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.qs-item{border-radius:10px;padding:16px;border:1px solid #e2e8f0;background:white;text-align:center;}
+.qs-item .qs-icon{font-size:28px;margin-bottom:8px;}
+.qs-item .qs-title{font-weight:700;font-size:12px;margin-bottom:4px;}
+.qs-item .qs-desc{font-size:11px;color:#64748b;}
+
+/* ── Divider ── */
+.div{height:1px;background:#e2e8f0;margin:28px 0;}
+
+/* ── Footer ── */
+footer{background:#0f172a;color:#94a3b8;text-align:center;padding:28px 24px;font-size:11px;margin-top:40px;}
+footer strong{color:white;}
+
+/* ── Sidebar note ── */
+.sidebar{float:right;width:240px;margin:0 0 16px 20px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:11px;color:#78350f;}
+.sidebar::after{content:'';display:table;clear:both;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     PRINT BAR
+══════════════════════════════════════════ -->
+<div class="print-bar no-print">
+  <span class="print-bar-title">💧 HydroSense — Complete User Manual</span>
+  <button class="print-btn" onclick="window.print()">🖨 Save as PDF &nbsp;(Print → Save as PDF)</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">💧</div>
+  <h1>HydroSense<br/><span>Complete User Manual</span></h1>
+  <div class="cover-subtitle">Water Resource Management &amp; Environmental Monitoring Platform<br/>Ministry of Water &amp; Environment — Republic of Uganda</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="label">Document Type</div>
+      <div class="value">User Manual v1.0</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Date</div>
+      <div class="value">May 2026</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Classification</div>
+      <div class="value">Internal / Official</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Platform</div>
+      <div class="value">Web (Desktop &amp; Mobile)</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">Languages</div>
+      <div class="value">10 Local + English</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="label">User Roles</div>
+      <div class="value">8 Role Types</div>
+    </div>
+  </div>
+  <div class="cover-badge">🔒 JWT Secured &nbsp;·&nbsp; 256-bit Encryption &nbsp;·&nbsp; Powered by Gemini AI</div>
+</div>
+
+<div class="wrapper">
+
+<!-- ══════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-section">
+    <div class="toc-section-title">Getting Started</div>
+    <div class="toc-items">
+      <div class="toc-item">1. System Overview<span class="num">§1</span></div>
+      <div class="toc-item">2. User Roles Explained<span class="num">§2</span></div>
+      <div class="toc-item">3. Registration &amp; Login<span class="num">§3</span></div>
+      <div class="toc-item">4. Dashboards<span class="num">§4</span></div>
+    </div>
+  </div>
+  <div class="toc-section">
+    <div class="toc-section-title">Role-Specific Guides</div>
+    <div class="toc-items">
+      <div class="toc-item">5. Citizen Guide<span class="num">§5</span></div>
+      <div class="toc-item">6. Community Committee Guide<span class="num">§6</span></div>
+      <div class="toc-item">7. District Officer Guide<span class="num">§7</span></div>
+      <div class="toc-item">8. Technician Guide<span class="num">§8</span></div>
+      <div class="toc-item">9. Health Officer Guide<span class="num">§9</span></div>
+      <div class="toc-item">10. Climate Scientist Guide<span class="num">§10</span></div>
+      <div class="toc-item">11. NGO Officer Guide<span class="num">§11</span></div>
+      <div class="toc-item">12. National Admin Guide<span class="num">§12</span></div>
+    </div>
+  </div>
+  <div class="toc-section">
+    <div class="toc-section-title">Feature Reference (All Pages)</div>
+    <div class="toc-items">
+      <div class="toc-item">13. Water Infrastructure<span class="num">§13</span></div>
+      <div class="toc-item">14. IoT Sensors<span class="num">§14</span></div>
+      <div class="toc-item">15. Climate Monitoring<span class="num">§15</span></div>
+      <div class="toc-item">16. Water Quality Testing<span class="num">§16</span></div>
+      <div class="toc-item">17. Maintenance Management<span class="num">§17</span></div>
+      <div class="toc-item">18. Health Surveillance<span class="num">§18</span></div>
+      <div class="toc-item">19. Emergency Center<span class="num">§19</span></div>
+      <div class="toc-item">20. GIS Map<span class="num">§20</span></div>
+      <div class="toc-item">21. Analytics &amp; Predictions<span class="num">§21</span></div>
+      <div class="toc-item">22. Governance &amp; Transparency<span class="num">§22</span></div>
+      <div class="toc-item">23. AI Hub<span class="num">§23</span></div>
+      <div class="toc-item">24. Community Reports<span class="num">§24</span></div>
+      <div class="toc-item">25. Guardian Water Network<span class="num">§25</span></div>
+      <div class="toc-item">26. Citizen Hub<span class="num">§26</span></div>
+      <div class="toc-item">27. Reporting (Citizen)<span class="num">§27</span></div>
+      <div class="toc-item">28. Task Assignment<span class="num">§28</span></div>
+      <div class="toc-item">29. Committee Management<span class="num">§29</span></div>
+      <div class="toc-item">30. Incident Command<span class="num">§30</span></div>
+      <div class="toc-item">31. User Management<span class="num">§31</span></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §1 — SYSTEM OVERVIEW
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">🌊</span> 1. System Overview</h2>
+<div class="card">
+  <p style="font-size:13px;line-height:1.8;color:#334155;">
+    <strong>HydroSense</strong> is Uganda's integrated digital platform for water resource management and environmental monitoring, developed for the <em>Ministry of Water &amp; Environment</em>. It connects citizens, field technicians, district water officers, scientists, community committees, and national administrators on a single secure platform — enabling real-time reporting, monitoring, coordination, and accountability.
+  </p>
+</div>
+
+<div class="three-col">
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">📡</div>
+    <strong style="font-size:12px;">Real-Time Monitoring</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">Live IoT sensor feeds, water quality readings, and climate data updated every 30 seconds.</p>
+  </div>
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">📋</div>
+    <strong style="font-size:12px;">Community Reporting</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">Citizens report water issues via app, SMS, voice, or USSD in 10+ local languages.</p>
+  </div>
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">🤖</div>
+    <strong style="font-size:12px;">AI-Powered Intelligence</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">Gemini AI analyses incidents, predicts risks, classifies reports, and supports decision-making.</p>
+  </div>
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">🗺️</div>
+    <strong style="font-size:12px;">GIS Mapping</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">Spatial visualization of water points, drought zones, flood risks, and pollution hotspots.</p>
+  </div>
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">🏛️</div>
+    <strong style="font-size:12px;">Governance &amp; Audit</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">Full budget tracking, audit logs, and transparency dashboards for public accountability.</p>
+  </div>
+  <div class="card-sm">
+    <div style="font-size:22px;margin-bottom:6px;">🔒</div>
+    <strong style="font-size:12px;">Secure by Design</strong>
+    <p style="font-size:11px;color:#64748b;margin-top:4px;">JWT authentication, bcrypt passwords, role-based access control, and full audit trails.</p>
+  </div>
+</div>
+
+<div class="box box-blue">
+  <strong>Supported Devices:</strong> HydroSense runs in any modern web browser on desktop, tablet, and smartphone. No app download required. Recommended browsers: Chrome, Edge, Firefox, Safari.
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §2 — USER ROLES
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">👥</span> 2. User Roles Explained</h2>
+<p style="margin-bottom:14px;font-size:12px;color:#475569;">HydroSense uses Role-Based Access Control (RBAC). Every user has exactly one role. Your role determines which pages you can access and what actions you can perform.</p>
+
+<div class="role-grid">
+  <div class="role-pill r-admin">
+    <div class="name">👑 National Admin</div>
+    <div class="desc">Full system access. Manages all users, districts, and settings nationwide.</div>
+  </div>
+  <div class="role-pill r-dist">
+    <div class="name">🏛️ District Officer</div>
+    <div class="desc">District Water Office staff. Manages their district, creates committee accounts, reviews reports.</div>
+  </div>
+  <div class="role-pill r-tech">
+    <div class="name">🔧 Technician</div>
+    <div class="desc">Field Engineer. Handles sensor maintenance, task assignments, and infrastructure repairs.</div>
+  </div>
+  <div class="role-pill r-health">
+    <div class="name">🏥 Health Officer</div>
+    <div class="desc">Water quality analyst. Tracks disease outbreaks and water safety incidents.</div>
+  </div>
+  <div class="role-pill r-climate">
+    <div class="name">🌍 Climate Scientist</div>
+    <div class="desc">Environmental monitoring. Tracks drought, flood, and climate risk indicators.</div>
+  </div>
+  <div class="role-pill r-ngo">
+    <div class="name">🌿 NGO Officer</div>
+    <div class="desc">Environmental advocacy. Community outreach, pollution reporting, and water monitoring.</div>
+  </div>
+  <div class="role-pill r-comm">
+    <div class="name">🏘️ Community Committee</div>
+    <div class="desc">Local water committee member. Logs in with a Committee ID (HSC-CC-…) assigned by their District Officer.</div>
+  </div>
+  <div class="role-pill r-citizen">
+    <div class="name">👤 Citizen</div>
+    <div class="desc">General public. Reports water issues, tracks their submissions, receives community alerts.</div>
+  </div>
+</div>
+
+<div class="box box-amber">
+  <strong>Note for Community Committee Members:</strong> You do NOT self-register. Your account is created by your District Water Officer. You will receive a <strong>Committee ID</strong> in the format <code>HSC-CC-KAM-2026-0001</code>. Use this ID — not an email address — to log in.
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §3 — REGISTRATION & LOGIN
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">🔐</span> 3. Registration &amp; Login</h2>
+
+<div class="two-col">
+  <div>
+    <h3>3.1 Citizen Registration</h3>
+    <p style="font-size:12px;color:#475569;margin-bottom:10px;">Only <strong>citizens</strong> self-register. All other roles are created by system administrators.</p>
+    <ol class="steps">
+      <li>Go to <strong>veltrix-4r2c.vercel.app</strong> and click <strong>"Create an Account"</strong> or visit <strong>/register</strong></li>
+      <li>Enter your <strong>Full Name</strong> and <strong>Phone Number</strong></li>
+      <li>Enter your <strong>Email Address</strong></li>
+      <li>Select your <strong>District</strong> from the dropdown (all 141 Uganda districts available)</li>
+      <li>Optionally enter your <strong>Sub-County</strong> and <strong>Village / Area</strong></li>
+      <li>Choose your <strong>Preferred Language</strong> (Luganda, Swahili, Luo, Runyankore, and more)</li>
+      <li>Set a <strong>Password</strong> (minimum 6 characters) and confirm it</li>
+      <li>Click <strong>"Create Citizen Account"</strong> — you are automatically logged in</li>
+    </ol>
+  </div>
+  <div>
+    <h3>3.2 Email Login (Staff &amp; Citizens)</h3>
+    <ol class="steps">
+      <li>Visit <strong>/login</strong> and select the <strong>"Email Login"</strong> tab (default)</li>
+      <li>Enter your <strong>Email Address</strong> and <strong>Password</strong></li>
+      <li>Tick <strong>"Remember me"</strong> to stay logged in for 365 days (otherwise 7 days)</li>
+      <li>Click <strong>"Sign In"</strong></li>
+      <li>You are redirected to your role-specific <strong>Dashboard</strong></li>
+    </ol>
+    <h3>3.3 Committee ID Login</h3>
+    <ol class="steps">
+      <li>Visit <strong>/login</strong> and click the <strong>"Committee ID"</strong> tab</li>
+      <li>Enter your <strong>Committee ID</strong> (format: <code>HSC-CC-KAM-2026-0001</code>)</li>
+      <li>Enter your <strong>temporary password</strong> given by your District Officer</li>
+      <li>Click <strong>"Sign In"</strong></li>
+    </ol>
+  </div>
+</div>
+
+<div class="two-col" style="margin-top:10px;">
+  <div>
+    <h3>3.4 Forgot Password</h3>
+    <ol class="steps">
+      <li>On the Login page, click <strong>"Forgot Password?"</strong></li>
+      <li>Enter your registered <strong>email address</strong></li>
+      <li>Check your inbox for a <strong>6-digit OTP</strong> code</li>
+      <li>Enter the OTP on the verification page</li>
+      <li>Set and confirm your <strong>new password</strong></li>
+    </ol>
+  </div>
+  <div>
+    <h3>3.5 Changing Your Password</h3>
+    <ol class="steps">
+      <li>Click your <strong>profile avatar</strong> (top-right corner)</li>
+      <li>Select <strong>"Profile Settings"</strong></li>
+      <li>Scroll to the <strong>Change Password</strong> section</li>
+      <li>Enter your current password, then your new password</li>
+      <li>Click <strong>"Update Password"</strong></li>
+    </ol>
+  </div>
+</div>
+
+<div class="box box-green" style="margin-top:8px;">
+  <strong>QR Code Verification:</strong> Staff members have a public profile accessible via QR code at <code>/verify/{user-id}</code>. Citizens can scan a staff member's ID badge to verify their identity and role.
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §4 — DASHBOARDS
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">📊</span> 4. Dashboards</h2>
+<p style="margin-bottom:12px;font-size:12px;color:#475569;">When you log in, HydroSense automatically shows you a dashboard tailored to your role.</p>
+
+<div class="card">
+  <h3>Citizen Dashboard</h3>
+  <p style="font-size:12px;color:#475569;margin-bottom:10px;"><em>Shown to users with role: citizen</em></p>
+  <ul class="feat">
+    <li><strong>Active Alerts</strong> — water and environmental alerts in your district</li>
+    <li><strong>My Reports</strong> — quick count of your submitted reports and their statuses</li>
+    <li><strong>Nearby Water Sources</strong> — functional boreholes and taps near you</li>
+    <li><strong>Quick-Action Tiles</strong> — one-tap access to Report Issue, Multilingual Report, Track My Reports, Water Infrastructure, Water Network, Community Hub</li>
+    <li><strong>Recent Reports</strong> — list of your recently submitted reports</li>
+    <li><strong>Announcements</strong> — latest public notices from your district</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Community Committee Dashboard</h3>
+  <p style="font-size:12px;color:#475569;margin-bottom:10px;"><em>Shown to users with role: community_committee</em></p>
+  <ul class="feat">
+    <li><strong>Committee Overview</strong> — your committee's name, district, and member count</li>
+    <li><strong>Recent Meetings</strong> — upcoming and past scheduled meetings</li>
+    <li><strong>Active Incidents</strong> — water issues being managed by your committee</li>
+    <li><strong>Projects</strong> — ongoing water and sanitation projects in your area</li>
+    <li><strong>Announcements</strong> — posted notices for your committee</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Main Staff Dashboard</h3>
+  <p style="font-size:12px;color:#475569;margin-bottom:10px;"><em>Shown to: District Officer, Technician, Health Officer, Climate Scientist, NGO Officer, National Admin</em></p>
+  <div class="two-col">
+    <ul class="feat">
+      <li><strong>Live Clock &amp; Weather</strong> — real-time date, time, and local weather</li>
+      <li><strong>Emergency Alerts</strong> — count of critical, warning, and info alerts</li>
+      <li><strong>Water Infrastructure</strong> — total points, functional %, offline sensors</li>
+      <li><strong>Maintenance Summary</strong> — pending and overdue requests</li>
+    </ul>
+    <ul class="feat">
+      <li><strong>Community Reports</strong> — new reports awaiting review</li>
+      <li><strong>Health Incidents</strong> — active disease case count</li>
+      <li><strong>Quick Actions</strong> — role-specific shortcut buttons</li>
+      <li><strong>Recent Activity Feed</strong> — latest system events</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §5 — CITIZEN GUIDE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">👤</span> 5. Citizen Guide</h2>
+<div class="box box-blue">As a <strong>Citizen</strong>, you can report water and environmental problems in your community, track the status of your submissions, view water sources near you, and participate in community discussions.</div>
+
+<h3>5.1 Submitting a Water/Environmental Report</h3>
+<div class="two-col">
+  <div>
+    <h4>Standard Report (/citizen-report)</h4>
+    <ol class="steps">
+      <li>Click <strong>"Report Issue"</strong> from your dashboard or navigate to <strong>/citizen-report</strong></li>
+      <li>Select the <strong>incident type</strong>: Water Pollution, Illegal Dumping, Sewage Leak, Flooding, Environmental Hazard, Infrastructure Damage, Water Contamination, or Disease Report</li>
+      <li>Enter a <strong>description</strong> of what you observed</li>
+      <li>Set your <strong>location</strong> (tap "Use My Location" or type it manually)</li>
+      <li>Optionally check <strong>"Report Anonymously"</strong></li>
+      <li>Attach <strong>photos, videos, or audio</strong> as evidence</li>
+      <li>Click <strong>"Submit Report"</strong></li>
+    </ol>
+  </div>
+  <div>
+    <h4>Multilingual Report (/multilingual-report)</h4>
+    <ol class="steps">
+      <li>Click <strong>"Multilingual Report"</strong> or visit <strong>/multilingual-report</strong></li>
+      <li><strong>Step 1 — Details:</strong> Select language, incident type, enter description in your local language</li>
+      <li>Tap <strong>"Translate to English"</strong> for automatic translation</li>
+      <li>Record a <strong>voice note</strong> if you prefer speaking to typing</li>
+      <li><strong>Step 2 — Media:</strong> Attach photos or videos</li>
+      <li><strong>Step 3 — Review:</strong> Confirm details and submit</li>
+    </ol>
+  </div>
+</div>
+
+<h3>5.2 Tracking Your Reports</h3>
+<ol class="steps">
+  <li>Go to <strong>/track-reports</strong> or tap <strong>"Track My Reports"</strong> on your dashboard</li>
+  <li>View all reports you have submitted with their current status</li>
+  <li>Click any report to see the full <strong>status timeline</strong>: Submitted → Under Investigation → Assigned to Technician → Resolved</li>
+  <li>Use the filter buttons to show only Pending, Investigating, or Resolved reports</li>
+</ol>
+
+<h3>5.3 Community Hub (/citizen-hub)</h3>
+<ul class="feat">
+  <li><strong>Discussions</strong> — browse and join conversations on Water Quality, Pollution, Climate, Health, Events, Governance, and General topics</li>
+  <li><strong>Start a Discussion</strong> — tap the blue button, choose a category, write your post, and optionally attach media or a voice note</li>
+  <li><strong>Like &amp; Reply</strong> — engage with other community members' posts</li>
+  <li><strong>Volunteer Events</strong> — view upcoming clean-up or water awareness events and click <strong>"Join"</strong></li>
+  <li><strong>Achievements</strong> — earn badges for reporting issues, joining events, and community participation</li>
+</ul>
+
+<h3>5.4 Guardian Water Network — GWN (/gwn)</h3>
+<p style="font-size:12px;color:#475569;margin-bottom:8px;">GWN is a citizen-science pollution tracking system. You can report environmental hazards and vote on the severity of others' reports.</p>
+<ul class="feat">
+  <li>Report types include: Illegal Dumping, Sewage Leak, Oil Spill, Algae Bloom, Dead Fish, Discolouration, Bad Odour, Flood, Broken Infrastructure, Industrial Waste</li>
+  <li>Browse the <strong>Feed</strong>, view <strong>Hotspot</strong> pollution areas, and check <strong>Statistics</strong> by district</li>
+  <li>Tap the 👍 icon on a report to <strong>vote</strong> and confirm its severity</li>
+</ul>
+
+<h3>5.5 Water Infrastructure (/water-infrastructure)</h3>
+<p style="font-size:12px;color:#475569;">Citizens can view water points (boreholes, taps, springs) in their area — including their status (functional, needs repair, non-functional), type, and number of beneficiaries. Tap a water point for full technical details.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §6 — COMMUNITY COMMITTEE GUIDE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">🏘️</span> 6. Community Committee Member Guide</h2>
+<div class="box box-green">Your account is <strong>created by your District Water Officer</strong>. You will receive a <strong>Committee ID</strong> (e.g. <code>HSC-CC-KAM-2026-0001</code>) and a temporary password. Use these to log in via the <strong>"Committee ID"</strong> tab on the login page.</div>
+
+<h3>6.1 Accessing Committee Management</h3>
+<ol class="steps">
+  <li>Log in with your Committee ID and password</li>
+  <li>Navigate to <strong>/committee-management</strong> from the sidebar</li>
+  <li>You will see your committee's dashboard with KPI cards: total members, upcoming meetings, active incidents, and running projects</li>
+</ol>
+
+<h3>6.2 Scheduling a Meeting</h3>
+<ol class="steps">
+  <li>In Committee Management, select your committee and open the <strong>Meetings</strong> tab</li>
+  <li>Click <strong>"Schedule Meeting"</strong></li>
+  <li>Enter: meeting title, date, time, location, agenda, and type (regular, emergency, special)</li>
+  <li>Click <strong>"Schedule"</strong> — all committee members are notified</li>
+</ol>
+
+<h3>6.3 Logging a Local Water Incident</h3>
+<ol class="steps">
+  <li>Open the <strong>Incidents</strong> tab in your committee's page</li>
+  <li>Click <strong>"Add Incident"</strong></li>
+  <li>Enter: title, incident type (water_quality, pollution, borehole_failure, water_shortage, flood, sanitation), description, priority (low/medium/high/critical), and location</li>
+  <li>Click <strong>"Save Incident"</strong> — it is sent to your District Officer for review</li>
+</ol>
+
+<h3>6.4 Managing Projects</h3>
+<ul class="feat">
+  <li>Use the <strong>Projects</strong> tab to create and track community water and sanitation projects</li>
+  <li>Project types: Water, Sanitation, Environmental, Flood Response, Tree Planting, Borehole Repair</li>
+  <li>Track status (planned, in_progress, completed), budget, and timelines</li>
+</ul>
+
+<h3>6.5 Posting Announcements</h3>
+<ul class="feat">
+  <li>Use the <strong>Announcements</strong> tab to post notices visible to all committee members</li>
+  <li>Include a title, body text, and optional priority flag</li>
+</ul>
+
+<h3>6.6 Other Access</h3>
+<p style="font-size:12px;color:#475569;">Community Committee members can also access: Citizen Hub (/citizen-hub), GIS Map (/gis), Guardian Water Network (/gwn), Community Reports (/community), and the standard Reporting pages (/citizen-report, /multilingual-report, /track-reports).</p>
+
+
+<!-- ══════════════════════════════════════════
+     §7 — DISTRICT OFFICER GUIDE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">🏛️</span> 7. District Officer Guide</h2>
+<div class="box box-blue">As a <strong>District Officer</strong>, you oversee all water management activities within your district. You create committee member accounts, review citizen reports, assign tasks to technicians, issue alerts, and manage emergencies.</div>
+
+<h3>7.1 Creating a Community Committee Account</h3>
+<ol class="steps">
+  <li>Go to <strong>/committee-management</strong> and click the <strong>"Committee Accounts"</strong> tab</li>
+  <li>Click <strong>"+ Create Account"</strong></li>
+  <li>Fill in: Full Name, Email Address, Phone, Temporary Password (min 6 characters)</li>
+  <li>Select a <strong>District</strong> from the dropdown</li>
+  <li>Choose the <strong>Committee Role</strong>: Chairperson, Secretary, Water Officer, Environmental Officer, Health Inspector, Emergency Coordinator, Community Mobilizer, District Supervisor, or Member</li>
+  <li>Enter <strong>Jurisdiction Area</strong> (e.g. "Makindye Sub-County") and Organisation Name</li>
+  <li>Click <strong>"Create Account"</strong></li>
+  <li>The system auto-generates a <strong>Committee ID</strong> (e.g. <code>HSC-CC-KAM-2026-0001</code>) — share this with the member for login</li>
+</ol>
+
+<h3>7.2 Reviewing Citizen Reports</h3>
+<ol class="steps">
+  <li>Go to <strong>/report-status</strong> to see all incoming citizen reports in your district</li>
+  <li>Click a report to view full details: type, description, location, photos, and AI severity score</li>
+  <li>Update the status: <strong>Under Review → Assigned → Resolved</strong> or <strong>Escalated</strong></li>
+  <li>For AI analysis, click <strong>"Analyze Report"</strong> to get Gemini AI's classification and risk score</li>
+</ol>
+
+<h3>7.3 Assigning Tasks to Technicians</h3>
+<ol class="steps">
+  <li>Navigate to <strong>/task-assignment</strong></li>
+  <li>Click <strong>"+ New Task"</strong> or use <strong>"Auto-Assign"</strong> to let the system distribute pending tasks intelligently</li>
+  <li>For manual assignment: set task title, type, priority, due date, district, and select the technician</li>
+  <li>Track task progress through Pending → In Progress → Completed</li>
+</ol>
+
+<h3>7.4 Issuing a Public Alert</h3>
+<ol class="steps">
+  <li>Go to <strong>/emergency</strong></li>
+  <li>Click <strong>"+ Create Alert"</strong></li>
+  <li>Set: Alert Type, Severity (Emergency / Critical / Warning / Info), District, Title, and Message</li>
+  <li>Click <strong>"Create Alert"</strong> — citizens and staff in the district are notified immediately</li>
+</ol>
+
+<h3>7.5 Other District Officer Functions</h3>
+<ul class="feat">
+  <li><strong>Emergency Response</strong> (/emergency) — create and manage response tickets for field deployment</li>
+  <li><strong>Governance</strong> (/governance) — review budget allocations, audit logs, and performance metrics for your district</li>
+  <li><strong>Incident Command</strong> (/incident-command) — coordinate multi-agency emergency response</li>
+  <li><strong>Analytics</strong> (/analytics) — view district water security scores, trends, and predictions</li>
+  <li><strong>GIS Map</strong> (/gis) — spatial overview of all water points, drought zones, and flood risks in your district</li>
+  <li><strong>Broadcast Notification</strong> — send district-wide announcements to all users in your district</li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════
+     §8 — TECHNICIAN GUIDE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">🔧</span> 8. Technician Guide</h2>
+<div class="box box-amber">As a <strong>Technician</strong>, your primary workspace is the Technician Portal where you manage work orders, record sensor readings, and update infrastructure status.</div>
+
+<h3>8.1 Technician Portal (/technician-portal)</h3>
+<ul class="feat">
+  <li>View tasks in three tabs: <strong>Pending Tasks</strong>, <strong>In Progress</strong>, <strong>Completed Today</strong></li>
+  <li>Click a task to see full details: water point, issue type, priority, description, cost estimate</li>
+  <li>Click <strong>"Start Task"</strong> to move it to In Progress</li>
+  <li>Click <strong>"Mark Complete"</strong> when the work is done</li>
+</ul>
+
+<h3>8.2 IoT Sensors (/sensors)</h3>
+<ol class="steps">
+  <li>Navigate to <strong>/sensors</strong> to see the live sensor feed</li>
+  <li>View real-time readings: current value, battery %, signal strength</li>
+  <li>Check sensor status: Online (green), Low Battery (amber), Offline (red)</li>
+  <li>Select a sensor to view its 24-hour reading chart</li>
+  <li>To record a manual reading: select the sensor, click <strong>"Add Reading"</strong>, and enter the measured value</li>
+</ol>
+
+<h3>8.3 Maintenance Requests (/maintenance)</h3>
+<ul class="feat">
+  <li>View all maintenance requests assigned to you, filtered by status and priority</li>
+  <li>Create a new maintenance request: select the water point, describe the issue, set priority and estimated cost</li>
+  <li>Update request status as work progresses</li>
+  <li>Track spare parts inventory and maintenance fund balance</li>
+</ul>
+
+<h3>8.4 Water Infrastructure (/water-infrastructure)</h3>
+<ul class="feat">
+  <li>Add new water points: enter name, type (borehole, protected spring, piped tap, etc.), status, GPS coordinates, beneficiary count, depth, pump type, and yield</li>
+  <li>Edit existing water point details after inspections</li>
+  <li>View the infrastructure map and filter by district, status, and type</li>
+</ul>
+
+<h3>8.5 AI Hub (/ai-hub)</h3>
+<p style="font-size:12px;color:#475569;">Technicians have access to the AI Hub's Overview, Predictions, Anomaly Detection, and Smart Alerts tabs — useful for identifying which infrastructure is likely to fail and should be prioritised for maintenance.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §9 — HEALTH OFFICER GUIDE
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">🏥</span> 9. Health Officer Guide</h2>
+<div class="box box-purple">As a <strong>Health Officer</strong>, you monitor water-linked diseases, manage health incident records, and ensure safe water quality across your jurisdiction.</div>
+
+<h3>9.1 Logging a Disease Outbreak (/health)</h3>
+<ol class="steps">
+  <li>Go to <strong>/health</strong> and click <strong>"Log Health Incident"</strong></li>
+  <li>Select: District, Disease Type (cholera, typhoid, diarrhea, dysentery, hepatitis A, schistosomiasis)</li>
+  <li>Enter: number of cases, deaths, hospitalisations, water source link (the suspected water point)</li>
+  <li>Add investigation notes and click <strong>"Save Incident"</strong></li>
+  <li><em>Note: incidents with 10+ cases automatically trigger an outbreak alert to the district</em></li>
+</ol>
+
+<h3>9.2 Water Quality Testing (/water-quality)</h3>
+<ol class="steps">
+  <li>Go to <strong>/water-quality</strong> and click <strong>"Submit New Test"</strong></li>
+  <li>Select the <strong>Water Point</strong> being tested</li>
+  <li>Enter test parameters: Turbidity (NTU), pH, TDS (mg/L), E. coli (CFU/100ml), Nitrates, Fluoride, Chlorine, Temperature</li>
+  <li>The system automatically flags parameters that exceed <strong>WHO safe drinking-water standards</strong></li>
+  <li>Click <strong>"Submit Test"</strong> — a quality alert is raised if the source is unsafe</li>
+</ol>
+
+<h3>9.3 Incident Analysis (/incident-analysis)</h3>
+<ul class="feat">
+  <li>Review pending citizen reports and run AI analysis to classify severity, risk score, and detect duplicates</li>
+  <li>Click <strong>"Analyze All Pending"</strong> to batch-process the queue with Gemini AI</li>
+  <li>View analysis results: AI category, risk score (0–100), confidence %, and recommended response</li>
+</ul>
+
+<h3>9.4 Emergency Response (/emergency)</h3>
+<ul class="feat">
+  <li>Acknowledge and resolve emergency alerts related to water-borne disease outbreaks</li>
+  <li>Coordinate with district officers during multi-agency health emergencies</li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════
+     §10 — CLIMATE SCIENTIST GUIDE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">🌍</span> 10. Climate Scientist Guide</h2>
+
+<h3>10.1 Climate Monitoring (/climate)</h3>
+<ul class="feat">
+  <li><strong>Drought Index</strong> — view SPI (Standardised Precipitation Index) per district. Severity levels: Extreme, Severe, Moderate, Mild, Normal, Wet</li>
+  <li><strong>Flood Risk Alerts</strong> — active flood risk zones with affected population estimates</li>
+  <li><strong>6-Month Forecast</strong> — AI-generated rainfall predictions by month</li>
+  <li><strong>Climate Resilience Scores</strong> — radar chart showing each district's performance across: Water Access, Infrastructure, Climate Adaptation, Governance, Community Capacity</li>
+  <li><strong>Weather Widget</strong> — live temperature, rainfall, and wind readings</li>
+</ul>
+
+<h3>10.2 Analytics (/analytics)</h3>
+<ul class="feat">
+  <li><strong>Overview tab</strong> — national water coverage %, people served, average quality score</li>
+  <li><strong>Predictions tab</strong> — risk indicators for borehole failure, drought, flood, water demand surge, and contamination</li>
+  <li><strong>Climate tab</strong> — 6-month trend charts for climate and maintenance data</li>
+  <li><strong>Security tab</strong> — water security scores ranked by district, climate risk matrix</li>
+</ul>
+
+<h3>10.3 Incident Analysis (/incident-analysis)</h3>
+<p style="font-size:12px;color:#475569;">Use AI-driven incident analysis to classify environmental events, detect patterns, and identify emerging risks. Run batch analysis on queued reports to accelerate response.</p>
+
+<h3>10.4 GIS Map (/gis)</h3>
+<p style="font-size:12px;color:#475569;">Switch between the Drought Index layer and Flood Risk layer to visualise climate hazards spatially. Identify at-risk districts and water points for intervention planning.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §11 — NGO OFFICER GUIDE
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">🌿</span> 11. NGO Officer Guide</h2>
+
+<h3>11.1 Community &amp; Environmental Work</h3>
+<ul class="feat">
+  <li><strong>Community Reports</strong> (/community) — review citizen-submitted reports and environmental observations; use Accept / Resolve actions</li>
+  <li><strong>Guardian Water Network</strong> (/gwn) — submit pollution reports, vote on incident severity, view hotspot pollution maps</li>
+  <li><strong>Citizen Reporting</strong> (/citizen-report, /multilingual-report) — submit detailed field reports from ground-level observations</li>
+  <li><strong>Health Surveillance</strong> (/health) — view disease incident data and water safety trends</li>
+  <li><strong>Water Quality</strong> (/water-quality) — access quality test records and safety statistics</li>
+</ul>
+
+<h3>11.2 GIS &amp; Data Access</h3>
+<ul class="feat">
+  <li>Full access to the <strong>GIS Map</strong> for spatial analysis of water points, drought, and flood zones</li>
+  <li>Access <strong>Citizen Hub</strong> to engage with community discussions and coordinate volunteer events</li>
+  <li>Track submitted reports via <strong>/track-reports</strong> and <strong>/report-status</strong></li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════
+     §12 — NATIONAL ADMIN GUIDE
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">👑</span> 12. National Admin Guide</h2>
+<div class="box box-red"><strong>Warning:</strong> National Admin accounts have unrestricted access to all data and operations across all districts. Handle with care. All actions are recorded in the audit log.</div>
+
+<h3>12.1 User Management (/users)</h3>
+<ol class="steps">
+  <li>Go to <strong>/users</strong> to see the complete list of all platform users</li>
+  <li>Use the <strong>Search</strong> bar to find a specific user by name</li>
+  <li>Click <strong>"+ Create User"</strong> to add a new staff account (any role, any district)</li>
+  <li>Click the <strong>edit icon</strong> on any user to update their name, phone, role, or district</li>
+  <li>Click the <strong>key icon</strong> to reset a user's password</li>
+  <li>Click the <strong>delete icon</strong> to remove an account (requires confirmation)</li>
+  <li>Use the <strong>QR icon</strong> to generate a verifiable ID card for a staff member</li>
+</ol>
+
+<h3>12.2 Creating Committee Accounts</h3>
+<p style="font-size:12px;color:#475569;">Unlike district officers (who are limited to their own district), National Admins can create committee accounts in <em>any</em> district. Follow the same process described in §7.1 — the district dropdown is fully open to all 141 districts.</p>
+
+<h3>12.3 Governance (/governance)</h3>
+<ul class="feat">
+  <li><strong>Budget tab</strong> — add and view budget records by project, funding source, and fiscal year; track allocation vs. expenditure</li>
+  <li><strong>Performance tab</strong> — system-wide performance metrics across districts</li>
+  <li><strong>Transparency tab</strong> — public accountability data and disclosure reports</li>
+  <li><strong>Audit tab</strong> — complete audit trail of every CREATE, UPDATE, DELETE, APPROVE, RESOLVE, and DISPATCH action on the platform, with timestamp, actor, and affected record</li>
+</ul>
+
+<h3>12.4 System-Wide Operations</h3>
+<ul class="feat">
+  <li>Full access to all 31 pages and all API endpoints</li>
+  <li>Incident Command (/incident-command) — create and escalate national-level incidents</li>
+  <li>AI Hub (/ai-hub) — all 9 AI intelligence tabs available</li>
+  <li>Broadcast Notifications — send system-wide alerts to all users or specific districts</li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════
+     FEATURE REFERENCE — ALL PAGES
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">📖</span> Feature Reference — All Pages</h2>
+
+<!-- Water Infrastructure -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🏗️</span>
+    <span class="pg-title">§13. Water Infrastructure</span>
+    <span class="pg-route">/water-infrastructure</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Central registry of all water access points across Uganda — boreholes, protected springs, piped taps, and more.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span><span class="chip chip-health">Health Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span><span class="chip chip-ngo">NGO Officer</span>
+      <span class="chip chip-comm">Community Committee</span><span class="chip chip-citizen">Citizen</span>
+    </div>
+    <div class="two-col">
+      <ul class="feat">
+        <li>Filter by district, status (functional/non-functional/needs repair), and type</li>
+        <li>Search water points by name or village</li>
+        <li>View infrastructure map with status colour coding</li>
+        <li>See statistics: total points, average infrastructure score, total beneficiaries</li>
+      </ul>
+      <ul class="feat">
+        <li>Click any water point to open full detail page (/water-infrastructure/:id)</li>
+        <li>Detail page shows: specifications, 24-hour sensor charts, maintenance history, linked alerts</li>
+        <li>Admin/Officer/Technician: Add new water point with full technical specs</li>
+        <li>Admin/Officer/Technician: Edit existing water point data</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Sensors -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">📡</span>
+    <span class="pg-title">§14. IoT Sensors</span>
+    <span class="pg-route">/sensors</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Live feed of all deployed IoT water monitoring sensors. Auto-refreshes every 30 seconds via WebSocket.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span><span class="chip chip-health">Health Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span>
+    </div>
+    <ul class="feat">
+      <li>Live readings dashboard: current value, battery level, signal strength per sensor</li>
+      <li>Min/max threshold tracking with automatic alerts when exceeded</li>
+      <li>24-hour historical chart for any selected sensor</li>
+      <li>Status breakdown: Online (green), Low Battery (amber), Offline (red)</li>
+      <li>Filter sensors by status; click to drill into individual sensor data</li>
+      <li>Technicians can record manual readings for sensors without auto-transmission</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Climate -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🌦️</span>
+    <span class="pg-title">§15. Climate Monitoring</span>
+    <span class="pg-route">/climate</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Drought and flood intelligence platform using SPI (Standardised Precipitation Index) and AI-powered rainfall forecasting.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer</span><span class="chip chip-climate">Climate Scientist</span>
+    </div>
+    <ul class="feat">
+      <li><strong>Drought Index</strong> — SPI values per district: Extreme Drought, Severe, Moderate, Mild, Normal, Wet</li>
+      <li><strong>Flood Risk Alerts</strong> — active zones with area name, risk level, and affected population estimate</li>
+      <li><strong>6-Month Forecast</strong> — AI-generated monthly rainfall predictions with trend indicators</li>
+      <li><strong>District Resilience Radar</strong> — five-axis chart per district: Water Access, Infrastructure, Climate Adaptation, Governance, Community Capacity</li>
+      <li><strong>Live Weather Widget</strong> — current temperature, rainfall (mm), and wind speed</li>
+      <li>Groundwater recharge rate and rainfall statistics</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Water Quality -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🧪</span>
+    <span class="pg-title">§16. Water Quality Testing</span>
+    <span class="pg-route">/water-quality</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Record and track water quality tests against WHO drinking-water standards. Contaminated sources are automatically flagged and alerted.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer</span><span class="chip chip-ngo">NGO Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span>
+    </div>
+    <ul class="feat">
+      <li>Quality test log with safety pass/fail indication per test</li>
+      <li>Safety rate statistics (% of tests passing WHO standards)</li>
+      <li>Quality scores by district (bar chart)</li>
+      <li>Parameters tested: Turbidity (NTU), pH, TDS (mg/L), E. coli (CFU/100ml), Nitrates (mg/L), Fluoride (mg/L), Chlorine (mg/L), Temperature (°C)</li>
+      <li>Submit new test: select water point, enter all parameter values, system auto-checks WHO limits</li>
+      <li>Contaminated source alert automatically raised when a test fails</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Maintenance -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🛠️</span>
+    <span class="pg-title">§17. Maintenance Management</span>
+    <span class="pg-route">/maintenance</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Track infrastructure repair work orders from creation to completion, including cost tracking and spare parts management.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span>
+    </div>
+    <div class="two-col">
+      <ul class="feat">
+        <li>Filter requests by status: Unassigned, Assigned, In Progress, Completed</li>
+        <li>Priority levels: Critical, High, Medium, Low — colour coded</li>
+        <li>Statistics: Total requests, Pending, Overdue</li>
+        <li>Cost tracking per request: estimated vs. actual cost</li>
+      </ul>
+      <ul class="feat">
+        <li>Spare parts inventory view</li>
+        <li>Maintenance fund balance: total collected, total spent, remaining</li>
+        <li>Create new request: water point, issue type, description, priority, estimated cost</li>
+        <li>Update request status as work progresses</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Health -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🏥</span>
+    <span class="pg-title">§18. Health Surveillance</span>
+    <span class="pg-route">/health</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Track water-linked disease outbreaks by district and disease type. Auto-alert triggers when case count reaches the outbreak threshold (10+ cases).</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer</span><span class="chip chip-ngo">NGO Officer</span>
+    </div>
+    <ul class="feat">
+      <li>Diseases tracked: Cholera, Typhoid, Diarrhea, Dysentery, Hepatitis A, Schistosomiasis</li>
+      <li>Statistics: Total cases, Deaths, Active outbreaks, Water-linked incidents</li>
+      <li>Incident registry with district, disease, case counts, and investigation notes</li>
+      <li>Cases by disease chart and cases by district chart</li>
+      <li>Log new incident: district, disease type, cases, deaths, hospitalisations, suspected water source, notes</li>
+      <li>Automatic outbreak alert when 10+ cases logged for same disease/district</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Emergency -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🚨</span>
+    <span class="pg-title">§19. Emergency Center</span>
+    <span class="pg-route">/emergency</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Real-time emergency alert management. Create, acknowledge, and resolve alerts. Auto-refreshes every 30 seconds for live situational awareness.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer</span>
+    </div>
+    <ul class="feat">
+      <li>Alert severity levels: Emergency (red), Critical (orange), Warning (yellow), Info (blue)</li>
+      <li>Active alerts displayed prominently at top; all historical alerts below</li>
+      <li>Statistics: total alerts, by severity, resolved vs. active</li>
+      <li>Emergency hotline reference numbers for field teams</li>
+      <li>Create alert: type, severity, district, title, message body</li>
+      <li>Acknowledge alert (to confirm receipt) and Resolve alert (to close it)</li>
+      <li>Emergency response tickets for dispatching field teams</li>
+    </ul>
+  </div>
+</div>
+
+<!-- GIS -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🗺️</span>
+    <span class="pg-title">§20. GIS Map</span>
+    <span class="pg-route">/gis</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Spatial visualisation of water infrastructure, drought severity, and flood risk across Uganda.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span><span class="chip chip-ngo">NGO Officer</span>
+      <span class="chip chip-health">Health Officer</span><span class="chip chip-comm">Community Committee</span>
+    </div>
+    <ul class="feat">
+      <li><strong>Layer 1 — Water Points:</strong> Functional (green), Needs Repair (orange), Non-functional (red), Solar-powered (blue)</li>
+      <li><strong>Layer 2 — Drought Index:</strong> Colour-coded SPI severity per district (extreme/severe/moderate/mild/normal/wet)</li>
+      <li><strong>Layer 3 — Flood Risk:</strong> Flood risk zones by district with severity shading</li>
+      <li>Filter by district and water point status</li>
+      <li>Click any water point marker to see its name, status, type, and beneficiary count</li>
+      <li>Summary count display (total shown, functional count)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Analytics -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">📈</span>
+    <span class="pg-title">§21. Analytics &amp; Predictions</span>
+    <span class="pg-route">/analytics</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">AI-powered analytics dashboard with national and district-level water security intelligence, predictive risk indicators, and 6-month trend charts.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span><span class="chip chip-health">Health Officer</span>
+    </div>
+    <table>
+      <tr><th>Tab</th><th>Content</th></tr>
+      <tr><td><strong>Overview</strong></td><td>Water coverage %, people served, average quality score, active health cases; 6-month trend charts</td></tr>
+      <tr><td><strong>Predictions</strong></td><td>Risk probability indicators: Borehole Failure, Drought, Flood, Water Demand Surge, Contamination; high-risk water point list</td></tr>
+      <tr><td><strong>Climate</strong></td><td>Climate risk summary, district resilience ranking, rainfall and groundwater trends</td></tr>
+      <tr><td><strong>Security</strong></td><td>Water security scores by district (ranked table), climate risk matrix, infrastructure vulnerability index</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Governance -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🏛️</span>
+    <span class="pg-title">§22. Governance &amp; Transparency</span>
+    <span class="pg-route">/governance</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Budget tracking, performance monitoring, transparency reporting, and a complete audit trail for public accountability.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+    </div>
+    <table>
+      <tr><th>Tab</th><th>Content</th></tr>
+      <tr><td><strong>Budget</strong></td><td>Budget records by project, type, and funding source. Total budget, amount spent, utilisation %. Add new budget record form.</td></tr>
+      <tr><td><strong>Performance</strong></td><td>System performance metrics: response times, resolution rates, coverage improvement by district</td></tr>
+      <tr><td><strong>Transparency</strong></td><td>Public disclosure reports and accountability data</td></tr>
+      <tr><td><strong>Audit</strong></td><td>Full audit trail: every CREATE, UPDATE, DELETE, APPROVE, RESOLVE, DISPATCH, REPORT, PUBLISH action — with actor, timestamp, and record reference</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- AI Hub -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🤖</span>
+    <span class="pg-title">§23. AI Hub</span>
+    <span class="pg-route">/ai-hub</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Gemini AI-powered intelligence centre. Provides real-time risk summaries, anomaly detection, predictive alerts, and a multi-user AI conversation workspace.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span><span class="chip chip-health">Health Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span>
+    </div>
+    <table>
+      <tr><th>Tab</th><th>Who Sees It</th><th>Content</th></tr>
+      <tr><td>Overview</td><td>All</td><td>Critical alerts count, high-risk water points, contamination events, drought districts, active outbreaks</td></tr>
+      <tr><td>Live Intelligence</td><td>Admin, Officer</td><td>Real-time AI risk summary, district heatmap, environmental risk index, operational insights</td></tr>
+      <tr><td>Predictions</td><td>Admin, Officer, Technician, Scientist</td><td>Prioritised incident list with AI scores; infrastructure failure predictions</td></tr>
+      <tr><td>Anomalies</td><td>Admin, Officer, Technician, Scientist</td><td>Sensor anomaly detection; outlier readings automatically flagged</td></tr>
+      <tr><td>Climate AI</td><td>Admin, Officer, Scientist</td><td>AI climate risk summaries, drought prediction models</td></tr>
+      <tr><td>Smart Alerts</td><td>All</td><td>AI-generated alert recommendations based on current data</td></tr>
+      <tr><td>Decision Support</td><td>Admin, Officer, Health</td><td>AI response strategy recommendations, escalation logic</td></tr>
+      <tr><td>AI Reports</td><td>Admin, Officer, Health, Scientist</td><td>Auto-generated situation reports and summaries</td></tr>
+      <tr><td>Conversations</td><td>All</td><td>Multi-user AI chat workspace — ask Gemini questions, share insights with colleagues</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Community Reports -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">📣</span>
+    <span class="pg-title">§24. Community Reports</span>
+    <span class="pg-route">/community</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Review and manage citizen-submitted reports and environmental observations from all reporting channels.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-comm">Community Committee</span><span class="chip chip-ngo">NGO Officer</span>
+      <span class="chip chip-citizen">Citizen</span>
+    </div>
+    <ul class="feat">
+      <li><strong>Community Reports tab</strong> — reports from App, SMS, USSD, Voice, and In-Person channels</li>
+      <li><strong>Environmental Observations tab</strong> — tagged field observations (water colour, dead fish, algae, oil spill, flooding, odour, illegal dumping)</li>
+      <li>Issue type breakdown (water quality, pollution, infrastructure, health, etc.)</li>
+      <li>Filter by district; Accept and Resolve actions for officers</li>
+      <li>Status flow: New → Under Review → Resolved / Escalated</li>
+    </ul>
+  </div>
+</div>
+
+<!-- GWN -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🛡️</span>
+    <span class="pg-title">§25. Guardian Water Network (GWN)</span>
+    <span class="pg-route">/gwn</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Citizen-science platform for crowdsourced pollution tracking. Anyone can report environmental hazards and the community votes on severity.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer</span><span class="chip chip-climate">Climate Scientist</span>
+      <span class="chip chip-ngo">NGO Officer</span><span class="chip chip-comm">Community Committee</span>
+      <span class="chip chip-citizen">Citizen</span>
+    </div>
+    <table>
+      <tr><th>Tab</th><th>Content</th></tr>
+      <tr><td>Feed</td><td>Latest reports with votes, severity, reporter, and status. Tap 👍 to vote and confirm severity.</td></tr>
+      <tr><td>Statistics</td><td>Reports by type, by district, by severity level, resolution rate</td></tr>
+      <tr><td>Hotspots</td><td>Persistent pollution areas with repeat-report counts and assigned agency</td></tr>
+      <tr><td>Analytics</td><td>Trend charts and heatmaps of pollution reporting over time</td></tr>
+    </table>
+    <p style="font-size:11px;color:#475569;margin-top:8px;">Report types: Illegal Dumping, Sewage Leak, Oil Spill, Algae Bloom, Dead Fish, Discolouration, Bad Odour, Flood, Broken Infrastructure, Industrial Waste</p>
+  </div>
+</div>
+
+<!-- Citizen Hub -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🗣️</span>
+    <span class="pg-title">§26. Citizen Hub</span>
+    <span class="pg-route">/citizen-hub</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Community engagement platform for discussions, volunteer events, and citizen achievements. Supports multilingual voice posts and media attachments.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span><span class="chip chip-health">Health Officer</span>
+      <span class="chip chip-climate">Climate Scientist</span><span class="chip chip-ngo">NGO Officer</span>
+      <span class="chip chip-comm">Community Committee</span><span class="chip chip-citizen">Citizen</span>
+    </div>
+    <ul class="feat">
+      <li><strong>Discussions</strong> — 8 categories: All, Water Quality, Pollution, Climate, Health, Events, Governance, General</li>
+      <li>Like, reply, mention (@user) — full social engagement features</li>
+      <li>Start a discussion with photo, video, audio, or voice recording (auto-translates via AI)</li>
+      <li><strong>Volunteer Events</strong> — browse upcoming community events, join or leave with one click</li>
+      <li><strong>Achievements</strong> — earn badges for reporting, joining events, and community participation</li>
+      <li>Supports 10+ local languages for discussion content</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Citizen Reporting -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">📝</span>
+    <span class="pg-title">§27. Citizen Reporting Suite</span>
+    <span class="pg-route">/citizen-report &nbsp;·&nbsp; /multilingual-report &nbsp;·&nbsp; /track-reports &nbsp;·&nbsp; /report-status</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Multi-channel reporting tools for citizens and field workers to submit, track, and review water/environmental incidents.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-ngo">NGO Officer</span><span class="chip chip-comm">Community Committee</span>
+      <span class="chip chip-citizen">Citizen</span>
+    </div>
+    <table>
+      <tr><th>Page</th><th>Purpose</th></tr>
+      <tr><td>/citizen-report</td><td>Standard report form. 8 incident types, GPS location, anonymous option, photo/video/audio upload. Disease sub-form for outbreak reporting.</td></tr>
+      <tr><td>/multilingual-report</td><td>3-step guided form with voice recording, auto-translation to English, and 18+ language selection.</td></tr>
+      <tr><td>/track-reports</td><td>Personal list of "My Reports" with status filter, statistics (total/investigating/resolved), and status history per report.</td></tr>
+      <tr><td>/report-status</td><td>Visual status flow timeline for any report. Officers can view reporter details, location, media, and update status. AI analysis button available.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Task Assignment -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">📋</span>
+    <span class="pg-title">§28. Task Assignment</span>
+    <span class="pg-route">/task-assignment &nbsp;·&nbsp; /technician-portal</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Work-order management system. Officers create and assign tasks; technicians receive and complete them.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-tech">Technician</span><span class="chip chip-health">Health Officer</span>
+    </div>
+    <table>
+      <tr><th>Page</th><th>Purpose</th></tr>
+      <tr><td>/task-assignment</td><td>Officers: create tasks, auto-assign pending work, view all tasks, update status. Statistics: pending, in-progress, completed.</td></tr>
+      <tr><td>/technician-portal</td><td>Technicians: 3-tab view (Pending / In Progress / Completed Today). Start task → Mark Complete workflow. Sensor health status sidebar.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Committee Management -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">🏘️</span>
+    <span class="pg-title">§29. Committee Management</span>
+    <span class="pg-route">/committee-management</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Full governance platform for water user committees — covering account creation, meetings, incidents, projects, announcements, and voting.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-comm">Community Committee</span>
+    </div>
+    <div class="two-col">
+      <div>
+        <h4>Admin / Officer Actions</h4>
+        <ul class="feat">
+          <li>Create new committee (name, district, description)</li>
+          <li>Add / remove committee members</li>
+          <li>Assign member roles (Chairperson, Secretary, etc.)</li>
+          <li>Create committee accounts (HSC-CC-… IDs)</li>
+          <li>View all committees in district or nationwide</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Committee Member Actions</h4>
+        <ul class="feat">
+          <li>Schedule and manage meetings</li>
+          <li>Log and escalate local water incidents</li>
+          <li>Create and track community projects</li>
+          <li>Post announcements to members</li>
+          <li>Participate in governance votes (Yes / No / Abstain)</li>
+          <li>View committee audit trail</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incident Command -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">⚡</span>
+    <span class="pg-title">§30. Incident Command Center</span>
+    <span class="pg-route">/incident-command &nbsp;·&nbsp; /incident-analysis</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Multi-agency emergency coordination for major water and environmental incidents requiring cross-departmental response.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin</span><span class="chip chip-dist">District Officer</span>
+      <span class="chip chip-health">Health Officer (analysis only)</span><span class="chip chip-climate">Climate Scientist (analysis only)</span>
+    </div>
+    <table>
+      <tr><th>Page</th><th>Content</th></tr>
+      <tr><td>/incident-command</td><td>Active incidents by severity (Emergency/Critical/High/Medium/Low). Create incident, assign agencies, update status, escalate to national level.</td></tr>
+      <tr><td>/incident-analysis</td><td>AI-powered report analysis queue. Run Gemini AI on individual or batch-pending reports. View AI severity classification, risk score (0–100), confidence %, duplicate detection, and response recommendations.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- User Management -->
+<div class="page-card">
+  <div class="page-card-header">
+    <span class="pg-icon">👑</span>
+    <span class="pg-title">§31. User Management</span>
+    <span class="pg-route">/users</span>
+  </div>
+  <div class="page-card-body">
+    <div class="pg-desc">Full user account CRUD for National Admins. Create, edit, reset passwords, and delete any account on the platform.</div>
+    <div class="access-chips">
+      <span class="chip chip-admin">National Admin only</span>
+    </div>
+    <ul class="feat">
+      <li>List all users with name, email, role badge, district, organisation</li>
+      <li>Search users by name</li>
+      <li>Create new user: any role, any district, optional organisation field</li>
+      <li>Edit user details (name, phone, role, district, organisation)</li>
+      <li>Reset any user's password (generates new password)</li>
+      <li>Delete user account with confirmation dialog</li>
+      <li>Generate QR-code ID card for any staff member</li>
+      <li>WhatsApp and phone call quick-links from user detail view</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     QUICK REFERENCE TABLE
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">📌</span> Quick Reference — Who Can Access What</h2>
+<div class="card" style="padding:0;overflow:hidden;">
+<table>
+  <thead>
+    <tr>
+      <th style="min-width:180px;">Page</th>
+      <th>Nat Admin</th><th>District</th><th>Techni.</th>
+      <th>Health</th><th>Climate</th><th>NGO</th>
+      <th>Comm.</th><th>Citizen</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Dashboard</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Water Infrastructure</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Citizen Hub</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Citizen Report</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Multilingual Report</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Track Reports</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Report Status</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Guardian Water Network</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Community Reports</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>IoT Sensors</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Climate Monitoring</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Water Quality Testing</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Maintenance</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Health Surveillance</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Emergency Center</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>GIS Map</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td></tr>
+    <tr><td>Analytics &amp; Predictions</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Governance</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>AI Hub</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Task Assignment</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Technician Portal</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td><td class="tick">✓</td></tr>
+    <tr><td>Committee Management</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="tick">✓</td><td class="cross">–</td></tr>
+    <tr><td>Incident Command</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>Incident Analysis</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="tick">✓</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+    <tr><td>User Management</td><td class="tick">✓</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td><td class="cross">–</td></tr>
+  </tbody>
+</table>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SUPPORTED LANGUAGES
+══════════════════════════════════════════ -->
+<h2 class="sec"><span class="icon">🌐</span> Supported Languages</h2>
+<div class="card">
+  <p style="font-size:12px;color:#475569;margin-bottom:12px;">HydroSense supports multilingual reporting and UI in the following languages. Language can be set at registration or changed at any time in your profile.</p>
+  <div class="three-col">
+    <ul class="feat" style="font-size:12px;">
+      <li>English</li><li>Luganda</li><li>Swahili (Kiswahili)</li><li>Luo (Acholi)</li>
+    </ul>
+    <ul class="feat" style="font-size:12px;">
+      <li>Runyankore-Rukiga</li><li>Ateso</li><li>Langi</li><li>Lugbara</li>
+    </ul>
+    <ul class="feat" style="font-size:12px;">
+      <li>Lusoga</li><li>Lumasaba</li><li>French</li><li>Arabic</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SCREENSHOTS
+══════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2 class="sec"><span class="icon">🖥️</span> System Screenshots &amp; UI Walkthrough</h2>
+<p style="font-size:12px;color:#475569;margin-bottom:20px;">The screens below illustrate the key pages of the HydroSense platform exactly as they appear to users. Each screenshot is accompanied by a description of what is shown and how to use it.</p>
+
+<style>
+/* ── Screen mockup shell ── */
+.screen-wrap{margin-bottom:32px;}
+.screen-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#64748b;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.screen-label span.badge{background:#2563eb;color:white;padding:2px 9px;border-radius:10px;font-size:10px;text-transform:none;letter-spacing:0;}
+.screen-caption{background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;padding:12px 16px;font-size:11px;color:#475569;line-height:1.7;}
+.screen-caption strong{color:#1e40af;}
+
+.browser{border-radius:10px 10px 0 0;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);border:1px solid #e2e8f0;border-bottom:none;}
+.browser-bar{background:#f1f5f9;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e2e8f0;}
+.browser-bar .dots{display:flex;gap:5px;}
+.browser-bar .dots span{width:10px;height:10px;border-radius:50%;display:block;}
+.dot-r{background:#fc5c57;}.dot-y{background:#fdbc40;}.dot-g{background:#34c84a;}
+.browser-bar .url{flex:1;background:white;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;font-size:10px;color:#64748b;font-family:monospace;margin:0 8px;}
+.screen-body{background:white;min-height:260px;}
+
+/* ── Two-col screenshot grid ── */
+.ss-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;}
+
+/* ── Login screen mock ── */
+.mock-login{display:flex;min-height:320px;font-size:11px;}
+.mock-login-left{width:42%;background:linear-gradient(135deg,#1e3a8a,#0891b2);color:white;padding:20px 16px;display:flex;flex-direction:column;gap:8px;}
+.mock-login-left .logo{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.mock-login-left h3{font-size:14px;font-weight:800;}
+.mock-login-left p{font-size:9px;opacity:0.7;line-height:1.5;}
+.mock-login-right{flex:1;padding:20px 18px;display:flex;flex-direction:column;justify-content:center;}
+.mock-tabs{display:flex;background:#f1f5f9;border-radius:8px;padding:3px;margin-bottom:14px;}
+.mock-tab{flex:1;text-align:center;padding:5px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;}
+.mock-tab.active{background:white;color:#1e40af;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.mock-tab.inactive{color:#94a3b8;}
+.mock-field{margin-bottom:9px;}
+.mock-field label{display:block;font-size:9px;font-weight:600;color:#374151;margin-bottom:3px;}
+.mock-input{width:100%;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;color:#374151;}
+.mock-btn{width:100%;padding:7px;background:linear-gradient(135deg,#2563eb,#0891b2);color:white;border:none;border-radius:7px;font-size:10px;font-weight:700;margin-top:6px;cursor:pointer;text-align:center;}
+.mock-hint{font-size:9px;color:#94a3b8;text-align:center;margin-top:8px;}
+.mock-emerald-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 8px;font-size:9px;color:#166534;margin-bottom:10px;}
+
+/* ── Citizen dashboard mock ── */
+.mock-dash{padding:14px;background:#f8fafc;font-size:11px;}
+.mock-dash-header{background:linear-gradient(135deg,#1e3a8a,#0891b2);color:white;border-radius:8px;padding:10px 14px;margin-bottom:10px;}
+.mock-dash-header h4{font-size:12px;font-weight:700;}
+.mock-dash-header p{font-size:9px;opacity:0.7;}
+.mock-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.mock-kpi{background:white;border:1px solid #e2e8f0;border-radius:6px;padding:8px;text-align:center;}
+.mock-kpi .val{font-size:16px;font-weight:800;color:#1e40af;}
+.mock-kpi .lbl{font-size:8px;color:#94a3b8;margin-top:2px;}
+.mock-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;}
+.mock-action{background:white;border:1px solid #e2e8f0;border-radius:6px;padding:7px 5px;text-align:center;font-size:9px;color:#1e40af;font-weight:600;}
+.mock-action .ic{font-size:14px;margin-bottom:2px;}
+.mock-list-item{background:white;border:1px solid #e2e8f0;border-radius:5px;padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;font-size:9px;}
+.mock-badge{padding:1px 6px;border-radius:8px;font-size:8px;font-weight:600;}
+.bg-green{background:#dcfce7;color:#166534;}
+.bg-orange{background:#fed7aa;color:#9a3412;}
+.bg-blue{background:#dbeafe;color:#1e40af;}
+.bg-red{background:#fee2e2;color:#991b1b;}
+.bg-gray{background:#f1f5f9;color:#475569;}
+
+/* ── Staff dashboard mock ── */
+.mock-staff-dash{display:flex;min-height:300px;font-size:10px;}
+.mock-sidebar{width:160px;background:#0f172a;color:#94a3b8;padding:12px 8px;flex-shrink:0;}
+.mock-sidebar .logo{color:white;font-weight:700;font-size:11px;margin-bottom:14px;display:flex;align-items:center;gap:4px;}
+.mock-nav-item{padding:5px 8px;border-radius:5px;font-size:9px;margin-bottom:2px;cursor:pointer;}
+.mock-nav-item.active{background:#1e40af;color:white;}
+.mock-nav-item:hover{background:#1e293b;color:white;}
+.mock-main{flex:1;background:#f8fafc;padding:12px;}
+.mock-kpi-4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;}
+.mock-kpi-card{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:9px;}
+.mock-kpi-card .num{font-size:18px;font-weight:800;margin-bottom:2px;}
+.mock-kpi-card .lab{font-size:8px;color:#94a3b8;}
+.mock-kpi-card.c-blue .num{color:#2563eb;}
+.mock-kpi-card.c-red .num{color:#dc2626;}
+.mock-kpi-card.c-green .num{color:#16a34a;}
+.mock-kpi-card.c-orange .num{color:#d97706;}
+.mock-map-area{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:10px;height:120px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;position:relative;overflow:hidden;}
+.mock-dot{width:8px;height:8px;border-radius:50%;position:absolute;}
+
+/* ── Water infra mock ── */
+.mock-infra{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-filter-bar{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.mock-filter-chip{padding:4px 10px;border-radius:16px;border:1px solid #e2e8f0;background:white;font-size:9px;color:#475569;cursor:pointer;}
+.mock-filter-chip.sel{background:#2563eb;color:white;border-color:#2563eb;}
+.mock-table{width:100%;border-collapse:collapse;background:white;border-radius:7px;overflow:hidden;border:1px solid #e2e8f0;font-size:9px;}
+.mock-table th{background:#1e3a8a;color:white;padding:6px 8px;text-align:left;font-size:8px;}
+.mock-table td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+.mock-table tr:last-child td{border-bottom:none;}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
+
+/* ── GIS map mock ── */
+.mock-gis{background:#1e293b;min-height:280px;position:relative;overflow:hidden;display:flex;}
+.mock-gis-panel{width:180px;background:white;padding:10px;font-size:9px;flex-shrink:0;border-right:1px solid #e2e8f0;}
+.mock-gis-map{flex:1;position:relative;overflow:hidden;}
+.mock-gis-map .map-bg{position:absolute;inset:0;background:linear-gradient(135deg,#c7d2fe 0%,#a5f3fc 40%,#bbf7d0 80%);opacity:0.6;}
+.map-outline{position:absolute;inset:15%;border:2px solid rgba(59,130,246,0.5);border-radius:30% 40% 25% 45%;background:rgba(59,130,246,0.07);}
+.map-pin{position:absolute;width:10px;height:10px;border-radius:50%;border:1.5px solid white;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.legend-item{display:flex;align-items:center;gap:5px;padding:3px 0;color:#374151;}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── Report form mock ── */
+.mock-report{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-incident-types{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;}
+.mock-itype{background:white;border:2px solid #e2e8f0;border-radius:7px;padding:7px 5px;text-align:center;font-size:9px;cursor:pointer;}
+.mock-itype.sel{border-color:#2563eb;background:#eff6ff;color:#1e40af;}
+.mock-itype .ic{font-size:14px;margin-bottom:2px;}
+.mock-media-bar{display:flex;gap:8px;margin-top:8px;}
+.mock-media-btn{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:6px 10px;font-size:9px;display:flex;align-items:center;gap:4px;cursor:pointer;}
+
+/* ── Committee management mock ── */
+.mock-cm{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-view-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.mock-vtab{padding:5px 14px;border-radius:7px;font-size:9px;font-weight:700;cursor:pointer;}
+.mock-vtab.active{background:#2563eb;color:white;}
+.mock-vtab.inactive{background:white;border:1px solid #e2e8f0;color:#64748b;}
+.mock-acct-card{background:white;border:1px solid #e2e8f0;border-radius:7px;padding:9px 10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.mock-acct-card .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#0891b2);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+.mock-acct-card .info{flex:1;}
+.mock-acct-card .id-chip{font-size:8px;font-family:monospace;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:2px 7px;border-radius:8px;}
+
+/* ── AI Hub mock ── */
+.mock-ai{padding:14px;background:#0f172a;color:#e2e8f0;font-size:10px;min-height:280px;}
+.mock-ai-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;}
+.mock-ai-tab{padding:4px 10px;border-radius:6px;font-size:9px;cursor:pointer;}
+.mock-ai-tab.active{background:#2563eb;color:white;}
+.mock-ai-tab.inactive{background:#1e293b;color:#94a3b8;}
+.mock-ai-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;}
+.mock-ai-kpi-card{background:#1e293b;border:1px solid #334155;border-radius:7px;padding:10px;}
+.mock-ai-kpi-card .num{font-size:20px;font-weight:800;color:#f87171;}
+.mock-ai-kpi-card .num.safe{color:#4ade80;}
+.mock-ai-kpi-card .num.warn{color:#fbbf24;}
+.mock-ai-kpi-card .lab{font-size:8px;color:#64748b;margin-top:2px;}
+.mock-ai-list-item{background:#1e293b;border:1px solid #334155;border-radius:6px;padding:7px 9px;margin-bottom:5px;display:flex;align-items:center;gap:8px;font-size:9px;}
+.risk-bar{flex:1;height:5px;background:#334155;border-radius:3px;overflow:hidden;}
+.risk-fill{height:100%;border-radius:3px;}
+
+/* ── Emergency mock ── */
+.mock-emrg{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-alert-card{border-radius:7px;padding:9px 12px;margin-bottom:6px;border-left:4px solid;}
+.mock-alert-card.emerg{background:#fef2f2;border-color:#dc2626;}
+.mock-alert-card.critical{background:#fff7ed;border-color:#ea580c;}
+.mock-alert-card.warning{background:#fffbeb;border-color:#d97706;}
+.mock-alert-card.info{background:#eff6ff;border-color:#2563eb;}
+.mock-alert-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.mock-alert-badge{font-size:8px;font-weight:700;padding:2px 7px;border-radius:8px;}
+.badge-emerg{background:#dc2626;color:white;}
+.badge-crit{background:#ea580c;color:white;}
+.badge-warn{background:#d97706;color:white;}
+.badge-info{background:#2563eb;color:white;}
+.alert-title{font-weight:700;font-size:10px;color:#0f172a;}
+.alert-body{font-size:9px;color:#64748b;margin-top:2px;}
+
+/* ── Analytics mock ── */
+.mock-analytics{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-chart-bar{display:flex;align-items:flex-end;gap:4px;height:80px;margin-bottom:8px;}
+.mock-bar{background:linear-gradient(to top,#2563eb,#7dd3fc);border-radius:3px 3px 0 0;flex:1;min-width:14px;}
+.mock-bar.b-green{background:linear-gradient(to top,#16a34a,#4ade80);}
+.mock-bar.b-orange{background:linear-gradient(to top,#d97706,#fbbf24);}
+
+/* ── Governance mock ── */
+.mock-gov{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-audit-row{background:white;border:1px solid #e2e8f0;border-radius:5px;padding:6px 9px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:9px;}
+.mock-audit-action{padding:2px 7px;border-radius:8px;font-size:8px;font-weight:700;}
+.aa-create{background:#dcfce7;color:#166534;}
+.aa-update{background:#dbeafe;color:#1e40af;}
+.aa-resolve{background:#fef9c3;color:#713f12;}
+.aa-delete{background:#fee2e2;color:#991b1b;}
+
+/* ── Multilingual report mock ── */
+.mock-ml{padding:14px;background:#f8fafc;font-size:10px;}
+.mock-steps-nav{display:flex;align-items:center;gap:0;margin-bottom:14px;}
+.mock-step-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.mock-step-dot.done{background:#16a34a;color:white;}
+.mock-step-dot.active{background:#2563eb;color:white;}
+.mock-step-dot.upcoming{background:#e2e8f0;color:#94a3b8;}
+.mock-step-line{flex:1;height:2px;}
+.mock-step-line.done{background:#16a34a;}
+.mock-step-line.upcoming{background:#e2e8f0;}
+.mock-voice-btn{background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.mock-translate-btn{background:white;border:1px solid #bbf7d0;color:#166534;border-radius:8px;padding:6px 12px;font-size:10px;font-weight:600;cursor:pointer;}
+</style>
+
+<!-- ─────────────────────────────────── SCREEN 1 — Login ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 1 <span class="badge">Public</span> Login &amp; Authentication</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/login</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-login">
+        <div class="mock-login-left">
+          <div class="logo"><span style="font-size:18px;">💧</span><div><div style="font-weight:700;font-size:11px;">HydroSense</div><div style="font-size:8px;opacity:0.7;">Ministry of Water &amp; Environment</div></div></div>
+          <h3>Welcome Back</h3>
+          <p>Sign in to access Uganda's integrated water monitoring and environmental management platform.</p>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;">
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">🔒 JWT Secured</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">🛡️ 256-bit Encryption</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">📋 Full Audit Trail</div>
+          </div>
+        </div>
+        <div class="mock-login-right">
+          <div style="font-weight:800;font-size:13px;margin-bottom:4px;">Sign In to HydroSense</div>
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:12px;">Choose how you want to sign in</div>
+          <div class="mock-tabs">
+            <div class="mock-tab active">✉️ Email Login</div>
+            <div class="mock-tab inactive">🪪 Committee ID</div>
+          </div>
+          <div class="mock-field"><label>Email Address</label><input class="mock-input" value="officer@mwe.go.ug" readonly/></div>
+          <div class="mock-field"><label>Password</label><input class="mock-input" type="password" value="••••••••" readonly/></div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:#2563eb;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:4px;color:#374151;"><input type="checkbox" checked readonly/> Remember me</label>
+            <span>Forgot Password?</span>
+          </div>
+          <div class="mock-btn">Sign In</div>
+          <div class="mock-hint">Don't have an account? <span style="color:#2563eb;">Create Citizen Account</span></div>
+        </div>
+      </div>
+      <!-- Committee ID tab version -->
+      <div class="mock-login" style="border-top:1px solid #f1f5f9;">
+        <div class="mock-login-left" style="background:linear-gradient(135deg,#064e3b,#047857);">
+          <div class="logo"><span style="font-size:18px;">🪪</span><div><div style="font-weight:700;font-size:11px;">Committee ID Login</div><div style="font-size:8px;opacity:0.7;">For Community Committee Members</div></div></div>
+          <h3 style="font-size:11px;margin-top:8px;">District-Controlled Access</h3>
+          <p>Committee accounts are created by District Water Officers. Your ID was assigned when your account was set up.</p>
+          <div style="margin-top:10px;background:rgba(255,255,255,0.15);border-radius:7px;padding:8px;font-size:8px;">
+            <div style="font-weight:700;margin-bottom:3px;">ID Format</div>
+            HSC-CC-KAM-2026-0001<br/>HSC-CC-WKS-2026-0003
+          </div>
+        </div>
+        <div class="mock-login-right">
+          <div style="font-weight:800;font-size:13px;margin-bottom:4px;">Committee Member Sign In</div>
+          <div class="mock-tabs">
+            <div class="mock-tab inactive">✉️ Email Login</div>
+            <div class="mock-tab active" style="background:#059669;color:white;">🪪 Committee ID</div>
+          </div>
+          <div class="mock-emerald-box">ℹ️ Enter the Committee ID provided by your District Water Officer</div>
+          <div class="mock-field"><label>Committee ID</label><input class="mock-input" style="font-family:monospace;letter-spacing:1px;font-size:11px;" value="HSC-CC-KAM-2026-0001" readonly/></div>
+          <div class="mock-field"><label>Password</label><input class="mock-input" type="password" value="••••••••" readonly/></div>
+          <div class="mock-btn" style="background:linear-gradient(135deg,#059669,#047857);">Sign In as Committee Member</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Login Page (/login)</strong> — Two-tab login system. The top half shows the standard <strong>Email Login</strong> for staff and citizens. The bottom half shows the <strong>Committee ID tab</strong>, used exclusively by Community Committee members using their HSC-CC-… ID assigned by their District Officer. Both tabs share the same password field. The "Remember Me" option extends the session to 365 days.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 2 — Citizen Dashboard ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 2 <span class="badge">Citizen</span> Citizen Dashboard</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/dashboard</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-dash">
+        <div class="mock-dash-header">
+          <h4>👋 Good Morning, Sarah — Kampala District</h4>
+          <p>Citizen Account &nbsp;·&nbsp; Water Reporter &nbsp;·&nbsp; Joined March 2026</p>
+        </div>
+        <div class="mock-kpi-row">
+          <div class="mock-kpi"><div class="val" style="color:#dc2626;">3</div><div class="lbl">Active Alerts</div></div>
+          <div class="mock-kpi"><div class="val" style="color:#2563eb;">7</div><div class="lbl">My Reports</div></div>
+          <div class="mock-kpi"><div class="val" style="color:#16a34a;">24</div><div class="lbl">Water Sources</div></div>
+          <div class="mock-kpi"><div class="val" style="color:#d97706;">2</div><div class="lbl">Unread Alerts</div></div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Quick Actions</div>
+        <div class="mock-actions">
+          <div class="mock-action"><div class="ic">📝</div>Report Issue</div>
+          <div class="mock-action"><div class="ic">🌍</div>Multilingual Report</div>
+          <div class="mock-action"><div class="ic">🔍</div>Track My Reports</div>
+          <div class="mock-action"><div class="ic">🏗️</div>Water Infrastructure</div>
+          <div class="mock-action"><div class="ic">🛡️</div>Water Network</div>
+          <div class="mock-action"><div class="ic">🗣️</div>Community Hub</div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">My Recent Reports</div>
+        <div class="mock-list-item"><span>Sewage leak near Nakasero Market</span><span class="mock-badge bg-orange">Investigating</span></div>
+        <div class="mock-list-item"><span>Broken borehole — Old Kampala</span><span class="mock-badge bg-green">Resolved</span></div>
+        <div class="mock-list-item"><span>Discoloured water — Mengo</span><span class="mock-badge bg-blue">Submitted</span></div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;margin:8px 0 5px;text-transform:uppercase;letter-spacing:0.5px;">Active District Alerts</div>
+        <div class="mock-list-item" style="background:#fef2f2;border-color:#fecaca;"><span style="color:#991b1b;">🚨 CRITICAL — Cholera risk in Rubaga Division</span><span class="mock-badge bg-red">Emergency</span></div>
+        <div class="mock-list-item" style="background:#fffbeb;border-color:#fde68a;"><span style="color:#78350f;">⚠️ WARNING — Borehole offline — Makindye</span><span class="mock-badge bg-orange">Warning</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Citizen Dashboard (/dashboard)</strong> — The first screen a citizen sees after login. Shows four KPI cards at the top (active alerts, report count, nearby water sources, unread notifications). Below are <strong>6 quick-action tiles</strong> for the most common citizen tasks. The lower panels show their recent report submissions with live status badges and any active district-level alerts that affect their area.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 3 — Staff Dashboard ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 3 <span class="badge">District Officer / Admin</span> Main Staff Dashboard</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/dashboard</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-staff-dash">
+        <div class="mock-sidebar">
+          <div class="logo">💧 HydroSense</div>
+          <div class="mock-nav-item active">📊 Dashboard</div>
+          <div class="mock-nav-item">🏗️ Infrastructure</div>
+          <div class="mock-nav-item">📡 Sensors</div>
+          <div class="mock-nav-item">🌦️ Climate</div>
+          <div class="mock-nav-item">🧪 Quality</div>
+          <div class="mock-nav-item">🛠️ Maintenance</div>
+          <div class="mock-nav-item">🏥 Health</div>
+          <div class="mock-nav-item">🚨 Emergency</div>
+          <div class="mock-nav-item">🗺️ GIS Map</div>
+          <div class="mock-nav-item">📈 Analytics</div>
+          <div class="mock-nav-item">🏛️ Governance</div>
+          <div class="mock-nav-item">🤖 AI Hub</div>
+          <div class="mock-nav-item">🏘️ Committees</div>
+        </div>
+        <div class="mock-main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div><div style="font-size:13px;font-weight:800;color:#0f172a;">District Overview — Kampala</div><div style="font-size:9px;color:#64748b;">Friday 29 May 2026 · 08:42 AM · Partly Cloudy 24°C</div></div>
+            <div style="display:flex;gap:5px;">
+              <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:4px 8px;font-size:9px;color:#dc2626;font-weight:700;">3 Emergency</div>
+              <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:4px 8px;font-size:9px;color:#ea580c;font-weight:700;">7 Critical</div>
+            </div>
+          </div>
+          <div class="mock-kpi-4">
+            <div class="mock-kpi-card c-blue"><div style="font-size:9px;color:#94a3b8;margin-bottom:3px;">Water Points</div><div class="num">142</div><div class="lab">87% Functional</div></div>
+            <div class="mock-kpi-card c-red"><div style="font-size:9px;color:#94a3b8;margin-bottom:3px;">Active Alerts</div><div class="num">18</div><div class="lab">3 Emergency</div></div>
+            <div class="mock-kpi-card c-orange"><div style="font-size:9px;color:#94a3b8;margin-bottom:3px;">Pending Tasks</div><div class="num">34</div><div class="lab">9 Overdue</div></div>
+            <div class="mock-kpi-card c-green"><div style="font-size:9px;color:#94a3b8;margin-bottom:3px;">Sensors Online</div><div class="num">91%</div><div class="lab">6 Offline</div></div>
+          </div>
+          <div class="mock-map-area">
+            <div class="map-bg"></div>
+            <div class="map-outline"></div>
+            <div class="mock-dot" style="background:#16a34a;top:40%;left:45%;"></div>
+            <div class="mock-dot" style="background:#16a34a;top:55%;left:60%;"></div>
+            <div class="mock-dot" style="background:#dc2626;top:30%;left:35%;"></div>
+            <div class="mock-dot" style="background:#d97706;top:60%;left:40%;"></div>
+            <div class="mock-dot" style="background:#16a34a;top:45%;left:70%;"></div>
+            <div class="mock-dot" style="background:#16a34a;top:70%;left:55%;"></div>
+            <div class="mock-dot" style="background:#dc2626;top:25%;left:65%;"></div>
+            <div style="position:absolute;bottom:6px;left:8px;font-size:8px;color:#475569;background:rgba(255,255,255,0.85);padding:2px 6px;border-radius:4px;">● Functional &nbsp; ● Offline &nbsp; ● Needs Repair</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Staff Dashboard (/dashboard)</strong> — Shown to District Officers, Admins, Technicians, Health Officers, Climate Scientists, and NGO Officers. Features a persistent <strong>left navigation sidebar</strong> with all accessible pages. The main area displays: the district name and live time/weather, colour-coded emergency alert counts, four KPI cards (water points, alerts, tasks, sensors), and a mini live map showing water point locations colour-coded by status. The dashboard refreshes automatically every 30 seconds.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 4 — Water Infrastructure ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 4 <span class="badge">All Roles</span> Water Infrastructure</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/water-infrastructure</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-infra">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div><div style="font-size:13px;font-weight:800;color:#0f172a;">Water Infrastructure</div><div style="font-size:9px;color:#64748b;">142 water access points · Kampala District</div></div>
+          <div style="background:#2563eb;color:white;border-radius:7px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer;">+ Add Water Point</div>
+        </div>
+        <div class="mock-filter-bar">
+          <div class="mock-filter-chip sel">All Status</div>
+          <div class="mock-filter-chip">✅ Functional</div>
+          <div class="mock-filter-chip">🔧 Needs Repair</div>
+          <div class="mock-filter-chip">❌ Non-Functional</div>
+          <div class="mock-filter-chip">Borehole</div>
+          <div class="mock-filter-chip">Protected Spring</div>
+          <div class="mock-filter-chip">Piped Tap</div>
+          <div style="flex:1;"><input style="padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;width:100%;background:#f8fafc;" placeholder="🔍 Search by name or village..." readonly/></div>
+        </div>
+        <table class="mock-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>District</th><th>Beneficiaries</th><th>Infra Score</th><th>Last Maintained</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Nakasero Borehole 1</strong><br/><span style="font-size:8px;color:#94a3b8;">Nakasero Village</span></td>
+              <td>Borehole</td>
+              <td><span class="status-dot" style="background:#16a34a;"></span>Functional</td>
+              <td>Kampala</td><td>450</td><td><span style="color:#16a34a;font-weight:700;">92/100</span></td><td>12 Mar 2026</td>
+            </tr>
+            <tr style="background:#fef2f2;">
+              <td><strong>Mengo Spring Tap</strong><br/><span style="font-size:8px;color:#94a3b8;">Mengo Ward</span></td>
+              <td>Protected Spring</td>
+              <td><span class="status-dot" style="background:#dc2626;"></span>Non-Functional</td>
+              <td>Kampala</td><td>210</td><td><span style="color:#dc2626;font-weight:700;">34/100</span></td><td>05 Jan 2026</td>
+            </tr>
+            <tr>
+              <td><strong>Rubaga Piped Tap</strong><br/><span style="font-size:8px;color:#94a3b8;">Rubaga Road</span></td>
+              <td>Piped Tap Stand</td>
+              <td><span class="status-dot" style="background:#d97706;"></span>Needs Repair</td>
+              <td>Kampala</td><td>680</td><td><span style="color:#d97706;font-weight:700;">61/100</span></td><td>28 Feb 2026</td>
+            </tr>
+            <tr>
+              <td><strong>Makindye Borehole 3</strong><br/><span style="font-size:8px;color:#94a3b8;">Makindye S/C</span></td>
+              <td>Borehole (Solar)</td>
+              <td><span class="status-dot" style="background:#16a34a;"></span>Functional</td>
+              <td>Kampala</td><td>1,200</td><td><span style="color:#16a34a;font-weight:700;">88/100</span></td><td>20 Apr 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Water Infrastructure (/water-infrastructure)</strong> — Central registry of all water access points. The filter bar lets users narrow by status (Functional / Needs Repair / Non-Functional) and type (Borehole, Spring, Piped Tap). Each row shows the <strong>Infrastructure Score</strong> (0–100) in colour — green for healthy, orange for degraded, red for critical. Admins, Officers, and Technicians see the <strong>"+ Add Water Point"</strong> button. Clicking any row opens a full detail page with sensor charts and maintenance history.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 5 — GIS Map ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 5 <span class="badge">Officers / Scientists / NGO / Committee</span> GIS Map</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/gis</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-gis">
+        <div class="mock-gis-panel">
+          <div style="font-weight:700;font-size:10px;margin-bottom:8px;color:#0f172a;">Map Layers</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+            <div style="background:#eff6ff;border:1.5px solid #2563eb;border-radius:6px;padding:5px 7px;font-size:9px;font-weight:700;color:#1e40af;">🔵 Water Points</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 7px;font-size:9px;color:#475569;">🟡 Drought Index</div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 7px;font-size:9px;color:#475569;">🔴 Flood Risk</div>
+          </div>
+          <div style="font-weight:700;font-size:10px;margin-bottom:6px;color:#0f172a;">Filter</div>
+          <select style="width:100%;padding:4px;border:1px solid #e2e8f0;border-radius:5px;font-size:9px;margin-bottom:4px;"><option>All Districts</option></select>
+          <select style="width:100%;padding:4px;border:1px solid #e2e8f0;border-radius:5px;font-size:9px;margin-bottom:10px;"><option>All Statuses</option></select>
+          <div style="font-weight:700;font-size:10px;margin-bottom:6px;color:#0f172a;">Legend</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div>Functional</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Needs Repair</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>Non-Functional</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div>Solar-Powered</div>
+          <div style="margin-top:10px;background:#f0fdf4;border-radius:6px;padding:6px;font-size:9px;color:#166534;"><strong>142 points</strong> shown<br/>124 Functional<br/>11 Needs Repair<br/>7 Non-Functional</div>
+        </div>
+        <div class="mock-gis-map">
+          <div class="map-bg"></div>
+          <div class="map-outline"></div>
+          <!-- Water point pins scattered -->
+          <div class="map-pin" style="background:#16a34a;top:30%;left:30%;"></div>
+          <div class="map-pin" style="background:#16a34a;top:40%;left:50%;"></div>
+          <div class="map-pin" style="background:#16a34a;top:55%;left:60%;"></div>
+          <div class="map-pin" style="background:#16a34a;top:65%;left:35%;"></div>
+          <div class="map-pin" style="background:#2563eb;top:35%;left:65%;"></div>
+          <div class="map-pin" style="background:#2563eb;top:70%;left:55%;"></div>
+          <div class="map-pin" style="background:#d97706;top:48%;left:42%;"></div>
+          <div class="map-pin" style="background:#d97706;top:25%;left:55%;"></div>
+          <div class="map-pin" style="background:#dc2626;top:60%;left:70%;"></div>
+          <div class="map-pin" style="background:#dc2626;top:20%;left:40%;"></div>
+          <div class="map-pin" style="background:#16a34a;top:75%;left:45%;"></div>
+          <!-- Tooltip -->
+          <div style="position:absolute;top:26%;left:46%;background:white;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:9px;box-shadow:0 2px 8px rgba(0,0,0,.1);white-space:nowrap;">
+            <div style="font-weight:700;">Nakasero Borehole 1</div>
+            <div style="color:#16a34a;">✅ Functional</div>
+            <div style="color:#64748b;">450 beneficiaries</div>
+          </div>
+          <div style="position:absolute;bottom:6px;right:8px;font-size:9px;color:white;background:rgba(15,23,42,0.6);padding:3px 7px;border-radius:4px;">Kampala District · Zoom 12</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>GIS Map (/gis)</strong> — Interactive spatial map. The left panel lets users switch between three map layers: <strong>Water Points</strong> (shown here), <strong>Drought Index</strong> (colour-coded SPI by district), and <strong>Flood Risk</strong> (risk zones). Each coloured dot represents a water point — green (functional), orange (needs repair), red (non-functional), blue (solar-powered). Hovering or clicking a pin shows a popup with the point's name, status, and beneficiary count. The legend and summary counts are always visible in the side panel.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 6 — Committee Accounts ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 6 <span class="badge">District Officer / Admin</span> Creating a Committee Account</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/committee-management</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-cm">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:800;color:#0f172a;">Community Committees</div>
+          <div style="background:#2563eb;color:white;border-radius:7px;padding:5px 12px;font-size:10px;font-weight:700;">+ Create Account</div>
+        </div>
+        <div class="mock-view-tabs">
+          <div class="mock-vtab inactive">Committees</div>
+          <div class="mock-vtab active">Committee Accounts</div>
+        </div>
+        <div class="mock-emerald-box" style="font-size:9px;margin-bottom:10px;">Committee IDs are auto-generated in the format <strong>HSC-CC-{DISTRICT}-{YEAR}-{SEQ}</strong> when you create an account. Share the ID with the member for login.</div>
+        <!-- Create account modal -->
+        <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-weight:700;font-size:11px;margin-bottom:10px;color:#0f172a;border-bottom:1px solid #f1f5f9;padding-bottom:8px;">Create Committee Member Account</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Full Name *</div><input class="mock-input" value="Namukasa Jane" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Email *</div><input class="mock-input" value="jane@kyebando.ug" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Phone</div><input class="mock-input" value="+256 771 234 567" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Temporary Password *</div><input class="mock-input" value="Hydro@2026" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">District *</div><select style="width:100%;padding:5px 7px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;background:#f8fafc;"><option>Kampala</option></select></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Committee Role</div><select style="width:100%;padding:5px 7px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;background:#f8fafc;"><option>Water Officer</option></select></div>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 9px;font-size:9px;color:#166534;margin-bottom:8px;">✅ Committee ID will be generated: <strong>HSC-CC-KAM-2026-0004</strong></div>
+          <div style="display:flex;justify-content:flex-end;gap:6px;">
+            <div style="padding:5px 12px;background:white;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;">Cancel</div>
+            <div style="padding:5px 12px;background:#2563eb;color:white;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">+ Create Account</div>
+          </div>
+        </div>
+        <!-- Existing accounts list -->
+        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Existing Committee Accounts — Kampala (3)</div>
+        <div class="mock-acct-card">
+          <div class="avatar">O</div>
+          <div class="info">
+            <div style="font-weight:700;font-size:10px;">Okello Moses</div>
+            <div style="font-size:8px;color:#64748b;">okello@kyebando.ug</div>
+            <div class="id-chip" style="display:inline-block;margin-top:3px;">HSC-CC-KAM-2026-0001</div>
+          </div>
+          <div style="text-align:right;"><div style="font-size:9px;color:#166534;font-weight:600;">Chairperson</div><div style="font-size:8px;color:#94a3b8;margin-top:2px;">Created by: Ssali David</div></div>
+        </div>
+        <div class="mock-acct-card">
+          <div class="avatar" style="background:linear-gradient(135deg,#7c3aed,#2563eb);">N</div>
+          <div class="info">
+            <div style="font-weight:700;font-size:10px;">Nakato Fatuma</div>
+            <div style="font-size:8px;color:#64748b;">nakato@makindye.ug</div>
+            <div class="id-chip" style="display:inline-block;margin-top:3px;">HSC-CC-KAM-2026-0002</div>
+          </div>
+          <div style="text-align:right;"><div style="font-size:9px;color:#166534;font-weight:600;">Secretary</div><div style="font-size:8px;color:#94a3b8;margin-top:2px;">Created by: Ssali David</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Committee Management — Accounts Tab (/committee-management)</strong> — District Officers and National Admins use this screen to create committee member accounts. The form takes basic details (name, email, phone, password, district, committee role). On submission, the system auto-generates a <strong>Committee ID</strong> (shown in the green preview box) which the member uses to log in. Existing accounts are listed below with their ID, role, and the name of the officer who created them.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 7 — Citizen Report ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 7 <span class="badge">Citizen / Committee / NGO</span> Reporting a Water Incident</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/citizen-report</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-report">
+        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:4px;">Report a Water Incident</div>
+        <div style="font-size:9px;color:#64748b;margin-bottom:10px;">Select the type of incident you are reporting. You may report anonymously.</div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Select Incident Type</div>
+        <div class="mock-incident-types">
+          <div class="mock-itype"><div class="ic">🏭</div>Water Pollution</div>
+          <div class="mock-itype sel"><div class="ic">🗑️</div>Illegal Dumping</div>
+          <div class="mock-itype"><div class="ic">💧</div>Sewage Leak</div>
+          <div class="mock-itype"><div class="ic">🌊</div>Flooding</div>
+          <div class="mock-itype"><div class="ic">⚠️</div>Env. Hazard</div>
+          <div class="mock-itype"><div class="ic">🏗️</div>Infra. Damage</div>
+          <div class="mock-itype"><div class="ic">🧪</div>Contamination</div>
+          <div class="mock-itype"><div class="ic">🏥</div>Disease Report</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">Description *</div>
+            <textarea style="width:100%;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;height:58px;color:#374151;resize:none;" readonly>Lorry dumping waste near Lubigi wetland. Started about 2 hours ago. Foul smell spreading to nearby homes.</textarea>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">Location</div>
+            <input class="mock-input" value="📍 Lubigi Wetland, Nansana" readonly style="margin-bottom:5px;"/>
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:5px 7px;font-size:8px;color:#1e40af;cursor:pointer;">📡 Use My Current Location</div>
+            <div style="margin-top:5px;display:flex;align-items:center;gap:4px;font-size:9px;color:#374151;"><input type="checkbox" readonly/> Report Anonymously</div>
+          </div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:5px;">Attach Evidence</div>
+        <div class="mock-media-bar">
+          <div class="mock-media-btn">📷 Photo</div>
+          <div class="mock-media-btn">🎥 Video</div>
+          <div class="mock-media-btn">🎤 Voice Note</div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:6px 10px;font-size:9px;display:flex;align-items:center;gap:4px;color:#166534;">✅ 2 photos attached</div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+          <div style="background:linear-gradient(135deg,#2563eb,#0891b2);color:white;border-radius:8px;padding:7px 18px;font-size:10px;font-weight:700;cursor:pointer;">🚀 Submit Report</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Citizen Report (/citizen-report)</strong> — The main reporting screen. Users first select an <strong>incident type</strong> from the 8 tiles (highlighted in blue when selected). They then write a description, set their location (manually or by GPS), and optionally attach photos, videos, or voice notes as evidence. The "Report Anonymously" checkbox hides the reporter's identity from officers. Submitted reports are immediately sent to the district officer for review and AI analysis.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 8 — Multilingual Report ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 8 <span class="badge">Citizen / Committee / NGO</span> Multilingual Report — Voice &amp; Translation</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/multilingual-report</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-ml">
+        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:4px;">Multilingual Report</div>
+        <div style="font-size:9px;color:#64748b;margin-bottom:12px;">Report in your local language. Our AI will translate your report to English automatically.</div>
+        <div class="mock-steps-nav">
+          <div class="mock-step-dot done">✓</div>
+          <div class="mock-step-line done"></div>
+          <div class="mock-step-dot active">2</div>
+          <div class="mock-step-line upcoming"></div>
+          <div class="mock-step-dot upcoming">3</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">Language</div>
+            <select style="width:100%;padding:5px 7px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;background:#f8fafc;margin-bottom:6px;"><option>Luganda (oluGanda)</option></select>
+            <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">Your Description (Luganda)</div>
+            <textarea style="width:100%;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;height:55px;color:#374151;resize:none;" readonly>Omutanda ogw'amazzi gwa Lubigi gulina bukyafu obutali bwakabi. Banaabimye emisiro ne byalo.</textarea>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:3px;">English Translation (AI)</div>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 8px;font-size:9px;color:#166534;min-height:55px;margin-bottom:6px;">"The Lubigi wetland is seriously contaminated. It has destroyed surrounding farms and nearby settlements."</div>
+            <div class="mock-translate-btn" style="display:flex;align-items:center;gap:5px;justify-content:center;margin-bottom:5px;">🌐 Re-Translate</div>
+          </div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#374151;margin-bottom:5px;">Record Voice Note</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <div class="mock-voice-btn">🎤 Record Voice</div>
+          <div style="font-size:9px;color:#94a3b8;">or type your report in the box above</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <div style="padding:6px 12px;background:white;border:1px solid #e2e8f0;border-radius:7px;font-size:10px;cursor:pointer;">← Back</div>
+          <div style="padding:6px 14px;background:#2563eb;color:white;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;">Next: Add Media →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Multilingual Report (/multilingual-report)</strong> — A 3-step guided form for citizens who prefer to report in their local language. Step 1 selects incident type; <strong>Step 2</strong> (shown here) lets the user type in their language (Luganda, Swahili, Luo, etc.) or record a voice note — Gemini AI automatically translates it to English for the right column. Step 3 attaches photos/videos. This makes the platform accessible to all Ugandans regardless of literacy or language.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 9 — Emergency Center ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 9 <span class="badge">District Officer / Health Officer / Admin</span> Emergency Center</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/emergency</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-emrg">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div><div style="font-size:13px;font-weight:800;color:#0f172a;">Emergency Center</div><div style="font-size:9px;color:#94a3b8;">Auto-refresh every 30 seconds · Last updated 08:43:17</div></div>
+          <div style="display:flex;gap:5px;">
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:4px 9px;font-size:9px;color:#dc2626;font-weight:700;">3 Emergency</div>
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:4px 9px;font-size:9px;color:#ea580c;font-weight:700;">7 Critical</div>
+            <div style="background:#2563eb;color:white;border-radius:6px;padding:4px 9px;font-size:9px;font-weight:700;cursor:pointer;">+ Create Alert</div>
+          </div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">⚡ Active Alerts</div>
+        <div class="mock-alert-card emerg">
+          <div class="mock-alert-header"><span class="alert-title">🚨 Cholera Outbreak — Rubaga Division</span><span class="mock-alert-badge badge-emerg">EMERGENCY</span></div>
+          <div class="alert-body">23 confirmed cases · 2 deaths · Suspected source: Rubaga Community Borehole. All water points in 3km radius placed under advisory.</div>
+          <div style="display:flex;gap:5px;margin-top:5px;">
+            <div style="background:#dc2626;color:white;border-radius:4px;padding:2px 8px;font-size:8px;font-weight:700;cursor:pointer;">Acknowledge</div>
+            <div style="background:white;border:1px solid #dc2626;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:8px;font-weight:700;cursor:pointer;">Resolve</div>
+          </div>
+        </div>
+        <div class="mock-alert-card critical">
+          <div class="mock-alert-header"><span class="alert-title">⚠️ Lubigi Wetland Contamination Escalated</span><span class="mock-alert-badge badge-crit">CRITICAL</span></div>
+          <div class="alert-body">Industrial waste detected. NES and NEMA field teams deployed. Citizens advised to avoid water sources in Nansana Sub-county.</div>
+          <div style="display:flex;gap:5px;margin-top:5px;">
+            <div style="background:#ea580c;color:white;border-radius:4px;padding:2px 8px;font-size:8px;font-weight:700;cursor:pointer;">Acknowledge</div>
+            <div style="background:white;border:1px solid #ea580c;color:#ea580c;border-radius:4px;padding:2px 8px;font-size:8px;font-weight:700;cursor:pointer;">Resolve</div>
+          </div>
+        </div>
+        <div class="mock-alert-card warning">
+          <div class="mock-alert-header"><span class="alert-title">🔶 Borehole Offline — Makindye S/C</span><span class="mock-alert-badge badge-warn">WARNING</span></div>
+          <div class="alert-body">Makindye Borehole 3 has been offline for 6 hours. Technician dispatched. 1,200 beneficiaries without water access.</div>
+        </div>
+        <div class="mock-alert-card info">
+          <div class="mock-alert-header"><span class="alert-title">ℹ️ Scheduled Maintenance — Nakasero Zone</span><span class="mock-alert-badge badge-info">INFO</span></div>
+          <div class="alert-body">Routine water quality testing in Nakasero zone. Minor service interruptions expected 10:00–14:00 today.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Emergency Center (/emergency)</strong> — Real-time alert management dashboard. Alerts are sorted by severity: Emergency (red border), Critical (orange), Warning (yellow), and Info (blue). Each alert shows the title, a description, affected area, and action buttons to <strong>Acknowledge</strong> (confirm receipt) or <strong>Resolve</strong> (close the alert). Officers can create new alerts using the "+ Create Alert" button. The page auto-refreshes every 30 seconds to ensure situational awareness is always current.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 10 — AI Hub ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 10 <span class="badge">Admin / Officer / Scientist / Health</span> AI Hub — Intelligence Centre</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/ai-hub</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-ai">
+        <div style="font-size:13px;font-weight:800;color:white;margin-bottom:4px;">🤖 AI Intelligence Hub</div>
+        <div style="font-size:9px;color:#64748b;margin-bottom:10px;">Powered by Gemini 2.5 Flash · Real-time risk analysis and environmental intelligence</div>
+        <div class="mock-ai-tabs">
+          <div class="mock-ai-tab active">Overview</div>
+          <div class="mock-ai-tab inactive">Live Intelligence</div>
+          <div class="mock-ai-tab inactive">Predictions</div>
+          <div class="mock-ai-tab inactive">Anomalies</div>
+          <div class="mock-ai-tab inactive">Climate AI</div>
+          <div class="mock-ai-tab inactive">Smart Alerts</div>
+          <div class="mock-ai-tab inactive">Decision Support</div>
+          <div class="mock-ai-tab inactive">AI Reports</div>
+          <div class="mock-ai-tab inactive">Conversations</div>
+        </div>
+        <div class="mock-ai-kpi">
+          <div class="mock-ai-kpi-card"><div class="num">3</div><div class="lab">Critical Alerts Active</div></div>
+          <div class="mock-ai-kpi-card"><div class="num warn">12</div><div class="lab">High-Risk Water Points</div></div>
+          <div class="mock-ai-kpi-card"><div class="num safe">78%</div><div class="lab">System Health Score</div></div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">AI Risk Assessment — Top Priority Incidents</div>
+        <div class="mock-ai-list-item">
+          <div style="width:24px;height:24px;border-radius:50%;background:#dc2626;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;flex-shrink:0;">!</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:9px;color:white;">Cholera Outbreak — Rubaga</div>
+            <div style="font-size:8px;color:#64748b;">AI Category: Health Emergency · Confidence: 94%</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:#f87171;font-weight:700;font-size:10px;">92/100</div>
+            <div style="font-size:8px;color:#64748b;">Risk Score</div>
+          </div>
+          <div style="width:60px;"><div class="risk-bar"><div class="risk-fill" style="width:92%;background:#dc2626;"></div></div></div>
+        </div>
+        <div class="mock-ai-list-item">
+          <div style="width:24px;height:24px;border-radius:50%;background:#ea580c;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;flex-shrink:0;">⚠</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:9px;color:white;">Lubigi Wetland Contamination</div>
+            <div style="font-size:8px;color:#64748b;">AI Category: Environmental Pollution · Confidence: 88%</div>
+          </div>
+          <div style="text-align:right;"><div style="color:#fbbf24;font-weight:700;font-size:10px;">79/100</div><div style="font-size:8px;color:#64748b;">Risk Score</div></div>
+          <div style="width:60px;"><div class="risk-bar"><div class="risk-fill" style="width:79%;background:#d97706;"></div></div></div>
+        </div>
+        <div class="mock-ai-list-item">
+          <div style="width:24px;height:24px;border-radius:50%;background:#d97706;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white;flex-shrink:0;">△</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:9px;color:white;">Makindye Borehole Failure Risk</div>
+            <div style="font-size:8px;color:#64748b;">AI Category: Infrastructure Failure · Confidence: 71%</div>
+          </div>
+          <div style="text-align:right;"><div style="color:#fbbf24;font-weight:700;font-size:10px;">63/100</div><div style="font-size:8px;color:#64748b;">Risk Score</div></div>
+          <div style="width:60px;"><div class="risk-bar"><div class="risk-fill" style="width:63%;background:#fbbf24;"></div></div></div>
+        </div>
+        <div style="margin-top:10px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px;font-size:9px;">
+          <div style="color:#4ade80;font-weight:700;margin-bottom:4px;">🤖 Gemini AI Recommendation</div>
+          <div style="color:#94a3b8;line-height:1.6;">Priority 1: Dispatch health team to Rubaga immediately. Quarantine Rubaga Community Borehole pending quality test. Priority 2: Coordinate with NEMA on Lubigi enforcement action. Estimated risk-reduction window: 48 hours.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>AI Hub (/ai-hub)</strong> — Powered by <strong>Gemini 2.5 Flash</strong>. The Overview tab (shown) displays three KPI cards: critical alerts, high-risk water points, and overall system health score. Below, the AI Risk Assessment table lists the most urgent incidents ranked by AI-generated risk score (0–100) with confidence percentage. Each incident includes the AI's category classification. At the bottom, a <strong>Gemini AI Recommendation</strong> panel provides actionable next steps. Other tabs offer Predictions, Anomaly Detection, Climate AI, Smart Alerts, and an AI Conversation workspace.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 11 — Analytics ─────────── -->
+<div class="ss-grid">
+<div class="screen-wrap" style="margin-bottom:0;">
+  <div class="screen-label">Screen 11 <span class="badge">Admin / Officer / Scientist</span> Analytics</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">/analytics</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-analytics">
+        <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:8px;">Analytics &amp; Predictions</div>
+        <div style="display:flex;gap:4px;margin-bottom:10px;">
+          <div style="background:#2563eb;color:white;border-radius:6px;padding:4px 10px;font-size:9px;font-weight:700;">Overview</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Predictions</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Climate</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Security</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><div style="font-size:18px;font-weight:800;color:#2563eb;">73%</div><div style="font-size:8px;color:#94a3b8;">Water Coverage</div></div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><div style="font-size:18px;font-weight:800;color:#16a34a;">2.1M</div><div style="font-size:8px;color:#94a3b8;">People Served</div></div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><div style="font-size:18px;font-weight:800;color:#d97706;">67/100</div><div style="font-size:8px;color:#94a3b8;">Avg Quality Score</div></div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:7px;padding:8px;"><div style="font-size:18px;font-weight:800;color:#dc2626;">147</div><div style="font-size:8px;color:#94a3b8;">Health Cases (Active)</div></div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;margin-bottom:4px;">6-Month Trend</div>
+        <div class="mock-chart-bar">
+          <div class="mock-bar" style="height:45%;"></div>
+          <div class="mock-bar" style="height:60%;"></div>
+          <div class="mock-bar" style="height:52%;"></div>
+          <div class="mock-bar" style="height:75%;"></div>
+          <div class="mock-bar" style="height:68%;"></div>
+          <div class="mock-bar" style="height:80%;"></div>
+          <div class="mock-bar b-green" style="height:38%;"></div>
+          <div class="mock-bar b-green" style="height:42%;"></div>
+          <div class="mock-bar b-green" style="height:55%;"></div>
+          <div class="mock-bar b-orange" style="height:30%;"></div>
+          <div class="mock-bar b-orange" style="height:25%;"></div>
+          <div class="mock-bar b-orange" style="height:20%;"></div>
+        </div>
+        <div style="display:flex;gap:10px;font-size:8px;color:#64748b;"><span>🔵 Maintenance</span><span>🟢 Quality Tests</span><span>🟡 Incidents</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Analytics (/analytics)</strong> — 4-tab intelligence dashboard. Overview (shown) displays national KPIs and 6-month trend charts comparing maintenance activity, quality tests, and incident counts over time.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── SCREEN 12 — Governance ─────────── -->
+<div class="screen-wrap" style="margin-bottom:0;">
+  <div class="screen-label">Screen 12 <span class="badge">Admin / Officer</span> Governance &amp; Audit</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">/governance</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-gov">
+        <div style="font-size:12px;font-weight:800;color:#0f172a;margin-bottom:8px;">Governance &amp; Transparency</div>
+        <div style="display:flex;gap:4px;margin-bottom:10px;">
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Budget</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Performance</div>
+          <div style="background:white;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;font-size:9px;color:#64748b;">Transparency</div>
+          <div style="background:#2563eb;color:white;border-radius:6px;padding:4px 10px;font-size:9px;font-weight:700;">Audit Log</div>
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Recent Audit Entries</div>
+        <div class="mock-audit-row">
+          <div class="mock-audit-action aa-resolve">RESOLVE</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:9px;">Alert #204 resolved — Rubaga</div><div style="font-size:8px;color:#94a3b8;">by Ssali David (District Officer)</div></div>
+          <div style="font-size:8px;color:#94a3b8;">08:41 AM</div>
+        </div>
+        <div class="mock-audit-row">
+          <div class="mock-audit-action aa-create">CREATE</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:9px;">Committee account HSC-CC-KAM-2026-0004</div><div style="font-size:8px;color:#94a3b8;">by Ssali David (District Officer)</div></div>
+          <div style="font-size:8px;color:#94a3b8;">08:33 AM</div>
+        </div>
+        <div class="mock-audit-row">
+          <div class="mock-audit-action aa-update">UPDATE</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:9px;">Water point #87 status → Functional</div><div style="font-size:8px;color:#94a3b8;">by Opio James (Technician)</div></div>
+          <div style="font-size:8px;color:#94a3b8;">08:17 AM</div>
+        </div>
+        <div class="mock-audit-row">
+          <div class="mock-audit-action aa-create">REPORT</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:9px;">Citizen report #1092 — Illegal Dumping, Nansana</div><div style="font-size:8px;color:#94a3b8;">by Anonymous citizen</div></div>
+          <div style="font-size:8px;color:#94a3b8;">07:59 AM</div>
+        </div>
+        <div class="mock-audit-row">
+          <div class="mock-audit-action aa-delete">DELETE</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:9px;">Duplicate water point #91 removed</div><div style="font-size:8px;color:#94a3b8;">by Muzoora Coleb (National Admin)</div></div>
+          <div style="font-size:8px;color:#94a3b8;">07:45 AM</div>
+        </div>
+        <div style="margin-top:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:7px;font-size:9px;color:#78350f;">
+          📋 Full audit log is tamper-evident and includes all 8 action types: CREATE · UPDATE · DELETE · APPROVE · RESOLVE · DISPATCH · REPORT · PUBLISH
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Governance — Audit Tab (/governance)</strong> — Every action on the platform is recorded here. Each row shows the action type (colour-coded), what was done, who did it, and when. This gives administrators and oversight bodies a complete tamper-evident trail of all system activity.
+  </div>
+</div>
+</div><!-- /.ss-grid -->
+
+<div class="page-break"></div>
+
+<!-- ─────────────────────────────────── SCREEN 13 — Registration ─────────── -->
+<div class="screen-wrap">
+  <div class="screen-label">Screen 13 <span class="badge">Public</span> Citizen Registration</div>
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <div class="url">veltrix-4r2c.vercel.app/register</div>
+    </div>
+    <div class="screen-body">
+      <div class="mock-login">
+        <div class="mock-login-left">
+          <div class="logo"><span style="font-size:20px;">💧</span><div><div style="font-weight:700;font-size:12px;">HydroSense</div><div style="font-size:8px;opacity:0.7;">Ministry of Water &amp; Environment</div></div></div>
+          <h3 style="font-size:13px;">Join HydroSense</h3>
+          <p style="font-size:9px;margin-top:6px;line-height:1.6;opacity:0.75;">Register to report water issues, track environmental incidents, and help protect Uganda's water resources.</p>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;">
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">📊 Report water issues from your phone</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">📍 Track report status in real time</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">🔔 Receive alerts about your area</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:5px 7px;font-size:8px;">🌍 10 local languages supported</div>
+          </div>
+          <div style="margin-top:12px;background:rgba(255,255,255,0.1);border-radius:7px;padding:9px;font-size:8px;line-height:1.5;opacity:0.85;">
+            <strong>Are you a Community Committee member?</strong><br/>Contact your District Water Office to get your access credentials. Committee accounts are not self-registered.
+          </div>
+        </div>
+        <div class="mock-login-right" style="padding:16px;">
+          <div style="font-weight:800;font-size:13px;margin-bottom:2px;">Create Citizen Account</div>
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:10px;">Join HydroSense to report and track water issues in your community</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Full Name *</div><input class="mock-input" value="Nakamya Grace" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Phone Number *</div><input class="mock-input" value="+256 772 801 432" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Email Address *</div><input class="mock-input" value="grace@gmail.com" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">District *</div><select style="width:100%;padding:5px 7px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;background:#f8fafc;"><option>Wakiso</option></select></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Sub-County</div><input class="mock-input" value="Nansana" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Village / Area</div><input class="mock-input" value="Kyebando" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Preferred Language</div><select style="width:100%;padding:5px 7px;border:1px solid #e2e8f0;border-radius:6px;font-size:9px;background:#f8fafc;"><option>Luganda (oluGanda)</option></select></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Password *</div><input class="mock-input" type="password" value="••••••••" readonly/></div>
+            <div><div style="font-size:8px;font-weight:600;color:#374151;margin-bottom:2px;">Confirm Password *</div><input class="mock-input" type="password" value="••••••••" readonly/></div>
+          </div>
+          <div class="mock-btn">Create Citizen Account</div>
+          <div class="mock-hint" style="margin-top:6px;">Already have an account? <span style="color:#2563eb;">Sign In</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="screen-caption">
+    <strong>Citizen Registration (/register)</strong> — The public self-registration page for citizens. The left panel explains the platform's benefits and includes a note directing committee members to contact their District Water Office instead. The form collects: name, phone, email, district (from a searchable dropdown of all 141 Uganda districts), sub-county, village, preferred language, and password. On submission, the account is created and the user is automatically logged in and redirected to their dashboard.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+</div><!-- /.wrapper -->
+
+<footer>
+  <strong>HydroSense</strong> &nbsp;·&nbsp; Ministry of Water &amp; Environment, Republic of Uganda<br/>
+  User Manual v1.0 &nbsp;·&nbsp; May 2026 &nbsp;·&nbsp; Confidential — Internal Use Only<br/>
+  <span style="font-size:10px;opacity:0.6;margin-top:6px;display:block;">Stack: React 18 · TypeScript · Node.js · Express · PostgreSQL · Gemini 2.5 Flash AI · Vercel · GitHub</span>
+</footer>
+
+</body>
+</html>

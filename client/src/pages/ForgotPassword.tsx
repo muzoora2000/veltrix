@@ -152,13 +152,13 @@ export default function ForgotPassword() {
           {step === 'email' && (
             <>
               <h2 className="text-2xl font-bold text-gray-900 mb-1">Forgot Password</h2>
-              <p className="text-gray-500 text-sm mb-6">Enter your email to receive a password reset OTP</p>
+              <p className="text-gray-500 text-sm mb-6">Enter your email, phone, or Committee ID to receive a password reset OTP</p>
               <form onSubmit={handleSendOTP} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email, Phone, or Committee ID</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="your@email.go.ug" required />
+                    <input type="text" value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="your@email.go.ug or HSC-CC-..." required />
                   </div>
                 </div>
                 <button type="submit" disabled={loading || !email}

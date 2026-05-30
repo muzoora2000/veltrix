@@ -233,10 +233,21 @@ router.post('/send-otp', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   const db = getDb();
   const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const { email, otp } = req.body;
-  if (!email || !otp) return res.status(400).json({ success: false, error: 'Email and OTP code are required' });
+  const { email, identifier, otp } = req.body;
+  const rawIdentifier = email || identifier;
+  if (!rawIdentifier || !otp) return res.status(400).json({ success: false, error: 'Identifier and OTP code are required' });
 
-  const emailKey = email.toLowerCase().trim();
+  let emailKey = rawIdentifier.toLowerCase().trim();
+  
+  // Resolve identifier to email if it's a Phone or Committee ID
+  if (/^HSC-/i.test(emailKey)) {
+    const user = await db.prepare('SELECT email FROM users WHERE committee_id = ?').get(emailKey.toUpperCase());
+    if (user) emailKey = user.email;
+  } else if (/^(\+256|0)[7-9]\d{8}$/.test(emailKey.replace(/[\s-]/g, ''))) {
+    const phoneNum = emailKey.replace(/[\s-]/g, '');
+    const user = await db.prepare('SELECT email FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phoneNum);
+    if (user) emailKey = user.email;
+  }
 
   /* Find the most recent unused, unexpired record */
   const record = await db.prepare(`
@@ -674,19 +685,30 @@ router.delete('/users/:id', authMiddleware, requireRole('national_admin'), async
 
 /* ── Forgot Password (send OTP) ── */
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+  const { email, identifier } = req.body;
+  const rawIdentifier = email || identifier;
+  if (!rawIdentifier) return res.status(400).json({ success: false, error: 'Email, Phone, or Committee ID is required' });
 
   try {
     const db = getDb();
-    const emailKey = email.toLowerCase().trim();
+    let emailKey = rawIdentifier.toLowerCase().trim();
+
+    // Resolve identifier to email
+    if (/^HSC-/i.test(emailKey)) {
+      const user = await db.prepare('SELECT email FROM users WHERE committee_id = ?').get(emailKey.toUpperCase());
+      if (user) emailKey = user.email;
+    } else if (/^(\+256|0)[7-9]\d{8}$/.test(emailKey.replace(/[\s-]/g, ''))) {
+      const phoneNum = emailKey.replace(/[\s-]/g, '');
+      const user = await db.prepare('SELECT email FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phoneNum);
+      if (user) emailKey = user.email;
+    }
 
     const user = await db.prepare(
       'SELECT id, name, email, phone FROM users WHERE email = ?'
     ).get(emailKey);
 
     if (!user) {
-      return res.status(404).json({ success: false, error: 'No account found with this email address' });
+      return res.status(404).json({ success: false, error: 'No account found with this identifier' });
     }
 
     const ip  = req.ip || req.connection?.remoteAddress || 'unknown';
@@ -726,12 +748,23 @@ router.post('/forgot-password', async (req, res) => {
 
 /* ── Reset Password (with OTP validation) ── */
 router.post('/reset-password', async (req, res) => {
-  const { email, otp, password } = req.body;
-  if (!email || !otp || !password) return res.status(400).json({ success: false, error: 'Email, OTP, and new password are required' });
+  const { email, identifier, otp, password } = req.body;
+  const rawIdentifier = email || identifier;
+  if (!rawIdentifier || !otp || !password) return res.status(400).json({ success: false, error: 'Identifier, OTP, and new password are required' });
   if (password.length < 6) return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
 
   const db = await getDb();
-  const emailKey = email.toLowerCase().trim();
+  let emailKey = rawIdentifier.toLowerCase().trim();
+
+  if (/^HSC-/i.test(emailKey)) {
+    const user = await db.prepare('SELECT email FROM users WHERE committee_id = ?').get(emailKey.toUpperCase());
+    if (user) emailKey = user.email;
+  } else if (/^(\+256|0)[7-9]\d{8}$/.test(emailKey.replace(/[\s-]/g, ''))) {
+    const phoneNum = emailKey.replace(/[\s-]/g, '');
+    const user = await db.prepare('SELECT email FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phoneNum);
+    if (user) emailKey = user.email;
+  }
+
   const record = await db.prepare(`
     SELECT * FROM otp_codes
     WHERE email = ? AND purpose = 'password_reset' AND used = 0 AND expires_at > NOW()
