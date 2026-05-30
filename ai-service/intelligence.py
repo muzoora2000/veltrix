@@ -10,6 +10,9 @@ import math
 import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+import json
+
+from multi_modal import _call_gemini_text
 
 DB_PATH = os.getenv("DB_PATH", "../server/watermonitor.db")
 
@@ -473,7 +476,84 @@ def _anomaly_recommendation(sensor_type: str, direction: str, severity: str) -> 
 # 5. CLIMATE AI FORECAST
 # ─────────────────────────────────────────────
 
-def generate_climate_forecast(district: Optional[str] = None) -> Dict:
+async def generate_climate_forecast(district: Optional[str] = None) -> Dict:
+    # 1. First, generate the mathematical algorithmic baseline
+    base_forecast = _generate_algorithmic_forecast(district)
+    
+    # 2. Extract historical data to provide as context to the AI
+    conn = get_db()
+    try:
+        params = [district, district] if district else [None, None]
+        drought = conn.execute("""
+            SELECT spi_value, severity, timestamp
+            FROM drought_index
+            WHERE (? IS NULL OR district = ?)
+            ORDER BY timestamp DESC
+            LIMIT 15
+        """, params).fetchall()
+        climate = conn.execute("""
+            SELECT rainfall_mm, temperature_max, timestamp
+            FROM climate_readings
+            WHERE (? IS NULL OR district = ?)
+            ORDER BY timestamp DESC
+            LIMIT 15
+        """, params).fetchall()
+        drought_history = rows_to_dicts(drought)
+        climate_history = rows_to_dicts(climate)
+    finally:
+        conn.close()
+
+    area = district if district else "National (All Districts)"
+    
+    # 3. Create the hyper-local AI prompt
+    prompt = f"""You are the Hydro AI Climate Forecaster.
+Generate a hyper-local 6-month climate forecast for Uganda area: {area}.
+
+Historical context for this area:
+- Recent Drought Indexes: {json.dumps(drought_history)}
+- Recent Climate Readings: {json.dumps(climate_history)}
+- Mathematical Baseline Averages: {json.dumps(base_forecast['summary'])}
+
+Analyze these specific patterns for {area}. Take into account Uganda's two rainy seasons (Mar-May, Oct-Dec) but adjust to local trends shown in the history.
+Return your forecast strictly as a JSON object matching this exact schema:
+{{
+  "summary": {{
+    "avg_spi": <float>,
+    "avg_rainfall_mm": <float>,
+    "avg_temp_max_c": <float>,
+    "spi_trend": <"worsening"|"stable"|"improving">,
+    "outlook": <"extreme_drought"|"severe_drought"|"moderate_drought"|"mild_drought"|"normal"|"above_normal"|"wet">,
+    "drought_severity_distribution": <dict mapping string to int counts>
+  }},
+  "forecast": [
+    {{
+      "month": <3-letter abbreviation, e.g., "Jun">,
+      "predicted_rainfall_mm": <float>,
+      "predicted_spi": <float>,
+      "drought_risk": <same enum as outlook>,
+      "confidence": <int 0-100>
+    }},
+    ... // exactly 6 upcoming months
+  ],
+  "recommendations": [
+    <string tailored specifically to {area}>,
+    ... // up to 5 recommendations
+  ]
+}}"""
+
+    # 4. Request generation and parse
+    try:
+        ai_response = await _call_gemini_text(prompt)
+        if "error" not in ai_response and "summary" in ai_response and "forecast" in ai_response:
+            return ai_response
+    except Exception as e:
+        print(f"Error in Gemini forecast for {area}: {e}")
+
+    # Fallback if AI fails
+    return base_forecast
+
+
+def _generate_algorithmic_forecast(district: Optional[str] = None) -> Dict:
     conn = get_db()
     try:
         params = [district, district] if district else [None, None]
@@ -640,7 +720,7 @@ def generate_smart_alerts(district: Optional[str] = None) -> List[Dict]:
 # 7. ROLE-BASED AI DASHBOARD
 # ─────────────────────────────────────────────
 
-def get_dashboard(role: str, district: Optional[str] = None) -> Dict:
+async def get_dashboard(role: str, district: Optional[str] = None) -> Dict:
     conn = get_db()
     try:
         # Basic counts
@@ -658,7 +738,7 @@ def get_dashboard(role: str, district: Optional[str] = None) -> Dict:
 
         anomalies = detect_anomalies(district)
         smart_alerts  = generate_smart_alerts(district)
-        climate       = generate_climate_forecast(district)
+        climate       = await generate_climate_forecast(district)
 
         base = {
             "role":              role,

@@ -608,9 +608,9 @@ def anomalies(district: Optional[str] = Query(None)):
 
 
 @app.get("/ai/climate/forecast")
-def climate_forecast(district: Optional[str] = Query(None)):
+async def climate_forecast(district: Optional[str] = Query(None)):
     try:
-        data = generate_climate_forecast(district)
+        data = await generate_climate_forecast(district)
         return {"status": "ok", "district": district, **data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -626,7 +626,7 @@ def smart_alerts(district: Optional[str] = Query(None)):
 
 
 @app.get("/ai/dashboard/{role}")
-def ai_dashboard(role: str, district: Optional[str] = Query(None)):
+async def ai_dashboard(role: str, district: Optional[str] = Query(None)):
     valid_roles = {
         "national_admin", "district_officer", "community_committee",
         "citizen", "ngo_officer", "technician", "health_officer", "climate_scientist",
@@ -634,7 +634,8 @@ def ai_dashboard(role: str, district: Optional[str] = Query(None)):
     if role not in valid_roles:
         raise HTTPException(status_code=400, detail=f"Unknown role: {role}")
     try:
-        return {"status": "ok", **get_dashboard(role, district)}
+        dashboard = await get_dashboard(role, district)
+        return {"status": "ok", **dashboard}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -652,7 +653,7 @@ class ReportRequest(BaseModel):
 @app.post("/ai/reports/generate")
 async def generate_report(req: ReportRequest):
     try:
-        dashboard_data = get_dashboard(req.role, req.district)
+        dashboard_data = await get_dashboard(req.role, req.district)
         ai_sum = dashboard_data.get("ai_summary", {})
         sys_stats = dashboard_data.get("system_stats", {})
         climate = dashboard_data.get("climate_outlook", {})
