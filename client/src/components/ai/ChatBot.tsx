@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X, Send, Bot, User, Loader2, Sparkles, ChevronDown,
   ImagePlus, AlertCircle, Plus, MessageSquare, Trash2, History,
-  RefreshCw, Clock, Activity,
+  RefreshCw, Clock, Activity, Camera,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAIService } from '../../contexts/AIServiceContext';
@@ -86,6 +86,7 @@ export default function ChatBot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   const retryDataRef = useRef<{ text: string; capturedBase64: string | null; capturedMime: string; capturedPreview: string | null } | null>(null);
   const elapsedIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -747,6 +748,16 @@ export default function ChatBot() {
             <div className="flex gap-2 items-center bg-gray-50 rounded-2xl border border-gray-200 px-3 py-2 focus-within:border-emerald-400 focus-within:bg-white transition-all">
               <button
                 type="button"
+                title="Take photo"
+                onClick={() => cameraRef.current?.click()}
+                className="text-gray-400 hover:text-emerald-600 transition-colors flex-shrink-0"
+                disabled={loading}
+              >
+                <Camera size={18} />
+              </button>
+
+              <button
+                type="button"
                 title="Upload image"
                 onClick={() => fileRef.current?.click()}
                 className="text-gray-400 hover:text-emerald-600 transition-colors flex-shrink-0"
@@ -756,6 +767,7 @@ export default function ChatBot() {
               </button>
 
               <input ref={fileRef} type="file" accept={ACCEPTED} onChange={handleFileChange} className="hidden" />
+              <input ref={cameraRef} type="file" accept={ACCEPTED} capture="environment" onChange={handleFileChange} className="hidden" />
 
               <input
                 ref={inputRef}

@@ -40,7 +40,7 @@ ROLE-AWARE BEHAVIOUR: Adapt your tone based on the user's role. national_admin =
 
 RESPONSE FORMATTING: Use **bold** for key figures. Use bullet points for lists. Use numbered steps for procedures. Keep responses concise but complete.
 
-IMAGE ANALYSIS: For any images (pump photos, water quality visuals, maps, documents), provide detailed environmental assessment with risk level and recommended action.
+IMAGE ANALYSIS: For any images (pump photos, water quality visuals, health hazard/disease indicators, maps, documents), provide a comprehensive assessment covering infrastructure, water quality, and public health risks, along with actionable recommendations.
 
 Generate structured situation reports when asked: include Executive Summary, Key Metrics, Priority Issues, Recommendations, and SDG 6 Alignment."""
 
