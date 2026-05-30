@@ -18,17 +18,18 @@ GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini
 async def analyze_image(
     image_data: str, image_mime: str, context: str = ""
 ) -> Dict[str, Any]:
-    prompt = f"""Analyze this environmental/water infrastructure image in detail.
+    prompt = f"""Analyze this environmental, water, or public health infrastructure image in detail.
 Context: {context}
 
 Return a JSON object with:
 - "description": detailed description of what is visible
-- "issues": list of detected issues (e.g., water contamination, infrastructure damage, pollution)
+- "issues": list of detected issues (e.g., water contamination, infrastructure damage, pollution, health hazards)
 - "severity": "low", "medium", "high", or "critical"
 - "recommendation": suggested action
 - "tags": array of relevant keywords
 - "water_quality_indicators": any visible signs about water quality (color, clarity, algae, etc.)
 - "infrastructure_condition": assessment of any visible infrastructure
+- "public_health_risks": any visible health hazards or disease vectors (e.g., stagnant water, waste)
 """
     return await _call_gemini_vision(prompt, image_data, image_mime)
 
