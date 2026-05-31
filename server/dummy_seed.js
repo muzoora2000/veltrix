@@ -25,10 +25,7 @@ const dbUrl = process.env.DATABASE_URL;
   const hash = bcrypt.hashSync('walter123', 10);
   
   await client.query(`INSERT INTO users (name, email, password_hash, role, district, organization, active) VALUES 
-    ('Walter Olum', 'walter.olum@hydrosense.ug', $1, 'national_admin', 'National', 'MoWE', 1),
-    ('Sarah Kibirige', 'sarah.k@health.ug', $1, 'health_officer', 'Kampala', 'MoH', 1),
-    ('John Okello', 'john.tech@water.ug', $1, 'technician', 'Gulu', 'NWSC', 1),
-    ('Peter Kato', 'kato.climate@env.ug', $1, 'climate_scientist', 'National', 'UNMA', 1)`, [hash]);
+    ('Walter Olum', 'walter.olum@hydrosense.ug', $1, 'national_admin', 'National', 'MoWE', 1)`, [hash]);
 
   await client.query(`INSERT INTO water_points (name, district, type, lat, lng, status, installed_date, pump_type, yield_lph, solar_powered) VALUES
     ('Bwaise Community Tap', 'Kampala', 'borehole', 0.35, 32.56, 'functional', '2018-05-15', 'India Mark II', 1200, 0),
