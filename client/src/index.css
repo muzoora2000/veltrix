@@ -29,6 +29,19 @@
     color: #f3f4f6 !important; /* gray-100 */
     background-color: #1f2937; /* gray-800 */
   }
+
+  /* Fix Chrome autofill text color to ensure typing is readable */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #f9fafb inset !important;
+      -webkit-text-fill-color: #111827 !important;
+  }
+  .dark input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 30px #1f2937 inset !important;
+      -webkit-text-fill-color: #f3f4f6 !important;
+  }
 }
 
 @layer components {
@@ -39,7 +52,7 @@
   .btn-secondary { @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200; }
   .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
   .btn-success { @apply btn bg-green-600 text-white hover:bg-green-700; }
-  .input { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200; }
+  .input { @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200; }
   .label { @apply block text-sm font-semibold text-gray-700 mb-1.5; }
   .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold; }
   .stat-card { @apply card hover:shadow-md transition-shadow cursor-default; }
