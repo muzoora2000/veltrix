@@ -22,26 +22,26 @@
 
 <br />
 
-[🚀 Live Demo](https://veltrix-4r2c.vercel.app) &nbsp;·&nbsp; [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) &nbsp;·&nbsp; [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
+<a href="https://veltrix-4r2c.vercel.app" style="text-decoration: none;">🚀 Live Demo</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">🐛 Report Bug</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">💡 Request Feature</a>
 
 </div>
 
----
+
 
 ## 📌 Table of Contents
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Tech Stack](#-tech-stack)
-- [User Roles & Access](#-user-roles--access)
-- [Modules](#-modules)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Deployment](#-deployment)
-- [Authors](#-authors)
+- <a href="#-overview" style="text-decoration: none;">Overview</a>
+- <a href="#-key-features" style="text-decoration: none;">Key Features</a>
+- <a href="#-system-architecture" style="text-decoration: none;">System Architecture</a>
+- <a href="#-tech-stack" style="text-decoration: none;">Tech Stack</a>
+- <a href="#-user-roles--access" style="text-decoration: none;">User Roles & Access</a>
+- <a href="#-modules" style="text-decoration: none;">Modules</a>
+- <a href="#-getting-started" style="text-decoration: none;">Getting Started</a>
+- <a href="#-environment-variables" style="text-decoration: none;">Environment Variables</a>
+- <a href="#-deployment" style="text-decoration: none;">Deployment</a>
+- <a href="#-authors" style="text-decoration: none;">Authors</a>
 
----
+
 
 ## 🌍 Overview
 
@@ -110,11 +110,11 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 - **Full audit trail** — every CREATE, UPDATE, DELETE, APPROVE, RESOLVE, DISPATCH action logged with actor and timestamp
 - **OTP password reset** — 6-digit OTP delivered via Resend, bcrypt-hashed in DB, single-use, 5-minute expiry
 
----
+
 
 ## 🏗️ System Architecture
 
-```
+<pre>
 ┌─────────────────────────────────────────────────────────────────┐
 │                    HYDROSENSE PLATFORM                          │
 ├──────────────────┬──────────────────────┬───────────────────────┤
@@ -131,7 +131,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
                    │   Shared by both     │
                    │   Node.js + Python   │
                    └─────────────────────┘
-```
+</pre>
 
 **Request flow:**
 1. Browser → Vercel (static assets)
@@ -139,7 +139,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 3. `/api/ai/*` → `hydrosense-server` proxies to → `hydrosense-ai`
 4. Socket.IO → direct WebSocket to `hydrosense-server`
 
----
+
 
 ## 🛠️ Tech Stack
 
@@ -161,7 +161,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 | **Climate Data** | Open-Meteo Archive API (free, no key) |
 | **Deployment** | Vercel (frontend), Render (Node + Python) |
 
----
+
 
 ## 👤 User Roles & Access
 
@@ -179,7 +179,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 ### How committee accounts work
 District Officers create committee member accounts via **Committee Management → Committee Accounts**. The system auto-generates a unique ID (`HSC-CC-KAM-2026-0001`). The member logs in at the **Committee ID tab** on the login page using that ID and the temporary password assigned by the officer.
 
----
+
 
 ## 📦 Modules
 
@@ -210,7 +210,7 @@ District Officers create committee member accounts via **Committee Management �
 | Incident Analysis | AI batch analysis of pending reports | Admin, Officer, Health, Climate |
 | Profile | Name, phone, avatar, password change — every user | All |
 
----
+
 
 ## 🚀 Getting Started
 
@@ -222,7 +222,7 @@ District Officers create committee member accounts via **Committee Management �
 
 ### Local installation
 
-```bash
+<pre>
 # 1. Clone
 git clone https://github.com/muzoora2000/veltrix.git
 cd veltrix
@@ -238,13 +238,13 @@ cd ../client && npm install
 cd ../ai-service
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
+</pre>
 
 ### Running locally
 
 Open three terminals:
 
-```bash
+<pre>
 # Terminal 1 — Backend (port 5000)
 cd server && npm run dev
 
@@ -253,11 +253,11 @@ cd client && npm run dev
 
 # Terminal 3 — AI Service (port 8000)
 cd ai-service && uvicorn main:app --reload --port 8000
-```
+</pre>
 
 App available at **http://localhost:5173**
 
----
+
 
 ## 🔐 Environment Variables
 
@@ -281,7 +281,7 @@ App available at **http://localhost:5173**
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `DATABASE_URL` | PostgreSQL connection string |
 
----
+
 
 ## ☁️ Deployment
 
@@ -300,7 +300,7 @@ HydroSense runs across three cloud services:
 
 **hydrosense-ai:** `DATABASE_URL`, `GEMINI_API_KEY`
 
----
+
 
 ## 👨‍💻 Authors
 
@@ -314,7 +314,7 @@ Cavendish University Uganda
 
 </div>
 
----
+
 
 <div align="center">
 
@@ -323,4 +323,3 @@ Cavendish University Uganda
 ⭐ Star this repository if you believe in what it stands for.
 
 </div>
-
