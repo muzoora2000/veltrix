@@ -178,7 +178,7 @@ export default function OTPVerification() {
                   type="text"
                   value={otp}
                   onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full text-center text-3xl tracking-[0.5em] px-4 py-4 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-mono"
+                  className="w-full text-center text-3xl tracking-[0.5em] px-4 py-4 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50 font-mono"
                   placeholder="000000"
                   maxLength={6}
                   required

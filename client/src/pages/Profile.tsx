@@ -120,11 +120,11 @@ export default function Profile() {
           <form onSubmit={handleUpdate} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">{s.name}</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" required />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">{s.phone}</label>
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" />
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" />
             </div>
             <button type="submit" disabled={loading} className="w-full py-3 rounded-xl font-bold text-white text-sm bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-60">
               {loading ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : <><Save size={14} /> {s.saveChanges}</>}
@@ -139,13 +139,13 @@ export default function Profile() {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">{s.currentPassword}</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type={showPw ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full pl-9 pr-10 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required />
+                <input type={showPw ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full pl-9 pr-10 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" required />
                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><Eye size={14} /></button>
               </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">{s.newPassword}</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required minLength={6} />
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" required minLength={6} />
             </div>
             <button type="submit" disabled={loading} className="w-full py-3 rounded-xl font-bold text-white text-sm bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-60">
               {loading ? <><Loader2 size={14} className="animate-spin" /> Updating...</> : <><Lock size={14} /> Change Password</>}

@@ -170,40 +170,40 @@ export default function CitizenReport() {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description *</label>
               <textarea value={form.description} onChange={update('description')} rows={4}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50"
                 placeholder="Describe what you observed: what happened, when, where, and any other important details..." required />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">District *</label>
-                <select value={form.district} onChange={update('district')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required>
+                <select value={form.district} onChange={update('district')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" required>
                   <option value="">Select district</option>
                   {districts.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sub-County</label>
-                <input type="text" value={form.sub_county} onChange={update('sub_county')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="Sub-county" />
+                <input type="text" value={form.sub_county} onChange={update('sub_county')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="Sub-county" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Village/Area</label>
-                <input type="text" value={form.village} onChange={update('village')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="Village or area name" />
+                <input type="text" value={form.village} onChange={update('village')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="Village or area name" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Latitude</label>
-                <input type="number" step="any" value={form.lat} onChange={update('lat')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="0.0000" />
+                <input type="number" step="any" value={form.lat} onChange={update('lat')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="0.0000" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Longitude</label>
-                <input type="number" step="any" value={form.lng} onChange={update('lng')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="0.0000" />
+                <input type="number" step="any" value={form.lng} onChange={update('lng')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="0.0000" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Severity</label>
-                <select value={form.severity} onChange={update('severity')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white">
+                <select value={form.severity} onChange={update('severity')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50">
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
@@ -216,7 +216,7 @@ export default function CitizenReport() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Water Impact</label>
-                <select value={form.water_impact} onChange={update('water_impact')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white">
+                <select value={form.water_impact} onChange={update('water_impact')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50">
                   <option value="">Select impact level</option>
                   <option value="none">No Impact</option>
                   <option value="minor">Minor Impact</option>
@@ -227,7 +227,7 @@ export default function CitizenReport() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Affected Population</label>
-                <input type="number" value={form.affected_population} onChange={update('affected_population')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="0" min={0} />
+                <input type="number" value={form.affected_population} onChange={update('affected_population')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="0" min={0} />
               </div>
             </div>
           </div>
@@ -374,15 +374,15 @@ export default function CitizenReport() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Name</label>
-                <input type="text" value={form.reporter_name} onChange={update('reporter_name')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="Your name" />
+                <input type="text" value={form.reporter_name} onChange={update('reporter_name')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="Your name" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone</label>
-                <input type="tel" value={form.reporter_phone} onChange={update('reporter_phone')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="+256..." />
+                <input type="tel" value={form.reporter_phone} onChange={update('reporter_phone')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="+256..." />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
-                <input type="email" value={form.reporter_email} onChange={update('reporter_email')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="your@email.com" />
+                <input type="email" value={form.reporter_email} onChange={update('reporter_email')} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50" placeholder="your@email.com" />
               </div>
             </div>
           )}
