@@ -341,8 +341,8 @@ export default function Login() {
         </div>
 
         {/* ── Content (z-10, above all effects) ── */}
-        <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-xl overflow-hidden login-form-animate">
-          <div className="px-8 pt-10 pb-8 sm:px-10">
+        <div className="relative z-10 w-full h-full flex flex-col justify-center items-center px-8 sm:px-12 lg:px-16 login-form-animate">
+          <div className="w-full max-w-[440px] pt-10 pb-8">
           <div className="flex items-center gap-3 mb-auto">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
