@@ -484,7 +484,7 @@ export default function Login() {
                     {features[activeFeature].stat}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-sm text-gray-500">
                   {features[activeFeature].desc}
                 </p>
               </div>
@@ -506,7 +506,7 @@ export default function Login() {
     {/* ══════════════════════════════════════════════
           RIGHT PANEL — Authentication Form
       ══════════════════════════════════════════════ */}
-      <div className="flex-1 min-h-screen bg-white dark:bg-gray-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="flex-1 min-h-screen bg-white flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="w-full max-w-[420px] mx-auto login-form-animate">
 
           {/* Mobile logo (hidden on desktop) */}
@@ -520,7 +520,7 @@ export default function Login() {
 
           {/* Header */}
           <div className="mb-6">
-            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Welcome back</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome back</h2>
             <p className="text-gray-400 text-sm mt-1">Sign in to access your dashboard</p>
           </div>
 
@@ -583,7 +583,7 @@ export default function Login() {
                 }
                 <input
                   type={loginMode === 'committee_id' ? 'text' : 'email'}
-                  className={`input text-gray-900 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 pl-11 pr-4 py-3.5 rounded-2xl ${
+                  className={`input text-gray-900 bg-gray-50 pl-11 pr-4 py-3.5 rounded-2xl ${
                     loginMode === 'committee_id'
                       ? 'border-emerald-200 focus:ring-emerald-500 font-mono tracking-wide'
                       : 'border-gray-200 focus:ring-blue-500'
