@@ -22,7 +22,7 @@
 
 <br />
 
-[🚀 Live Demo](https://veltrix-4r2c.vercel.app) · [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) · [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
+<a href="https://veltrix-4r2c.vercel.app" style="text-decoration: none;">🚀 Live Demo</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">🐛 Report Bug</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">💡 Request Feature</a>
 
 </div>
 
@@ -30,16 +30,16 @@
 
 ## 📌 Table of Contents
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Tech Stack](#-tech-stack)
-- [User Roles & Access](#-user-roles--access)
-- [Modules](#-modules)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Deployment](#-deployment)
-- [Authors](#-authors)
+- <a href="#-overview" style="text-decoration: none;">Overview</a>
+- <a href="#-key-features" style="text-decoration: none;">Key Features</a>
+- <a href="#-system-architecture" style="text-decoration: none;">System Architecture</a>
+- <a href="#-tech-stack" style="text-decoration: none;">Tech Stack</a>
+- <a href="#-user-roles--access" style="text-decoration: none;">User Roles & Access</a>
+- <a href="#-modules" style="text-decoration: none;">Modules</a>
+- <a href="#-getting-started" style="text-decoration: none;">Getting Started</a>
+- <a href="#-environment-variables" style="text-decoration: none;">Environment Variables</a>
+- <a href="#-deployment" style="text-decoration: none;">Deployment</a>
+- <a href="#-authors" style="text-decoration: none;">Authors</a>
 
 ---
 
@@ -59,32 +59,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 - **Full OTP email delivery** — Forgot-password and account verification via Resend transactional email
 - **Real-time push** — Socket.IO delivers new alerts and notifications to the browser instantly, not on a 30-second poll
 
----
 
-## 📸 Platform Showcase
-
-<p align="center">
-  <img src="screenshots/02-dashboard.png" width="49%" alt="System Dashboard">
-  <img src="screenshots/08-health.png" width="49%" alt="Public Health Tracking">
-</p>
-
-<p align="center">
-  <img src="screenshots/07-gis.png" width="49%" alt="GIS Map">
-  <img src="screenshots/12-ai-hub.png" width="49%" alt="AI Intelligence Hub">
-</p>
-
-<p align="center">
-  <img src="screenshots/03-water-infra.png" width="49%" alt="Water Infrastructure">
-  <img src="screenshots/11-citizen-hub.png" width="49%" alt="Citizen Engagement Hub">
-</p>
-
-<p align="center">
-  <img src="screenshots/01-login.png" width="32%" alt="Login Screen">
-  <img src="screenshots/09-emergency.png" width="32%" alt="Emergency Center">
-  <img src="screenshots/10-analytics.png" width="32%" alt="Predictive Analytics">
-</p>
-
----
 
 ## ✨ Key Features
 
