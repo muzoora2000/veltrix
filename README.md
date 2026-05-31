@@ -18,7 +18,7 @@
 
 <br />
 
-> **HydroSense** is a full-stack, enterprise-grade water resource management and environmental monitoring platform built for Uganda's Ministry of Water & Environment. It connects national administrators, district officers, field technicians, health officers, climate scientists, NGOs, community committees, and citizens on a single secure platform — enabling real-time incident reporting, proximity-based task dispatch, AI-powered analysis, and community-driven environmental stewardship.
+> **HydroSense** is an AI-powered, enterprise-grade water resource management and proactive public health monitoring platform built for Uganda's Ministry of Water & Environment. It connects national administrators, district officers, field technicians, health officers, climate scientists, NGOs, community committees, and citizens on a single secure platform — seamlessly integrating intelligent water stewardship with disease surveillance. It enables real-time incident reporting, proximity-based task dispatch, predictive climate/disease analysis, and community-driven monitoring.
 
 <br />
 
@@ -49,7 +49,7 @@ Uganda faces a critical water crisis — over **60% of rural communities** lack 
 
 **HydroSense** was built to change that.
 
-It is a unified platform that connects IoT sensors, citizen reporters, field technicians, health officers, climate scientists, and national administrators into a single, intelligent ecosystem. Every report, sensor reading, and maintenance request flows through a real-time pipeline that triggers the right response — automatically.
+It is a unified, AI-powered platform that connects IoT sensors, citizen reporters, field technicians, health officers, climate scientists, and national administrators into a single, intelligent ecosystem. Because water security is deeply tied to population health, the system actively tracks and correlates public health incidents (like cholera outbreaks) alongside environmental data. Every report, sensor reading, health flag, and maintenance request flows through a real-time pipeline that triggers the right response — automatically.
 
 ### What makes it different
 
@@ -58,6 +58,31 @@ It is a unified platform that connects IoT sensors, citizen reporters, field tec
 - **District-controlled committee access** — Community Committee members receive a unique `HSC-CC-{DISTRICT}-{YEAR}-{SEQ}` identity code, managed by District Officers, not self-registered
 - **Full OTP email delivery** — Forgot-password and account verification via Resend transactional email
 - **Real-time push** — Socket.IO delivers new alerts and notifications to the browser instantly, not on a 30-second poll
+
+---
+
+## 📸 Platform Showcase
+
+<p align="center">
+  <img src="screenshots/02-dashboard.png" width="49%" alt="System Dashboard">
+  <img src="screenshots/08-health.png" width="49%" alt="Public Health Tracking">
+</p>
+
+<p align="center">
+  <img src="screenshots/07-gis.png" width="49%" alt="GIS Map">
+  <img src="screenshots/12-ai-hub.png" width="49%" alt="AI Intelligence Hub">
+</p>
+
+<p align="center">
+  <img src="screenshots/03-water-infra.png" width="49%" alt="Water Infrastructure">
+  <img src="screenshots/11-citizen-hub.png" width="49%" alt="Citizen Engagement Hub">
+</p>
+
+<p align="center">
+  <img src="screenshots/01-login.png" width="32%" alt="Login Screen">
+  <img src="screenshots/09-emergency.png" width="32%" alt="Emergency Center">
+  <img src="screenshots/10-analytics.png" width="32%" alt="Predictive Analytics">
+</p>
 
 ---
 
