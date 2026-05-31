@@ -20,7 +20,7 @@ export default function Profile() {
   const [phone, setPhone] = useState(user?.phone || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [showPw, setShowPw] = useState(true);
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -145,7 +145,7 @@ export default function Profile() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">{s.newPassword}</label>
-              <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required minLength={6} />
+              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" required minLength={6} />
             </div>
             <button type="submit" disabled={loading} className="w-full py-3 rounded-xl font-bold text-white text-sm bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-60">
               {loading ? <><Loader2 size={14} className="animate-spin" /> Updating...</> : <><Lock size={14} /> Change Password</>}

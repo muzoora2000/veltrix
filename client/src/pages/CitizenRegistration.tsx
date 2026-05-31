@@ -31,8 +31,8 @@ export default function CitizenRegistration() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
-  const [showPw, setShowPw]   = useState(true);
-  const [showCpw, setShowCpw] = useState(true);
+  const [showPw, setShowPw]   = useState(false);
+  const [showCpw, setShowCpw] = useState(false);
 
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
