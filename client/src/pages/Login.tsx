@@ -582,7 +582,7 @@ export default function Login() {
                 }
                 <input
                   type={loginMode === 'committee_id' ? 'text' : 'email'}
-                  className={`input dark:bg-gray-800 dark:text-gray-100 pl-11 pr-4 py-3.5 rounded-2xl ${
+                  className={`input text-gray-900 bg-gray-50 dark:bg-gray-800 dark:text-gray-100 pl-11 pr-4 py-3.5 rounded-2xl ${
                     loginMode === 'committee_id'
                       ? 'border-emerald-200 focus:ring-emerald-500 font-mono tracking-wide'
                       : 'border-gray-200 focus:ring-blue-500'
@@ -611,7 +611,7 @@ export default function Login() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-2xl text-sm bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
+                  className="w-full text-gray-900 bg-gray-50 px-4 py-3.5 pr-12 border border-gray-200 rounded-2xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
