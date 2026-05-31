@@ -27,7 +27,6 @@
 </div>
 
 
-
 ## 📌 Table of Contents
 
 - <a href="#-overview" style="text-decoration: none;">Overview</a>
@@ -40,6 +39,7 @@
 - <a href="#-environment-variables" style="text-decoration: none;">Environment Variables</a>
 - <a href="#-deployment" style="text-decoration: none;">Deployment</a>
 - <a href="#-authors" style="text-decoration: none;">Authors</a>
+
 
 
 
@@ -138,6 +138,7 @@ It is a unified, AI-powered platform that connects IoT sensors, citizen reporter
 2. `/api/*` → Vercel rewrites to → Render `hydrosense-server`
 3. `/api/ai/*` → `hydrosense-server` proxies to → `hydrosense-ai`
 4. Socket.IO → direct WebSocket to `hydrosense-server`
+
 
 
 
@@ -256,6 +257,7 @@ cd ai-service && uvicorn main:app --reload --port 8000
 </pre>
 
 App available at **http://localhost:5173**
+
 
 
 
