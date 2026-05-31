@@ -313,7 +313,7 @@ HydroSense runs across three cloud services:
 Cavendish University Uganda
 
 [![GitHub](https://img.shields.io/badge/GitHub-muzoora2000-181717?style=flat-square&logo=github)](https://github.com/muzoora2000)
-[![GitHub](https://img.shields.io/badge/GitHub-waterolum-181717?style=flat-square&logo=github)](https://github.com/waterolum)
+[![GitHub](https://img.shields.io/badge/GitHub-walterolum-181717?style=flat-square&logo=github)](https://github.com/walterolum)
 
 </div>
 
