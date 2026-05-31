@@ -1144,6 +1144,14 @@ async function runMigrations(db) {
     console.log('[MIGRATION] ensure_walter_v2: Walter Olum credentials set.');
   }
 
+  // MIGRATION: Wipe non-admin users as requested
+  const wipeUsers = await db.prepare("SELECT name FROM _migrations WHERE name = 'wipe_non_admin_users'").get();
+  if (!wipeUsers) {
+    await db.prepare("DELETE FROM users WHERE role != 'national_admin'").run();
+    await pool.query(`INSERT INTO _migrations (name) VALUES ('wipe_non_admin_users') ON CONFLICT DO NOTHING`);
+    console.log('[MIGRATION] wipe_non_admin_users: Deleted all non-admin users.');
+  }
+
   // Bootstrap: ensure at least one admin exists
   const adminCount = await db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'national_admin' AND active = 1").get();
   if (!adminCount || parseInt(adminCount.c) === 0) {
