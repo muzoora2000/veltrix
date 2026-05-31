@@ -341,9 +341,8 @@ export default function Login() {
         </div>
 
         {/* ── Content (z-10, above all effects) ── */}
-        <div className="relative z-10 flex flex-col h-full px-9 py-8">
-
-          {/* Logo / Branding */}
+        <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-xl overflow-hidden login-form-animate">
+          <div className="px-8 pt-10 pb-8 sm:px-10">
           <div className="flex items-center gap-3 mb-auto">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
@@ -485,7 +484,7 @@ export default function Login() {
                     {features[activeFeature].stat}
                   </span>
                 </div>
-                <p className="text-xs text-blue-200/80 leading-relaxed">
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                   {features[activeFeature].desc}
                 </p>
               </div>
@@ -506,7 +505,7 @@ export default function Login() {
       {/* ══════════════════════════════════════════════
           RIGHT PANEL — Authentication Form
       ══════════════════════════════════════════════ */}
-      <div className="flex-1 flex items-center justify-center bg-white p-6 lg:p-10 xl:p-14">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <div className="w-full max-w-[420px] login-form-animate">
 
           {/* Mobile logo (hidden on desktop) */}
@@ -520,7 +519,7 @@ export default function Login() {
 
           {/* Header */}
           <div className="mb-6">
-            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Welcome back</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Welcome back</h2>
             <p className="text-gray-400 text-sm mt-1">Sign in to access your dashboard</p>
           </div>
 
@@ -583,11 +582,11 @@ export default function Login() {
                 }
                 <input
                   type={loginMode === 'committee_id' ? 'text' : 'email'}
-                  className={`w-full pl-11 pr-4 py-3.5 border rounded-2xl text-sm bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent focus:bg-white transition-all duration-200 ${
+                  className={`input dark:bg-gray-800 dark:text-gray-100 pl-11 pr-4 py-3.5 rounded-2xl ${
                     loginMode === 'committee_id'
                       ? 'border-emerald-200 focus:ring-emerald-500 font-mono tracking-wide'
                       : 'border-gray-200 focus:ring-blue-500'
-                  }`}
+                  } ${error ? 'border-red-300 bg-red-50 focus:ring-red-500' : ''}`}
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
                   placeholder={loginMode === 'committee_id' ? 'HSC-CC-KLA-2026-0001' : 'your@email.go.ug'}
