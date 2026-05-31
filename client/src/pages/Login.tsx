@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, AlertCircle, Shield, Wifi, UserPlus, CreditCard, Mail } from 'lucide-react';
+import { Eye, AlertCircle, Shield, Wifi, UserPlus, CreditCard, Mail } from 'lucide-react';
 
 const slides = [
   {
@@ -152,7 +152,7 @@ export default function Login() {
   const [loginMode, setLoginMode]       = useState<LoginMode>('email');
   const [identifier, setIdentifier]     = useState('');
   const [password, setPassword]         = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+
   const [rememberMe, setRememberMe]     = useState(true);
   const [error, setError]               = useState('');
   const [loading, setLoading]           = useState(false);
@@ -611,21 +611,13 @@ export default function Login() {
               </div>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="w-full text-gray-900 bg-gray-50 px-4 py-3.5 pr-12 border border-gray-200 rounded-2xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-gray-50 transition-all duration-200"
+                  type="text"
+                  className="w-full text-gray-900 bg-gray-50 px-4 py-3.5 pr-4 border border-gray-200 rounded-2xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-gray-50 transition-all duration-200"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
               </div>
             </div>
 

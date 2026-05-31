@@ -31,8 +31,8 @@ export default function CitizenRegistration() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState('');
-  const [showPw, setShowPw]   = useState(false);
-  const [showCpw, setShowCpw] = useState(false);
+  
+  
 
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirmPassword: '',
@@ -210,25 +210,17 @@ export default function CitizenRegistration() {
               <Field label="Password" required>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showPw ? 'text' : 'password'} value={form.password} onChange={update('password')}
+                  <input type="text" value={form.password} onChange={update('password')}
                     required minLength={6} placeholder="Min 6 characters"
-                    className={INPUT_CLS + ' pr-10'} />
-                  <button type="button" onClick={() => setShowPw(p => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
+                    className={INPUT_CLS + ' pr-4'} />
                 </div>
               </Field>
               <Field label="Confirm Password" required>
                 <div className="relative">
                   <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input type={showCpw ? 'text' : 'password'} value={form.confirmPassword} onChange={update('confirmPassword')}
+                  <input type="text" value={form.confirmPassword} onChange={update('confirmPassword')}
                     required minLength={6} placeholder="Re-enter password"
-                    className={INPUT_CLS + ' pr-10'} />
-                  <button type="button" onClick={() => setShowCpw(p => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showCpw ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
+                    className={INPUT_CLS + ' pr-4'} />
                 </div>
               </Field>
             </div>
