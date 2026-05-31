@@ -278,7 +278,7 @@ const ROLE_LABELS = {
 router.get('/users/mention-search', authMiddleware, async (req, res) => {
   const db = await getDb();
   const q = String(req.query.q || '').trim().toLowerCase();
-  if (!q) { const defaultUsers = await db.prepare("SELECT id, name, role FROM users WHERE id != ? ORDER BY CASE WHEN role != 'citizen' THEN 0 ELSE 1 END, name ASC LIMIT 30").all(req.user.id); return res.json({ success: true, data: defaultUsers.map(row => { if (row.role === 'citizen') { return { id: row.id, name: row.name, role: row.role, tag: `@${row.name}`, display: row.name }; } const label = ROLE_LABELS[row.role] || row.role.replace(/_/g, ' '); return { id: row.id, name: row.name, role: row.role, tag: `@${label}`, display: `${label} - ${row.name}` }; }) }); })) }); }
+  if (!q) { const defaultUsers = await db.prepare("SELECT id, name, role FROM users WHERE id != ? ORDER BY CASE WHEN role != 'citizen' THEN 0 ELSE 1 END, name ASC LIMIT 30").all(req.user.id); return res.json({ success: true, data: defaultUsers.map(row => { if (row.role === 'citizen') { return { id: row.id, name: row.name, role: row.role, tag: `@${row.name}`, display: row.name }; } const label = ROLE_LABELS[row.role] || row.role.replace(/_/g, ' '); return { id: row.id, name: row.name, role: row.role, tag: `@${label}`, display: `${label} - ${row.name}` }; }) }); }
 
   // Citizens: search by name. Officials: also match role label.
   const byName = await db.prepare(
