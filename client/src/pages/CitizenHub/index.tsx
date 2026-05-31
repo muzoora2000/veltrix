@@ -595,7 +595,7 @@ export default function CitizenHub() {
     setMentionStart(atIdx);
     setMentionFor(target);
     setMentionQuery(fragment);
-    if (fragment.length >= 1) {
+    if (fragment.length >= 0) {
       searchMentions(fragment).then(r => setMentionResults(r.data.data || [])).catch(() => {});
     } else {
       setMentionResults([]);

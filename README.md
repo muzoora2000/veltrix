@@ -22,7 +22,7 @@
 
 <br />
 
-<a href="https://veltrix-4r2c.vercel.app" style="text-decoration: none;">🚀 Live Demo</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">🐛 Report Bug</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">💡 Request Feature</a>
+[🚀 Live Demo](https://veltrix-4r2c.vercel.app) &nbsp;·&nbsp; [🐛 Report Bug](https://github.com/muzoora2000/veltrix/issues) &nbsp;·&nbsp; [💡 Request Feature](https://github.com/muzoora2000/veltrix/issues)
 
 </div>
 
@@ -30,16 +30,16 @@
 
 ## 📌 Table of Contents
 
-- <a href="#-overview" style="text-decoration: none;">Overview</a>
-- <a href="#-key-features" style="text-decoration: none;">Key Features</a>
-- <a href="#-system-architecture" style="text-decoration: none;">System Architecture</a>
-- <a href="#-tech-stack" style="text-decoration: none;">Tech Stack</a>
-- <a href="#-user-roles--access" style="text-decoration: none;">User Roles & Access</a>
-- <a href="#-modules" style="text-decoration: none;">Modules</a>
-- <a href="#-getting-started" style="text-decoration: none;">Getting Started</a>
-- <a href="#-environment-variables" style="text-decoration: none;">Environment Variables</a>
-- <a href="#-deployment" style="text-decoration: none;">Deployment</a>
-- <a href="#-authors" style="text-decoration: none;">Authors</a>
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [System Architecture](#-system-architecture)
+- [Tech Stack](#-tech-stack)
+- [User Roles & Access](#-user-roles--access)
+- [Modules](#-modules)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Deployment](#-deployment)
+- [Authors](#-authors)
 
 ---
 
@@ -323,3 +323,4 @@ Cavendish University Uganda
 ⭐ Star this repository if you believe in what it stands for.
 
 </div>
+
