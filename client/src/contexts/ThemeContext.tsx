@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 type Theme = 'light' | 'dark';
 
@@ -13,6 +14,7 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('hs_theme') as Theme | null;
     if (saved === 'dark' || saved === 'light') return saved;
@@ -22,13 +24,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    // Only apply dark mode to the DOM if the user is authenticated
+    if (user && theme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
     localStorage.setItem('hs_theme', theme);
-  }, [theme]);
+  }, [theme, user]);
 
   const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
 

@@ -196,8 +196,8 @@ function UnauthorizedPage() {
 ───────────────────────────────────────────────────────────── */
 export default function App() {
   return (
-    <ThemeProvider>
     <AuthProvider>
+    <ThemeProvider>
     <AIServiceProvider>
     <LanguageProvider>
       <BrowserRouter>
@@ -253,7 +253,7 @@ export default function App() {
       </BrowserRouter>
     </LanguageProvider>
     </AIServiceProvider>
-    </AuthProvider>
     </ThemeProvider>
+    </AuthProvider>
   );
 }
