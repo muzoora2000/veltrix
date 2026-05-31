@@ -501,12 +501,13 @@ export default function Login() {
           </div>
         </div>
       </div>
+    </div>
 
-      {/* ══════════════════════════════════════════════
+    {/* ══════════════════════════════════════════════
           RIGHT PANEL — Authentication Form
       ══════════════════════════════════════════════ */}
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="w-full max-w-[420px] login-form-animate">
+      <div className="flex-1 min-h-screen bg-white dark:bg-gray-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="w-full max-w-[420px] mx-auto login-form-animate">
 
           {/* Mobile logo (hidden on desktop) */}
           <div className="flex items-center gap-3 mb-7 lg:hidden">
