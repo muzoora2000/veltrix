@@ -22,23 +22,23 @@
 
 <br />
 
-🚀 Live Demo &nbsp;·&nbsp; 🐛 Report Bug &nbsp;·&nbsp; 💡 Request Feature
+<a href="https://veltrix-4r2c.vercel.app" style="text-decoration: none;">🚀 Live Demo</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">🐛 Report Bug</a> &nbsp;·&nbsp; <a href="https://github.com/muzoora2000/veltrix/issues" style="text-decoration: none;">💡 Request Feature</a>
 
 </div>
 
 
 ## 📌 Table of Contents
 
-- Overview
-- Key Features
-- System Architecture
-- Tech Stack
-- User Roles & Access
-- Modules
-- Getting Started
-- Environment Variables
-- Deployment
-- Authors
+- <a href="#-overview" style="text-decoration: none;">Overview</a>
+- <a href="#-key-features" style="text-decoration: none;">Key Features</a>
+- <a href="#-system-architecture" style="text-decoration: none;">System Architecture</a>
+- <a href="#-tech-stack" style="text-decoration: none;">Tech Stack</a>
+- <a href="#-user-roles--access" style="text-decoration: none;">User Roles & Access</a>
+- <a href="#-modules" style="text-decoration: none;">Modules</a>
+- <a href="#-getting-started" style="text-decoration: none;">Getting Started</a>
+- <a href="#-environment-variables" style="text-decoration: none;">Environment Variables</a>
+- <a href="#-deployment" style="text-decoration: none;">Deployment</a>
+- <a href="#-authors" style="text-decoration: none;">Authors</a>
 
 
 
