@@ -10,8 +10,40 @@ const { notifyRoles } = require('../utils/notify');
 
 const router = express.Router();
 
+const ROLE_LABELS = {
+  national_admin: 'National Admin', district_officer: 'District Officer',
+  community_committee: 'Community Committee', ngo_officer: 'NGO Officer',
+  technician: 'Technician', health_officer: 'Health Officer',
+  climate_scientist: 'Climate Scientist',
+};
+
+async function notifyMentions(db, text, senderId, senderName, contextMessage, refType, refId, defaultDistrict = null) {
+  if (!text || !text.includes('@')) return;
+  try {
+    const users = await db.prepare(
+      `SELECT id, role, district FROM users WHERE id != ? AND 
+       (UPPER(?) LIKE '%@' || UPPER(REPLACE(name, ' ', '')) || '%' OR UPPER(?) LIKE '%@' || UPPER(name) || '%')`
+    ).all(senderId, text, text);
+    const uniqueIds = new Set();
+    for (const u of users) {
+      if (uniqueIds.has(u.id)) continue;
+      uniqueIds.add(u.id);
+      await db.prepare(
+        `INSERT INTO notification_log (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
+         VALUES (?, ?, 'in_app', ?, ?, 'sent', ?, ?, ?)`
+      ).run(u.role, u.id, `You were mentioned`, contextMessage, refType, refId, u.district || defaultDistrict || null);
+    }
+    const mentionedRoles = Object.keys(ROLE_LABELS).filter(slug => text.toLowerCase().includes('@' + ROLE_LABELS[slug].toLowerCase()));
+    if (mentionedRoles.length > 0) {
+      notifyRoles(mentionedRoles, defaultDistrict, 'Your role was mentioned', contextMessage, refType, refId);
+    }
+  } catch (e) {
+    console.error('[notifyMentions]', e);
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────
+
    PUBLIC ENVIRONMENTAL DASHBOARD (no auth needed)
 ───────────────────────────────────────────────────────────── */
 router.get('/dashboard', async (req, res) => {
@@ -112,6 +144,13 @@ router.post('/discussions', authMiddleware, async (req, res) => {
     'discussion', r.lastInsertRowid
   );
 
+  await notifyMentions(
+    db, title + ' ' + content,
+    req.user.id, req.user.name,
+    `${req.user.name} mentioned you in a discussion: "${title.trim().slice(0, 60)}"`,
+    'discussion', r.lastInsertRowid, req.user.district
+  );
+
   res.status(201).json({ success: true, id: r.lastInsertRowid });
 });
 
@@ -187,6 +226,13 @@ router.post('/discussions/:id/replies', authMiddleware, async (req, res) => {
       );
     }
   }
+
+  await notifyMentions(
+    db, content,
+    req.user.id, req.user.name,
+    `${req.user.name} mentioned you in a reply`,
+    'discussion', did, req.user.district
+  );
 
   res.status(201).json({ success: true });
 });
@@ -268,12 +314,6 @@ router.get('/discussions/:id/views', authMiddleware, async (req, res) => {
 /* ─────────────────────────────────────────────────────────────
    MENTION SEARCH — find users to @tag in discussions
 ───────────────────────────────────────────────────────────── */
-const ROLE_LABELS = {
-  national_admin: 'National Admin', district_officer: 'District Officer',
-  community_committee: 'Community Committee', ngo_officer: 'NGO Officer',
-  technician: 'Technician', health_officer: 'Health Officer',
-  climate_scientist: 'Climate Scientist',
-};
 
 router.get('/users/mention-search', authMiddleware, async (req, res) => {
   const db = await getDb();
