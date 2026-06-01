@@ -137,11 +137,17 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
     const sock = io('/', { transports: ['websocket', 'polling'] });
     socketRef.current = sock;
 
+    sock.on('connect', () => {
+      if (user) {
+        sock.emit('subscribe_notifications', { role: user.role, id: user.id });
+      }
+    });
+
     sock.on('new_alert', () => setUnreadCount(c => c + 1));
     sock.on('new_notification', () => setUnreadCount(c => c + 1));
 
     return () => { sock.disconnect(); socketRef.current = null; };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchUnread();

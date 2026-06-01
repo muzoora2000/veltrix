@@ -44,6 +44,14 @@ async function notifyRoles(roles, district, subject, message, refType, refId) {
          VALUES (?, 'in_app', ?, ?, 'sent', ?, ?, ?)`
       ).run(role, subject, message, refType || null, refId || null, district || null);
     }
+
+    // Push real-time notification to targeted role rooms
+    const { io } = require('../index');
+    if (io) {
+      for (const role of uniqueRoles) {
+        io.to(`role_${role}`).emit('new_notification');
+      }
+    }
   } catch (e) {
     console.error('[notify] notifyRoles error:', e.message);
   }

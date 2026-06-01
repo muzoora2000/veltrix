@@ -32,6 +32,11 @@ async function notifyMentions(db, text, senderId, senderName, contextMessage, re
         `INSERT INTO notification_log (recipient_type, recipient_id, channel, subject, message, status, reference_type, reference_id, district)
          VALUES (?, ?, 'in_app', ?, ?, 'sent', ?, ?, ?)`
       ).run(u.role, u.id, `You were mentioned`, contextMessage, refType, refId, u.district || defaultDistrict || null);
+
+      const { io } = require('../index');
+      if (io) {
+        io.to(`user_${u.id}`).emit('new_notification');
+      }
     }
     const mentionedRoles = Object.keys(ROLE_LABELS).filter(slug => text.toLowerCase().includes('@' + ROLE_LABELS[slug].toLowerCase()));
     if (mentionedRoles.length > 0) {

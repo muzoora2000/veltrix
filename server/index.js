@@ -540,6 +540,10 @@ io.on('connection', (socket) => {
   console.log(`[Socket] Client connected: ${socket.id}`);
   socket.on('subscribe_district', (district) => socket.join(`district_${district}`));
   socket.on('unsubscribe_district', (district) => socket.leave(`district_${district}`));
+  socket.on('subscribe_notifications', ({ role, id }) => {
+    if (role) socket.join(`role_${role}`);
+    if (id) socket.join(`user_${id}`);
+  });
   socket.on('disconnect', (reason) => console.log(`[Socket] Client disconnected: ${socket.id} (${reason})`));
 });
 
