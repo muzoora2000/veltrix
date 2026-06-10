@@ -89,7 +89,12 @@ export default function OTPVerification() {
           <div className="flex items-center gap-3 mb-10">
             <Logo className="w-16 h-auto" />
             <div>
-              <div className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">Ministry of Water & Environment</div>
+              <div className="text-white text-3xl font-extrabold tracking-tight mb-1">
+                HydroSense
+              </div>
+              <div className="text-white/80 text-[10px] uppercase font-bold tracking-widest">
+                Ministry of Water & Environment · Uganda
+              </div>
             </div>
           </div>
           <div className="max-w-md">

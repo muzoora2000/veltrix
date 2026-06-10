@@ -346,7 +346,10 @@ export default function Login() {
             <div className="flex items-center gap-4 mb-10 animate-fade-in relative z-10 w-full max-w-lg p-3">
               <Logo className="w-16 h-auto" />
               <div>
-                <div className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">
+                <div className="text-white text-3xl font-extrabold tracking-tight mb-1">
+                  HydroSense
+                </div>
+                <div className="text-white/80 text-[10px] uppercase font-bold tracking-widest">
                   Ministry of Water & Environment · Uganda
                 </div>
               </div>
@@ -509,7 +512,12 @@ export default function Login() {
           <div className="flex items-center gap-3 mb-7 lg:hidden">
             <Logo className="w-14 h-auto" />
             <div>
-              <div className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mt-1">AI-Powered Climate-Resilient Rural Water & Health System</div>
+              <div className="text-2xl font-extrabold tracking-tight text-gray-900 mb-1">
+                HydroSense
+              </div>
+              <div className="text-gray-400 text-[10px] uppercase font-bold tracking-widest">
+                AI-Powered Climate-Resilient Rural Water & Health System
+              </div>
             </div>
           </div>
 
