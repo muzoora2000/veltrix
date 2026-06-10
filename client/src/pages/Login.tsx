@@ -344,7 +344,7 @@ export default function Login() {
         <div className="relative z-10 w-full h-full flex flex-col justify-center items-center px-8 sm:px-12 lg:px-16 login-form-animate">
           <div className="w-full max-w-[440px] pt-10 pb-8">
             <div className="flex items-center gap-4 mb-10 animate-fade-in relative z-10 w-full max-w-lg p-3">
-              <Logo className="w-16 h-auto" />
+              <Logo className="w-24 h-auto" />
               <div>
                 <div className="text-white text-3xl font-extrabold tracking-tight mb-1">
                   HydroSense
@@ -510,7 +510,7 @@ export default function Login() {
 
           {/* Mobile logo (hidden on desktop) */}
           <div className="flex items-center gap-3 mb-7 lg:hidden">
-            <Logo className="w-14 h-auto" />
+            <Logo className="w-20 h-auto" />
             <div>
               <div className="text-2xl font-extrabold tracking-tight text-gray-900 mb-1">
                 HydroSense
