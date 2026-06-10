@@ -246,14 +246,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         style={{ background:'linear-gradient(180deg,#0f172a 0%,#111827 100%)' }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8">
-          <Logo className="h-10 w-auto" />
-          <div className="flex-1 min-w-0">
-            <div className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mt-0.5" style={{ lineHeight: '1.2' }}>
-              AI-Powered<br/>Water & Health
-            </div>
+        <div className="flex flex-col items-center text-center px-5 py-5 border-b border-white/8 relative">
+          <Logo className="h-16 w-auto mb-3" />
+          <div className="text-gray-400 text-[11px] uppercase font-bold tracking-widest" style={{ lineHeight: '1.3' }}>
+            AI-Powered<br/>Water & Health
           </div>
-          <button onClick={onClose} className="lg:hidden text-gray-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="absolute right-4 top-4 lg:hidden text-gray-500 hover:text-white transition-colors">
             <X size={17}/>
           </button>
         </div>
