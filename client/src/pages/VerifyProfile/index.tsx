@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { Logo } from '../../components/common/Logo';
 
 const ROLE_LABELS: Record<string, string> = {
   national_admin: 'National Admin',
@@ -49,9 +50,8 @@ export default function VerifyProfile() {
       }}>
         {/* Logo */}
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '28px' }}>💧</span>
-            <span style={{ fontSize: '20px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1px' }}>HydroSense</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Logo className="w-16 h-auto" />
           </div>
           <div style={{ fontSize: '12px', color: '#6b7280' }}>Staff Credential Verification</div>
         </div>

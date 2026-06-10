@@ -8,6 +8,7 @@ import {
   Brain, Shield, Radio, Hammer, UserCog, UserCircle, Building2, Lock as LockIcon,
 } from 'lucide-react';
 import ProfileModal from '../common/ProfileModal';
+import { Logo } from '../common/Logo';
 
 /* ─────────────────────────────────────────────────────────────
    Role type (all 8 original roles)
@@ -246,13 +247,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-white/8">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-bold flex-shrink-0"
-            style={{ background:'linear-gradient(135deg,#2563eb,#0ea5e9)' }}>
-            💧
-          </div>
+          <Logo className="h-10 w-auto" />
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-white text-sm tracking-wide truncate">HydroSense</div>
-            <div className="text-gray-500 text-[11px]">AI-Powered Water & Health · Uganda</div>
+            <div className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mt-0.5" style={{ lineHeight: '1.2' }}>
+              AI-Powered<br/>Water & Health
+            </div>
           </div>
           <button onClick={onClose} className="lg:hidden text-gray-500 hover:text-white transition-colors">
             <X size={17}/>

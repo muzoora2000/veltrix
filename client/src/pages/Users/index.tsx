@@ -5,6 +5,7 @@ import {
   X, AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Trash2,
   MessageCircle, PhoneCall,
 } from 'lucide-react';
+import { Logo } from '../../components/common/Logo';
 import { getUsers, createUser, updateUser, resetUserPassword, deleteUser } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -296,8 +297,7 @@ export default function UserManagement() {
       return `
         <div class="card">
           <div class="header">
-            <span class="icon">💧</span>
-            <span class="sys">HydroSense</span>
+            <img src="${window.location.origin}/logo.png" alt="HydroSense" style="height: 28px; width: auto; max-width: 100%; display: block; margin: 0 auto;" />
           </div>
           <img src="${url}" alt="QR" />
           <div class="name">${u.name}</div>
@@ -815,9 +815,8 @@ export default function UserManagement() {
               {/* Printable credential card */}
               <div className="border-2 border-indigo-100 dark:border-indigo-900 rounded-2xl p-5 text-center">
                 {/* Logo */}
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <span className="text-2xl">💧</span>
-                  <span className="font-black text-sm tracking-widest text-indigo-900 dark:text-indigo-300">HydroSense</span>
+                <div className="flex items-center justify-center mb-4">
+                  <Logo className="h-10 w-auto" />
                 </div>
 
                 {/* QR image */}
@@ -899,7 +898,7 @@ export default function UserManagement() {
   @media print{body{background:white}.no-print{display:none}}
 </style></head><body>
 <div class="card">
-  <div class="logo"><span style="font-size:22px">💧</span><span class="logo-text">HydroSense</span></div>
+  <div class="logo"><img src="${window.location.origin}/logo.png" alt="HydroSense Logo" style="height:32px; margin:0 auto; display:block;" /></div>
   <img src="${qrUrl(qrText(qrUser, qrPassword || undefined), 180)}" alt="QR" />
   <div class="name">${qrUser.name}</div>
   <div class="email">📧 ${qrUser.email}</div>

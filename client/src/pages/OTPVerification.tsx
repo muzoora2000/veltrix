@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Shield, AlertCircle, CheckCircle, Loader2, Smartphone } from 'lucide-react';
 import api from '../api/client';
+import { Logo } from '../components/common/Logo';
 
 export default function OTPVerification() {
   const navigate = useNavigate();
@@ -86,10 +87,9 @@ export default function OTPVerification() {
       <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-blue-900 via-blue-800 to-cyan-700 relative overflow-hidden p-10 flex-col justify-between">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl border border-white/20">💧</div>
+            <Logo className="w-16 h-auto" />
             <div>
-              <div className="font-bold text-white text-lg">HydroSense</div>
-              <div className="text-blue-200 text-xs">Ministry of Water & Environment</div>
+              <div className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">Ministry of Water & Environment</div>
             </div>
           </div>
           <div className="max-w-md">
@@ -126,8 +126,7 @@ export default function OTPVerification() {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">💧</div>
-            <div className="font-bold text-gray-900 text-sm">HydroSense</div>
+            <Logo className="w-14 h-auto" />
           </div>
 
           {error && (

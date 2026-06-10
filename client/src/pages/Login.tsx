@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, AlertCircle, Shield, Wifi, UserPlus, CreditCard, Mail } from 'lucide-react';
+import { Logo } from '../components/common/Logo';
 
 const slides = [
   {
@@ -340,21 +341,16 @@ export default function Login() {
           ))}
         </div>
 
-        {/* ── Content (z-10, above all effects) ── */}
         <div className="relative z-10 w-full h-full flex flex-col justify-center items-center px-8 sm:px-12 lg:px-16 login-form-animate">
           <div className="w-full max-w-[440px] pt-10 pb-8">
-          <div className="flex items-center gap-3 mb-auto">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' }}
-            >
-              💧
+            <div className="flex items-center gap-4 mb-10 animate-fade-in relative z-10 w-full max-w-lg p-3">
+              <Logo className="w-16 h-auto" />
+              <div>
+                <div className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">
+                  Ministry of Water & Environment · Uganda
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-white text-base leading-tight tracking-widest">HydroSense</div>
-              <div className="text-blue-300/80 text-xs">Ministry of Water & Environment · Uganda</div>
-            </div>
-          </div>
 
           {/* Central Glassmorphism Card */}
           <div
@@ -511,10 +507,9 @@ export default function Login() {
 
           {/* Mobile logo (hidden on desktop) */}
           <div className="flex items-center gap-3 mb-7 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl shadow">💧</div>
+            <Logo className="w-14 h-auto" />
             <div>
-              <div className="font-bold text-gray-900 text-sm tracking-widest">HydroSense</div>
-              <div className="text-gray-400 text-xs">AI-Powered Climate-Resilient Rural Water & Health System</div>
+              <div className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mt-1">AI-Powered Climate-Resilient Rural Water & Health System</div>
             </div>
           </div>
 

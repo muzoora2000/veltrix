@@ -8,6 +8,7 @@ import {
   AlertCircle, CheckCircle, Phone, Mail, User, MapPin, Lock,
   Loader2, Eye, EyeOff, Globe, Shield,
 } from 'lucide-react';
+import { Logo } from '../components/common/Logo';
 
 const INPUT_CLS =
   'w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-50 text-gray-900 transition-colors';
@@ -78,10 +79,9 @@ export default function CitizenRegistration() {
       <div className="hidden lg:flex lg:w-[42%] bg-gradient-to-br from-blue-900 via-blue-800 to-cyan-700 relative overflow-hidden p-10 flex-col justify-between">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center text-2xl border border-white/20">💧</div>
+            <Logo className="w-16 h-auto" />
             <div>
-              <div className="font-bold text-white text-lg">HydroSense</div>
-              <div className="text-blue-200 text-xs">Ministry of Water &amp; Environment</div>
+              <div className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">Ministry of Water & Environment</div>
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">Join HydroSense</h1>
@@ -125,8 +125,7 @@ export default function CitizenRegistration() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl">💧</div>
-            <div className="font-bold text-gray-900 text-sm">HydroSense</div>
+            <Logo className="w-14 h-auto" />
           </div>
 
           {error && (
